@@ -1258,7 +1258,7 @@ convert_list_to_tree (GList ** stack, GstClockTime * start,
     *start = object->start;
   }
 
-  if (GNL_IS_SOURCE (object)) {
+  if (GNL_OBJECT_IS_SOURCE (object)) {
     *stack = g_list_next (*stack);
     /* update highest priority.
      * We do this here, since it's only used with sources (leafs of the tree) */
