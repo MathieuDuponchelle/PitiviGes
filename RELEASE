@@ -1,5 +1,5 @@
 
-Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.15 "I missed the snow in Barcelona"
+Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.16 "I needed time to think to get the memories from my mind"
         
 
 
@@ -29,12 +29,17 @@ An element for using filters in a GnlComposition
 
 Features of this release
     
-      * Many fixes for complex compositions
+      * More race fixes
+      * gnlcomposition: propagate caps to childs
+      * gnlurisource: Only use needed streams
+      * gnlcomposition: Fix QoS handling
+      * 
 
 Bugs fixed in this release
      
-      * 609689 : compositions containing gnloperation videomixer/adder freeze when input is another gnloperation
-      * 609792 : [pitivi] [transitions] black frame flashing in rendered files when using transitions
+      * 613283 : gst_element_class_set_details = > gst_element_class_set_details_simple
+      * 626501 : Caps property of gnlfilesource works incorrectly
+      * 626733 : Race in gnlcomposition between no_more_pads_object_cb and compare_relink_single_node
 
 Download
 
@@ -65,6 +70,10 @@ GNonLin is primarily used by PiTiVi (http://www.pitivi.org/) and Jokosher (http:
 Contributors to this release
     
       * Alessandro Decina
+      * Benjamin Otte
+      * David Schleef
       * Edward Hervey
       * Sebastian Dröge
+      * Stefan Kost
+      * Tim-Philipp Müller
  
