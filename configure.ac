@@ -106,21 +106,10 @@ AG_GST_GLIB_CHECK([2.6])
 
 dnl checks for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
-AG_GST_CHECK_GST($GST_MAJORMINOR, [$GST_REQ])
+AG_GST_CHECK_GST($GST_MAJORMINOR, [$GST_REQ], [yes])
+AG_GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ], [yes])
 
-GST_TOOLS_DIR=`$PKG_CONFIG --variable=toolsdir gstreamer-$GST_MAJORMINOR`
-if test -z $GST_TOOLS_DIR; then
-  AC_MSG_ERROR([no tools dir defined in GStreamer pkg-config file; core upgrade needed.])
-fi
-AC_SUBST(GST_TOOLS_DIR)
-
-GST_PLUGINS_DIR=`$PKG_CONFIG gstreamer-$GST_MAJORMINOR --variable pluginsdir`
-AC_SUBST(GST_PLUGINS_DIR)
-AC_MSG_NOTICE(Using GStreamer Core Plugins in $GST_PLUGINS_DIR)
-
-AG_GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ])
-
-AG_GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ])
+AG_GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ], [yes])
 
 dnl check for uninstalled plugin directories for unit tests
 AG_GST_CHECK_GST_PLUGINS_GOOD($GST_MAJORMINOR, [0.10.25])
