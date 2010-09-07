@@ -313,11 +313,13 @@ GST_START_TEST (test_no_more_pads_race)
 
   composition = gst_element_factory_make ("gnlcomposition", "composition");
   fakesink = gst_element_factory_make ("fakesink", NULL);
+  fail_unless (fakesink != NULL);
   g_object_set (fakesink, "sync", TRUE, NULL);
 
   /* operation */
   operation = gst_element_factory_make ("gnloperation", "operation");
   videomixer = gst_element_factory_make ("videomixer", "videomixer");
+  fail_unless (videomixer != NULL);
   gst_bin_add (GST_BIN (operation), videomixer);
   g_object_set (operation, "start", 0 * GST_SECOND, "duration", 20 * GST_SECOND,
       "media-start", 0 * GST_SECOND, "media-duration", 20 * GST_SECOND,
@@ -404,7 +406,7 @@ GST_START_TEST (test_no_more_pads_race)
 
 GST_END_TEST;
 
-Suite *
+static Suite *
 gnonlin_suite (void)
 {
   Suite *s = suite_create ("gnonlin");
@@ -414,24 +416,13 @@ gnonlin_suite (void)
 
   tcase_add_test (tc_chain, test_change_object_start_stop_in_current_stack);
   tcase_add_test (tc_chain, test_remove_invalid_object);
-  tcase_add_test (tc_chain, test_no_more_pads_race);
+  if (gst_default_registry_check_feature_version ("videomixer", 0, 10, 0)) {
+    tcase_add_test (tc_chain, test_no_more_pads_race);
+  } else {
+    GST_WARNING ("videomixer element not available, skipping 1 test");
+  }
 
   return s;
 }
 
-int
-main (int argc, char **argv)
-{
-  int nf;
-
-  Suite *s = gnonlin_suite ();
-  SRunner *sr = srunner_create (s);
-
-  gst_check_init (&argc, &argv);
-
-  srunner_run_all (sr, CK_NORMAL);
-  nf = srunner_ntests_failed (sr);
-  srunner_free (sr);
-
-  return nf;
-}
+GST_CHECK_MAIN (gnonlin)
