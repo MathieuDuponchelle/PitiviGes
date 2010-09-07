@@ -121,9 +121,6 @@ AC_MSG_NOTICE(Using GStreamer Core Plugins in $GST_PLUGINS_DIR)
 AG_GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ])
 
 AG_GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ])
-GSTPB_PLUGINS_DIR=`$PKG_CONFIG gstreamer-plugins-base-$GST_MAJORMINOR --variable pluginsdir`
-AC_SUBST(GSTPB_PLUGINS_DIR)
-AC_MSG_NOTICE(Using GStreamer Base Plugins in $GSTPB_PLUGINS_DIR)
 
 dnl check for uninstalled plugin directories for unit tests
 AG_GST_CHECK_GST_PLUGINS_GOOD($GST_MAJORMINOR, [0.10.25])
