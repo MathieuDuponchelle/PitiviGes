@@ -1902,7 +1902,7 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
         } else {
           if (G_UNLIKELY (gst_pad_link_full (srcpad, sinkpad,
                       GST_PAD_LINK_CHECK_NOTHING) != GST_PAD_LINK_OK)) {
-            GST_WARNING_OBJECT (comp, "Failed to link pads %s - %s",
+            GST_WARNING_OBJECT (comp, "Failed to link pads %s:%s - %s:%s",
                 GST_DEBUG_PAD_NAME (srcpad), GST_DEBUG_PAD_NAME (sinkpad));
           }
           gst_object_unref (sinkpad);
