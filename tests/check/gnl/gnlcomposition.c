@@ -409,7 +409,7 @@ GST_END_TEST;
 static Suite *
 gnonlin_suite (void)
 {
-  Suite *s = suite_create ("gnonlin");
+  Suite *s = suite_create ("gnlcomposition");
   TCase *tc_chain = tcase_create ("gnlcomposition");
 
   suite_add_tcase (s, tc_chain);
