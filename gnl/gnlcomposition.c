@@ -45,8 +45,17 @@ GST_DEBUG_CATEGORY_STATIC (gnlcomposition);
 
 enum
 {
-  ARG_0,
-  ARG_UPDATE,
+  PROP_0,
+  PROP_UPDATE,
+};
+
+/* Properties from GnlObject */
+enum
+{
+  GNLOBJECT_PROP_START,
+  GNLOBJECT_PROP_STOP,
+  GNLOBJECT_PROP_DURATION,
+  GNLOBJECT_PROP_LAST
 };
 
 struct _GnlCompositionPrivate
@@ -124,6 +133,8 @@ struct _GnlCompositionPrivate
   GstPadEventFunction gnl_event_pad_func;
 
 };
+
+static GParamSpec *gnlobject_properties[GNLOBJECT_PROP_LAST];
 
 #define OBJECT_IN_ACTIVE_SEGMENT(comp,element)				\
   ((GNL_OBJECT_START(element) < comp->priv->segment_stop) &&		\
@@ -284,10 +295,19 @@ gnl_composition_class_init (GnlCompositionClass * klass)
    * back the property to %TRUE when done.
    */
 
-  g_object_class_install_property (gobject_class, ARG_UPDATE,
+  g_object_class_install_property (gobject_class, PROP_UPDATE,
       g_param_spec_boolean ("update", "Update",
           "Update the internal pipeline on every modification", TRUE,
           G_PARAM_READWRITE));
+
+  /* Get the paramspec of the GnlObject klass so we can do
+   * fast notifies */
+  gnlobject_properties[GNLOBJECT_PROP_START] =
+      g_object_class_find_property (gobject_class, "start");
+  gnlobject_properties[GNLOBJECT_PROP_STOP] =
+      g_object_class_find_property (gobject_class, "stop");
+  gnlobject_properties[GNLOBJECT_PROP_DURATION] =
+      g_object_class_find_property (gobject_class, "duration");
 }
 
 static void
@@ -408,7 +428,7 @@ gnl_composition_set_property (GObject * object, guint prop_id,
   GnlComposition *comp = (GnlComposition *) object;
 
   switch (prop_id) {
-    case ARG_UPDATE:
+    case PROP_UPDATE:
       gnl_composition_set_update (comp, g_value_get_boolean (value));
       break;
     default:
@@ -424,7 +444,7 @@ gnl_composition_get_property (GObject * object, guint prop_id,
   GnlComposition *comp = (GnlComposition *) object;
 
   switch (prop_id) {
-    case ARG_UPDATE:
+    case PROP_UPDATE:
       g_value_set_boolean (value, comp->priv->can_update);
       break;
     default:
@@ -1637,16 +1657,31 @@ update_start_stop_duration (GnlComposition * comp)
     GST_LOG ("no objects, resetting everything to 0");
     if (cobj->start) {
       cobj->start = 0;
+#if GLIB_CHECK_VERSION(2,26,0)
+      g_object_notify_by_pspec (G_OBJECT (cobj),
+          gnlobject_properties[GNLOBJECT_PROP_START]);
+#else
       g_object_notify (G_OBJECT (cobj), "start");
+#endif
     }
     if (cobj->duration) {
       cobj->duration = 0;
+#if GLIB_CHECK_VERSION(2,26,0)
+      g_object_notify_by_pspec (G_OBJECT (cobj),
+          gnlobject_properties[GNLOBJECT_PROP_DURATION]);
+#else
       g_object_notify (G_OBJECT (cobj), "duration");
+#endif
       signal_duration_change (comp);
     }
     if (cobj->stop) {
       cobj->stop = 0;
+#if GLIB_CHECK_VERSION(2,26,0)
+      g_object_notify_by_pspec (G_OBJECT (cobj),
+          gnlobject_properties[GNLOBJECT_PROP_STOP]);
+#else
       g_object_notify (G_OBJECT (cobj), "stop");
+#endif
     }
     return;
   }
@@ -1657,7 +1692,12 @@ update_start_stop_duration (GnlComposition * comp)
         "Setting start to 0 because we have a default object");
     if (cobj->start != 0) {
       cobj->start = 0;
+#if GLIB_CHECK_VERSION(2,26,0)
+      g_object_notify_by_pspec (G_OBJECT (cobj),
+          gnlobject_properties[GNLOBJECT_PROP_START]);
+#else
       g_object_notify (G_OBJECT (cobj), "start");
+#endif
     }
   } else {
     /* Else it's the first object's start value */
@@ -1666,7 +1706,12 @@ update_start_stop_duration (GnlComposition * comp)
       GST_LOG_OBJECT (obj, "setting start from %s to %" GST_TIME_FORMAT,
           GST_OBJECT_NAME (obj), GST_TIME_ARGS (obj->start));
       cobj->start = obj->start;
+#if GLIB_CHECK_VERSION(2,26,0)
+      g_object_notify_by_pspec (G_OBJECT (cobj),
+          gnlobject_properties[GNLOBJECT_PROP_START]);
+#else
       g_object_notify (G_OBJECT (cobj), "start");
+#endif
     }
   }
 
@@ -1684,12 +1729,22 @@ update_start_stop_duration (GnlComposition * comp)
     }
     comp->priv->segment->stop = obj->stop;
     cobj->stop = obj->stop;
+#if GLIB_CHECK_VERSION(2,26,0)
+    g_object_notify_by_pspec (G_OBJECT (cobj),
+        gnlobject_properties[GNLOBJECT_PROP_STOP]);
+#else
     g_object_notify (G_OBJECT (cobj), "stop");
+#endif
   }
 
   if ((cobj->stop - cobj->start) != cobj->duration) {
     cobj->duration = cobj->stop - cobj->start;
+#if GLIB_CHECK_VERSION(2,26,0)
+    g_object_notify_by_pspec (G_OBJECT (cobj),
+        gnlobject_properties[GNLOBJECT_PROP_DURATION]);
+#else
     g_object_notify (G_OBJECT (cobj), "duration");
+#endif
     signal_duration_change (comp);
   }
 
