@@ -46,19 +46,23 @@ GST_DEBUG_CATEGORY_STATIC (gnlobject);
 
 enum
 {
-  ARG_0,
-  ARG_START,
-  ARG_DURATION,
-  ARG_STOP,
-  ARG_MEDIA_START,
-  ARG_MEDIA_DURATION,
-  ARG_MEDIA_STOP,
-  ARG_RATE,
-  ARG_PRIORITY,
-  ARG_ACTIVE,
-  ARG_CAPS,
-  ARG_EXPANDABLE
+  PROP_0,
+  PROP_START,
+  PROP_DURATION,
+  PROP_STOP,
+  PROP_MEDIA_START,
+  PROP_MEDIA_DURATION,
+  PROP_MEDIA_STOP,
+  PROP_RATE,
+  PROP_PRIORITY,
+  PROP_ACTIVE,
+  PROP_CAPS,
+  PROP_EXPANDABLE,
+  PROP_LAST
 };
+
+static GParamSpec *properties[PROP_LAST];
+
 
 static void gnl_object_dispose (GObject * object);
 static void
@@ -111,20 +115,22 @@ gnl_object_class_init (GnlObjectClass * klass)
    *
    * The start position relative to the parent in nanoseconds.
    */
-  g_object_class_install_property (gobject_class, ARG_START,
-      g_param_spec_uint64 ("start", "Start",
-          "The start position relative to the parent (in nanoseconds)",
-          0, G_MAXUINT64, 0, G_PARAM_READWRITE));
+  properties[PROP_START] = g_param_spec_uint64 ("start", "Start",
+      "The start position relative to the parent (in nanoseconds)",
+      0, G_MAXUINT64, 0, G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_START,
+      properties[PROP_START]);
 
   /**
    * GnlObject:duration
    *
    * The outgoing duration in nanoseconds.
    */
-  g_object_class_install_property (gobject_class, ARG_DURATION,
-      g_param_spec_int64 ("duration", "Duration",
-          "Outgoing duration (in nanoseconds)", 0, G_MAXINT64, 0,
-          G_PARAM_READWRITE));
+  properties[PROP_DURATION] = g_param_spec_int64 ("duration", "Duration",
+      "Outgoing duration (in nanoseconds)", 0, G_MAXINT64, 0,
+      G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_DURATION,
+      properties[PROP_DURATION]);
 
   /**
    * GnlObject:stop
@@ -133,10 +139,11 @@ gnl_object_class_init (GnlObjectClass * klass)
    *
    * This value is computed based on the values of start and duration.
    */
-  g_object_class_install_property (gobject_class, ARG_STOP,
-      g_param_spec_uint64 ("stop", "Stop",
-          "The stop position relative to the parent (in nanoseconds)",
-          0, G_MAXUINT64, 0, G_PARAM_READABLE));
+  properties[PROP_STOP] = g_param_spec_uint64 ("stop", "Stop",
+      "The stop position relative to the parent (in nanoseconds)",
+      0, G_MAXUINT64, 0, G_PARAM_READABLE);
+  g_object_class_install_property (gobject_class, PROP_STOP,
+      properties[PROP_STOP]);
 
   /**
    * GnlObject:media_start
@@ -146,10 +153,12 @@ gnl_object_class_init (GnlObjectClass * klass)
    * Also called 'in-point' in video-editing, this corresponds to
    * what position in the 'contained' object we should start outputting from.
    */
-  g_object_class_install_property (gobject_class, ARG_MEDIA_START,
+  properties[PROP_MEDIA_START] =
       g_param_spec_uint64 ("media_start", "Media start",
-          "The media start position (in nanoseconds)",
-          0, G_MAXUINT64, GST_CLOCK_TIME_NONE, G_PARAM_READWRITE));
+      "The media start position (in nanoseconds)", 0, G_MAXUINT64,
+      GST_CLOCK_TIME_NONE, G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_MEDIA_START,
+      properties[PROP_MEDIA_START]);
 
   /**
    * GnlObject:media_duration
@@ -159,10 +168,12 @@ gnl_object_class_init (GnlObjectClass * klass)
    * This correspond to the 'contained' object's duration we will be
    * outputting for.
    */
-  g_object_class_install_property (gobject_class, ARG_MEDIA_DURATION,
+  properties[PROP_MEDIA_DURATION] =
       g_param_spec_int64 ("media_duration", "Media duration",
-          "Duration of the media (in nanoseconds), can be negative",
-          G_MININT64, G_MAXINT64, 0, G_PARAM_READWRITE));
+      "Duration of the media (in nanoseconds), can be negative", G_MININT64,
+      G_MAXINT64, 0, G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_MEDIA_DURATION,
+      properties[PROP_MEDIA_DURATION]);
 
   /**
    * GnlObject:media_stop
@@ -175,10 +186,11 @@ gnl_object_class_init (GnlObjectClass * klass)
    * This value is read-only, and is computed from the media_start and
    * media_duration property.
    */
-  g_object_class_install_property (gobject_class, ARG_MEDIA_STOP,
-      g_param_spec_uint64 ("media_stop", "Media stop",
-          "The media stop position (in nanoseconds)",
-          0, G_MAXUINT64, GST_CLOCK_TIME_NONE, G_PARAM_READABLE));
+  properties[PROP_MEDIA_STOP] = g_param_spec_uint64 ("media_stop", "Media stop",
+      "The media stop position (in nanoseconds)",
+      0, G_MAXUINT64, GST_CLOCK_TIME_NONE, G_PARAM_READABLE);
+  g_object_class_install_property (gobject_class, PROP_MEDIA_STOP,
+      properties[PROP_MEDIA_STOP]);
 
   /**
    * GnlObject:rate
@@ -187,10 +199,11 @@ gnl_object_class_init (GnlObjectClass * klass)
    *
    * This is a read-only value computed from duration and media_duration.
    */
-  g_object_class_install_property (gobject_class, ARG_RATE,
-      g_param_spec_double ("rate", "Rate",
-          "Playback rate of the media (1.0 : standard forward)",
-          -G_MAXDOUBLE, G_MAXDOUBLE, 1.0, G_PARAM_READABLE));
+  properties[PROP_RATE] = g_param_spec_double ("rate", "Rate",
+      "Playback rate of the media (1.0 : standard forward)",
+      -G_MAXDOUBLE, G_MAXDOUBLE, 1.0, G_PARAM_READABLE);
+  g_object_class_install_property (gobject_class, PROP_RATE,
+      properties[PROP_RATE]);
 
   /**
    * GnlObject:priority
@@ -206,10 +219,11 @@ gnl_object_class_init (GnlObjectClass * klass)
    * in GnlComposition and their start/stop values will be modified as to
    * fit the whole duration of the composition.
    */
-  g_object_class_install_property (gobject_class, ARG_PRIORITY,
-      g_param_spec_uint ("priority", "Priority",
-          "The priority of the object (0 = highest priority)", 0, G_MAXUINT, 0,
-          G_PARAM_READWRITE));
+  properties[PROP_PRIORITY] = g_param_spec_uint ("priority", "Priority",
+      "The priority of the object (0 = highest priority)", 0, G_MAXUINT, 0,
+      G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_PRIORITY,
+      properties[PROP_PRIORITY]);
 
   /**
    * GnlObject:active
@@ -218,9 +232,10 @@ gnl_object_class_init (GnlObjectClass * klass)
    *
    * Set to #TRUE to temporarily disable this object in a #GnlComposition.
    */
-  g_object_class_install_property (gobject_class, ARG_ACTIVE,
-      g_param_spec_boolean ("active", "Active",
-          "Use this object in the GnlComposition", TRUE, G_PARAM_READWRITE));
+  properties[PROP_ACTIVE] = g_param_spec_boolean ("active", "Active",
+      "Use this object in the GnlComposition", TRUE, G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_ACTIVE,
+      properties[PROP_ACTIVE]);
 
   /**
    * GnlObject:caps
@@ -232,10 +247,11 @@ gnl_object_class_init (GnlObjectClass * klass)
    *
    * If nothing is specified then a source pad will be chosen at random.
    */
-  g_object_class_install_property (gobject_class, ARG_CAPS,
-      g_param_spec_boxed ("caps", "Caps",
-          "Caps used to filter/choose the output stream",
-          GST_TYPE_CAPS, G_PARAM_READWRITE));
+  properties[PROP_CAPS] = g_param_spec_boxed ("caps", "Caps",
+      "Caps used to filter/choose the output stream",
+      GST_TYPE_CAPS, G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_CAPS,
+      properties[PROP_CAPS]);
 
   /**
    * GnlObject:expandable
@@ -243,10 +259,12 @@ gnl_object_class_init (GnlObjectClass * klass)
    * Indicates whether this object should expand to the full duration of its
    * container #GnlComposition.
    */
-  g_object_class_install_property (gobject_class, ARG_EXPANDABLE,
+  properties[PROP_EXPANDABLE] =
       g_param_spec_boolean ("expandable", "Expandable",
-          "Expand to the full duration of the container composition", FALSE,
-          G_PARAM_READWRITE));
+      "Expand to the full duration of the container composition", FALSE,
+      G_PARAM_READWRITE);
+  g_object_class_install_property (gobject_class, PROP_EXPANDABLE,
+      properties[PROP_EXPANDABLE]);
 }
 
 static void
@@ -467,7 +485,11 @@ update_values (GnlObject * object)
         "Updating stop value : %" GST_TIME_FORMAT " [start:%" GST_TIME_FORMAT
         ", duration:%" GST_TIME_FORMAT "]", GST_TIME_ARGS (object->stop),
         GST_TIME_ARGS (object->start), GST_TIME_ARGS (object->duration));
+#if GLIB_CHECK_VERSION(2,26,0)
+    g_object_notify_by_pspec (G_OBJECT (object), properties[PROP_STOP]);
+#else
     g_object_notify (G_OBJECT (object), "stop");
+#endif
   }
 
   /* check if media start/duration has changed */
@@ -480,7 +502,11 @@ update_values (GnlObject * object)
         GST_TIME_ARGS (object->media_stop),
         GST_TIME_ARGS (object->media_start),
         GST_TIME_ARGS (object->media_duration));
+#if GLIB_CHECK_VERSION(2,26,0)
+    g_object_notify_by_pspec (G_OBJECT (object), properties[PROP_MEDIA_STOP]);
+#else
     g_object_notify (G_OBJECT (object), "media_stop");
+#endif
   }
 
   /* check if rate has changed */
@@ -498,7 +524,11 @@ update_values (GnlObject * object)
         GST_TIME_FORMAT "] rate_1:%d", object->rate,
         GST_TIME_ARGS (object->media_duration),
         GST_TIME_ARGS (object->duration), object->rate_1);
+#if GLIB_CHECK_VERSION(2,26,0)
+    g_object_notify_by_pspec (G_OBJECT (object), properties[PROP_RATE]);
+#else
     g_object_notify (G_OBJECT (object), "rate");
+#endif
   }
 }
 
@@ -511,31 +541,31 @@ gnl_object_set_property (GObject * object, guint prop_id,
   g_return_if_fail (GNL_IS_OBJECT (object));
 
   switch (prop_id) {
-    case ARG_START:
+    case PROP_START:
       gnlobject->start = g_value_get_uint64 (value);
       update_values (gnlobject);
       break;
-    case ARG_DURATION:
+    case PROP_DURATION:
       gnlobject->duration = g_value_get_int64 (value);
       update_values (gnlobject);
       break;
-    case ARG_MEDIA_START:
+    case PROP_MEDIA_START:
       gnlobject->media_start = g_value_get_uint64 (value);
       break;
-    case ARG_MEDIA_DURATION:
+    case PROP_MEDIA_DURATION:
       gnlobject->media_duration = g_value_get_int64 (value);
       update_values (gnlobject);
       break;
-    case ARG_PRIORITY:
+    case PROP_PRIORITY:
       gnlobject->priority = g_value_get_uint (value);
       break;
-    case ARG_ACTIVE:
+    case PROP_ACTIVE:
       gnlobject->active = g_value_get_boolean (value);
       break;
-    case ARG_CAPS:
+    case PROP_CAPS:
       gnl_object_set_caps (gnlobject, gst_value_get_caps (value));
       break;
-    case ARG_EXPANDABLE:
+    case PROP_EXPANDABLE:
       if (g_value_get_boolean (value))
         GST_OBJECT_FLAG_SET (gnlobject, GNL_OBJECT_EXPANDABLE);
       else
@@ -554,37 +584,37 @@ gnl_object_get_property (GObject * object, guint prop_id,
   GnlObject *gnlobject = (GnlObject *) object;
 
   switch (prop_id) {
-    case ARG_START:
+    case PROP_START:
       g_value_set_uint64 (value, gnlobject->start);
       break;
-    case ARG_DURATION:
+    case PROP_DURATION:
       g_value_set_int64 (value, gnlobject->duration);
       break;
-    case ARG_STOP:
+    case PROP_STOP:
       g_value_set_uint64 (value, gnlobject->stop);
       break;
-    case ARG_MEDIA_START:
+    case PROP_MEDIA_START:
       g_value_set_uint64 (value, gnlobject->media_start);
       break;
-    case ARG_MEDIA_DURATION:
+    case PROP_MEDIA_DURATION:
       g_value_set_int64 (value, gnlobject->media_duration);
       break;
-    case ARG_MEDIA_STOP:
+    case PROP_MEDIA_STOP:
       g_value_set_uint64 (value, gnlobject->media_stop);
       break;
-    case ARG_RATE:
+    case PROP_RATE:
       g_value_set_double (value, gnlobject->rate);
       break;
-    case ARG_PRIORITY:
+    case PROP_PRIORITY:
       g_value_set_uint (value, gnlobject->priority);
       break;
-    case ARG_ACTIVE:
+    case PROP_ACTIVE:
       g_value_set_boolean (value, gnlobject->active);
       break;
-    case ARG_CAPS:
+    case PROP_CAPS:
       gst_value_set_caps (value, gnlobject->caps);
       break;
-    case ARG_EXPANDABLE:
+    case PROP_EXPANDABLE:
       g_value_set_boolean (value, GNL_OBJECT_IS_EXPANDABLE (object));
       break;
     default:
