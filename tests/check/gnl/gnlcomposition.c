@@ -235,6 +235,7 @@ GST_START_TEST (test_remove_invalid_object)
   fail_unless (gst_bin_remove (composition, source1));
 
   gst_object_unref (composition);
+  gst_object_unref (source2);
 }
 
 GST_END_TEST;
