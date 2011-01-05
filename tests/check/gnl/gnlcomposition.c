@@ -322,8 +322,8 @@ GST_START_TEST (test_no_more_pads_race)
   videomixer = gst_element_factory_make ("videomixer", "videomixer");
   fail_unless (videomixer != NULL);
   gst_bin_add (GST_BIN (operation), videomixer);
-  g_object_set (operation, "start", 0 * GST_SECOND, "duration", 20 * GST_SECOND,
-      "media-start", 0 * GST_SECOND, "media-duration", 20 * GST_SECOND,
+  g_object_set (operation, "start", 0 * GST_SECOND, "duration", 10 * GST_SECOND,
+      "media-start", 0 * GST_SECOND, "media-duration", 10 * GST_SECOND,
       "priority", 10, NULL);
   gst_bin_add (GST_BIN (composition), operation);
 
@@ -331,8 +331,8 @@ GST_START_TEST (test_no_more_pads_race)
   source1 = gst_element_factory_make ("gnlsource", "source1");
   videotestsrc1 = gst_element_factory_make ("videotestsrc", "videotestsrc1");
   gst_bin_add (GST_BIN (source1), videotestsrc1);
-  g_object_set (source1, "start", 0 * GST_SECOND, "duration", 10 * GST_SECOND,
-      "media-start", 0 * GST_SECOND, "media-duration", 10 * GST_SECOND,
+  g_object_set (source1, "start", 0 * GST_SECOND, "duration", 5 * GST_SECOND,
+      "media-start", 0 * GST_SECOND, "media-duration", 5 * GST_SECOND,
       "priority", 20, NULL);
 
   /* source2 */
@@ -343,16 +343,16 @@ GST_START_TEST (test_no_more_pads_race)
   gst_pad_set_blocked_async (pad, TRUE, pad_block, bin);
   gst_bin_add (bin, videotestsrc2);
   gst_bin_add (GST_BIN (source2), GST_ELEMENT (bin));
-  g_object_set (source2, "start", 0 * GST_SECOND, "duration", 10 * GST_SECOND,
-      "media-start", 0 * GST_SECOND, "media-duration", 10 * GST_SECOND,
+  g_object_set (source2, "start", 0 * GST_SECOND, "duration", 5 * GST_SECOND,
+      "media-start", 0 * GST_SECOND, "media-duration", 5 * GST_SECOND,
       "priority", 20, NULL);
 
   /* source3 */
   source3 = gst_element_factory_make ("gnlsource", "source3");
   videotestsrc2 = gst_element_factory_make ("videotestsrc", "videotestsrc3");
   gst_bin_add (GST_BIN (source3), videotestsrc2);
-  g_object_set (source3, "start", 0 * GST_SECOND, "duration", 10 * GST_SECOND,
-      "media-start", 0 * GST_SECOND, "media-duration", 10 * GST_SECOND,
+  g_object_set (source3, "start", 0 * GST_SECOND, "duration", 5 * GST_SECOND,
+      "media-start", 0 * GST_SECOND, "media-duration", 5 * GST_SECOND,
       "priority", 20, NULL);
 
   closure.composition = composition;
