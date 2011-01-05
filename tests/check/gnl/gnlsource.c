@@ -61,7 +61,7 @@ GST_START_TEST (test_simple_videotestsrc)
   GST_DEBUG ("Let's poll the bus");
 
   while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
     GST_LOG ("poll");
     if (message) {
       switch (GST_MESSAGE_TYPE (message)) {
@@ -166,7 +166,7 @@ GST_START_TEST (test_videotestsrc_in_bin)
   GST_DEBUG ("Let's poll the bus");
 
   while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
     GST_LOG ("poll");
     if (message) {
       switch (GST_MESSAGE_TYPE (message)) {

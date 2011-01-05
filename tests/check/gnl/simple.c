@@ -201,7 +201,7 @@ test_one_after_other_full (gboolean async)
   GST_DEBUG ("Let's poll the bus");
 
   while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
     if (message) {
       switch (GST_MESSAGE_TYPE (message)) {
         case GST_MESSAGE_EOS:
@@ -253,7 +253,7 @@ test_one_after_other_full (gboolean async)
   GST_DEBUG ("Let's poll the bus AGAIN");
 
   while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
     if (message) {
       switch (GST_MESSAGE_TYPE (message)) {
         case GST_MESSAGE_EOS:
@@ -393,7 +393,7 @@ test_one_under_another_full (gboolean async)
           GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE);
 
   while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
     if (message) {
       switch (GST_MESSAGE_TYPE (message)) {
         case GST_MESSAGE_EOS:
@@ -419,7 +419,7 @@ test_one_under_another_full (gboolean async)
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline),
           GST_STATE_NULL) == GST_STATE_CHANGE_FAILURE);
 
-  gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+  gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
   gst_object_unref (GST_OBJECT (sinkpad));
   ASSERT_OBJECT_REFCOUNT_BETWEEN (pipeline, "main pipeline", 1, 2);
   gst_object_unref (pipeline);
@@ -549,7 +549,7 @@ test_one_bin_after_other_full (gboolean async)
   GST_DEBUG ("Let's poll the bus");
 
   while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
     if (message) {
       switch (GST_MESSAGE_TYPE (message)) {
         case GST_MESSAGE_EOS:
@@ -596,7 +596,7 @@ test_one_bin_after_other_full (gboolean async)
 
   carry_on = TRUE;
   while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
     if (message) {
       switch (GST_MESSAGE_TYPE (message)) {
         case GST_MESSAGE_EOS:

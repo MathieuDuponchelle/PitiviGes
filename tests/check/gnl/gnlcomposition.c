@@ -132,7 +132,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
 
   carry_on = TRUE;
   while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 2);
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
     if (message) {
       switch (GST_MESSAGE_TYPE (message)) {
         case GST_MESSAGE_ASYNC_DONE:
