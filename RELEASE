@@ -1,5 +1,5 @@
 
-Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.16 "I needed time to think to get the memories from my mind"
+Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.17 "Flight from Hawaii coming out of the sun"
         
 
 
@@ -29,17 +29,13 @@ An element for using filters in a GnlComposition
 
 Features of this release
     
-      * More race fixes
-      * gnlcomposition: propagate caps to childs
-      * gnlurisource: Only use needed streams
-      * gnlcomposition: Fix QoS handling
-      * 
+      * documentation and debugging fixes
+      * Use glib 2.22 API if available
 
 Bugs fixed in this release
      
-      * 613283 : gst_element_class_set_details = > gst_element_class_set_details_simple
-      * 626501 : Caps property of gnlfilesource works incorrectly
-      * 626733 : Race in gnlcomposition between no_more_pads_object_cb and compare_relink_single_node
+      * 628943 : make check fails if videomixer element can't be found
+      * 633721 : tests: gnl/simple: test_one_under_another failure / timeout
 
 Download
 
@@ -69,10 +65,9 @@ GNonLin is primarily used by PiTiVi (http://www.pitivi.org/) and Jokosher (http:
   
 Contributors to this release
     
-      * Alessandro Decina
-      * Benjamin Otte
       * David Schleef
       * Edward Hervey
+      * Jan Schmidt
       * Sebastian Dröge
       * Stefan Kost
       * Tim-Philipp Müller

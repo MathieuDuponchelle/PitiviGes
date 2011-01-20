@@ -1,3 +1,10 @@
+This is GNonLin 0.10.17 "Flight from Hawaii coming out of the sun"
+
+Features of this release
+
+      * documentation and debugging fixes
+      * Use glib 2.22 API if available
+
 This is GNonLin 0.10.16 "I needed time to think to get the memories from my mind"
 
 Features of this release

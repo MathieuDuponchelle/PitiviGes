@@ -1,9 +1,203 @@
-=== release 0.10.16 ===
+=== release 0.10.17 ===
 
-2010-09-06  Edward Hervey <bilboed@bilboed.com>
+2011-01-20  Edward Hervey <bilboed@bilboed.com>
 
 	* configure.ac:
-	  releasing 0.10.16, "I needed time to think to get the memories from my mind"
+	  releasing 0.10.17, "Flight from Hawaii coming out of the sun"
+
+2011-01-13 11:29:52 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* configure.ac:
+	  configure.ac: 0.10.16.2 pre-release
+
+2011-01-11 15:52:11 +0200  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From e572c87 to f94d739
+
+2011-01-10 16:38:45 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From ccbaa85 to e572c87
+
+2011-01-10 14:55:50 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 46445ad to ccbaa85
+
+2011-01-05 17:19:57 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/gnlcomposition.c:
+	  tests: Don't use huge durations in tests
+
+2011-01-05 17:18:38 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/gnlsource.c:
+	* tests/check/gnl/simple.c:
+	  tests: Poll more often.
+	  Should lower the risks of timing out
+
+2010-12-20 17:48:15 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 169462a to 46445ad
+
+2010-12-19 11:10:29 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* tests/check/gnl/gnlcomposition.c:
+	  gnlcomposition: Fix memory leak in the unit test
+
+2010-12-17 12:28:14 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  GnlComposition: Use g_object_notify_by_pspec if available
+
+2010-12-17 12:12:15 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlobject.c:
+	  GnlObject: Use g_object_notify_by_pspec if available
+
+2010-12-17 12:12:01 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* configure.ac:
+	  configure.ac: Bump GLib requirement to 2.22
+	  In sync with gstreamer core
+
+2010-12-15 14:57:18 +0200  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 20742ae to 169462a
+
+2010-12-14 00:56:53 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/gnlsource.c:
+	* tests/check/gnl/simple.c:
+	  tests: give test suites different names
+	  So the output tells us which test is actually running. Also use
+	  GST_CHECK_MAIN() while we're at it.
+
+2010-12-13 16:24:51 +0200  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 011bcc8 to 20742ae
+
+2010-10-27 13:18:18 +0100  Jan Schmidt <thaytan@noraisin.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 7bbd708 to 011bcc8
+
+2010-10-14 12:32:42 -0700  David Schleef <ds@schleef.org>
+
+	* common:
+	  Automatic update of common submodule
+	  From 5a668bf to 7bbd708
+
+2010-10-12 15:25:10 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  composition: fix debugging message printf format
+
+2010-10-08 12:45:12 -0700  David Schleef <ds@schleef.org>
+
+	* common:
+	  Automatic update of common submodule
+	  From c4a8adc to 5a668bf
+
+2010-10-08 12:57:01 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 5e3c9bf to c4a8adc
+
+2010-09-21 18:35:06 +0200  Edward Hervey <bilboed@bilboed.com>
+
+	* common:
+	  Automatic update of common submodule
+	  From 080e025 to 5e3c9bf
+
+2010-09-08 10:14:40 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* docs/libs/.gitignore:
+	* docs/libs/Makefile.am:
+	  docs: put inspect registry into docs/libs next to the other inspect info
+	  Instead of putting the docs registry into docs/plugins.
+
+2010-09-08 00:44:45 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* configure.ac:
+	  configure: bump core/base requirement to released version
+	  Bump core requirement to released version. People should always
+	  use the same -base as core, so bump -base requirement to match
+	  core requirement. Also bump GLib requirement to GLib requirement
+	  of core.
+
+2010-09-08 00:40:41 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* configure.ac:
+	  configure: another small clean-up
+	  AG_GST_CHECK_GST already sets GST_TOOLS_DIR and GST_PLUGINS_DIR,
+	  no need to do it a second time.
+
+2010-09-08 00:35:52 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* configure.ac:
+	  configure: small clean-up
+	  AG_GST_CHECK_GST_PLUGINS_BASE already sets GSTPB_PLUGINS_DIR
+	  and prints it to the output, no need to do that twice.
+
+2010-09-08 00:33:20 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* common:
+	* configure.ac:
+	* tests/check/Makefile.am:
+	  tests: find uninstalled -good plugins and use them for tests
+	  Enables some more tests / code paths in an uninstalled setup. Also
+	  remove duplicate GST_PLUGIN_DIRS.
+	  https://bugzilla.gnome.org/show_bug.cgi?id=628943
+
+2010-09-08 00:25:42 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* tests/check/gnl/gnlcomposition.c:
+	  tests: skip gnlcomposition's test_no_more_pads_race test if videomixer is not available
+	  Fixes 'make check' in uninstalled setup where it currently can't
+	  find the -good plugins.
+	  https://bugzilla.gnome.org/show_bug.cgi?id=628943
+
+2010-09-08 09:55:22 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* configure.ac:
+	* docs/libs/gnonlin.hierarchy:
+	* docs/libs/inspect/plugin-gnonlin.xml:
+	  Back to development
+
+2010-09-07 11:43:48 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From c2e10bf to aa0d1d0
+
+=== release 0.10.16 ===
+
+2010-09-06 17:14:09 +0200  Edward Hervey <bilboed@bilboed.com>
+
+	* ChangeLog:
+	* NEWS:
+	* RELEASE:
+	* configure.ac:
+	  Release 0.10.16
 
 2010-09-05 18:59:10 -0700  David Schleef <ds@schleef.org>
 
@@ -734,8 +928,6 @@
 	  gnlfilesource: If we use uridecodebin get the location from there
 	  This prevents assertions that result from getting the property value
 	  from the internal filesrc, which is NULL if we use uridecodebin.
-
-=== release 0.10.13 ===
 
 2009-09-07 11:51:36 +0200  Edward Hervey <bilboed@bilboed.com>
 
