@@ -1,5 +1,5 @@
 built_header_make = gnlmarshal.h
-build_source_make = gnlmarshal.c
+built_source_make = gnlmarshal.c
 plugin_LTLIBRARIES = libgnl.la
 
 EXTRA_libgnl_la_SOURCES = gnlmarshal.list 
@@ -52,3 +52,18 @@ gnlmarshal.c: gnlmarshal.list
 	echo "#include \"gnlmarshal.h\"" >> gnlmarshal.c.tmp && \
 	glib-genmarshal --body --prefix=gnl_marshal $^ >> gnlmarshal.c.tmp && \
 	mv gnlmarshal.c.tmp gnlmarshal.c
+
+
+Android.mk: Makefile.am $(BUILT_SOURCES)
+	androgenizer \
+	-:PROJECT libgnl -:SHARED libgnl \
+	 -:TAGS eng debug \
+         -:REL_TOP $(top_srcdir) -:ABS_TOP $(abs_top_srcdir) \
+	 -:SOURCES $(libgnl_la_SOURCES) \
+	 -:CFLAGS $(DEFS) $(DEFAULT_INCLUDES) $(libgnl_la_CFLAGS) \
+	 -:LDFLAGS $(libgnl_la_LDFLAGS) \
+	           $(libgnl_la_LIBADD) \
+	           -ldl \
+	 -:PASSTHROUGH LOCAL_ARM_MODE:=arm \
+		       LOCAL_MODULE_PATH:='$$(TARGET_OUT)/lib/gstreamer-0.10' \
+	> $@
