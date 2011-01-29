@@ -1111,6 +1111,16 @@ GST_START_TEST (test_complex_operations_bis)
   comp =
       gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
 
+  /* TOPOLOGY
+   *
+   * 0           1           2           3           4     ..   6 | Priority
+   * ----------------------------------------------------------------------------
+   * [ ......................[------ oper ----------]..........]  | 1 EXPANDABLE
+   * [--------------------- source1 ----------------]             | 2
+   *                         [------------ source2       ------]  | 3
+   * */
+
+
   /*
      source1
      Start : 0s

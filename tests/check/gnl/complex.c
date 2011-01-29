@@ -215,6 +215,15 @@ GST_START_TEST (test_one_default_another)
       gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
   fail_if (comp == NULL);
 
+  /* TOPOLOGY
+   *
+   * 0           1           2           3           4          5 | Priority
+   * ----------------------------------------------------------------------------
+   *             [-source1--]            [-source2--][-source3-]  | 1
+   * [--------------------------defaultsource------------------]  | MAXUINT32
+   * */
+
+
   /*
      defaultsrc source
      Start : 0s
