@@ -22,6 +22,16 @@ G_STMT_START {								\
     GST_DEBUG_OBJECT (object, "start/stop/duration values valid");	\
   } G_STMT_END;
 
+#define check_state_simple(object, expected_state)			\
+  G_STMT_START {							\
+    GstStateChangeReturn ret;						\
+    GstState state, pending;						\
+    ret = gst_element_get_state(GST_ELEMENT_CAST(object), &state, &pending, 5 * GST_SECOND); \
+    fail_if (ret == GST_STATE_CHANGE_FAILURE);				\
+    fail_unless (state == expected_state, "Element state (%s) is not the expected one (%s)", \
+		 gst_element_state_get_name(state), gst_element_state_get_name(expected_state)); \
+  } G_STMT_END;
+
 typedef struct _Segment {
   gdouble	rate;
   GstFormat	format;
