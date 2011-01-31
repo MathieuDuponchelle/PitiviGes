@@ -717,7 +717,9 @@ synchronize_sinks (GnlOperation * operation)
   } else {
     /* Remove pad */
     /* FIXME, which one do we remove ? :) */
-    remove_sink_pad (operation, NULL);
+    while (operation->num_sinks < operation->realsinks)
+      if (!remove_sink_pad (operation, NULL))
+        break;
   }
 }
 
