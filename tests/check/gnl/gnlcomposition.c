@@ -366,7 +366,11 @@ GST_START_TEST (test_no_more_pads_race)
   g_object_connect (composition, "signal::pad-removed",
       on_composition_pad_removed_cb, NULL, NULL);
 
+  GST_DEBUG ("Adding composition to pipeline");
+
   gst_bin_add_many (GST_BIN (pipeline), composition, fakesink, NULL);
+
+  GST_DEBUG ("Setting pipeline to PAUSED");
 
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PAUSED)
       == GST_STATE_CHANGE_FAILURE);
@@ -381,6 +385,8 @@ GST_START_TEST (test_no_more_pads_race)
     fail_if (TRUE, "error: %s - %s", error->message, debug);
   }
   gst_message_unref (message);
+
+  GST_DEBUG ("Adding second source");
 
   /* FIXME: maybe slow down the videotestsrc steaming thread */
   gst_bin_add (GST_BIN (composition), source2);

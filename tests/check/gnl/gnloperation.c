@@ -16,6 +16,14 @@ GST_START_TEST (test_simple_operation)
   comp =
       gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
 
+  /* TOPOLOGY
+   *
+   * 0           1           2           3           4          5 | Priority
+   * ----------------------------------------------------------------------------
+   *             [-- oper --]                                     | 0
+   * [------------- source -------------]                         | 1
+   * */
+
   /*
      source
      Start : 0s
@@ -1022,7 +1030,7 @@ GST_START_TEST (test_complex_operations)
     }
   }
 
-  GST_DEBUG ("Setting pipeline to NULL");
+  GST_DEBUG ("Setting pipeline to READY");
 
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline),
           GST_STATE_READY) == GST_STATE_CHANGE_FAILURE);
@@ -1030,6 +1038,11 @@ GST_START_TEST (test_complex_operations)
   fail_if (collect->expected_segments != NULL);
 
   GST_DEBUG ("Resetted pipeline to READY");
+
+  /* Elements should all be in the READY state */
+  check_state_simple (source1, GST_STATE_READY);
+  check_state_simple (source2, GST_STATE_READY);
+  check_state_simple (oper, GST_STATE_READY);
 
   /* Expected segments */
   collect->expected_segments = g_list_append (collect->expected_segments,
@@ -1255,14 +1268,19 @@ GST_START_TEST (test_complex_operations_bis)
     }
   }
 
-  GST_DEBUG ("Setting pipeline to NULL");
+  GST_DEBUG ("Setting pipeline to READY");
 
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline),
           GST_STATE_READY) == GST_STATE_CHANGE_FAILURE);
 
   fail_if (collect->expected_segments != NULL);
 
-  GST_DEBUG ("Resetted pipeline to READY");
+  GST_DEBUG ("Resetted pipeline to READY, checking state of elements");
+
+  /* Elements should all be in the READY state */
+  check_state_simple (source1, GST_STATE_READY);
+  check_state_simple (source2, GST_STATE_READY);
+  check_state_simple (oper, GST_STATE_READY);
 
   /* Expected segments */
   collect->expected_segments = g_list_append (collect->expected_segments,
