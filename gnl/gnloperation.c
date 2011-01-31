@@ -78,6 +78,7 @@ static void gnl_operation_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
 static gboolean gnl_operation_prepare (GnlObject * object);
+static gboolean gnl_operation_cleanup (GnlObject * object);
 
 static gboolean gnl_operation_add_element (GstBin * bin, GstElement * element);
 static gboolean gnl_operation_remove_element (GstBin * bin,
@@ -153,6 +154,7 @@ gnl_operation_class_init (GnlOperationClass * klass)
       GST_DEBUG_FUNCPTR (gnl_operation_remove_element);
 
   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_operation_prepare);
+  gnlobject_class->cleanup = GST_DEBUG_FUNCPTR (gnl_operation_cleanup);
 
   gst_element_class_add_pad_template (gstelement_class,
       gst_static_pad_template_get (&gnl_operation_src_template));
@@ -727,6 +729,20 @@ gnl_operation_prepare (GnlObject * object)
 
   return TRUE;
 }
+
+static gboolean
+gnl_operation_cleanup (GnlObject * object)
+{
+  GnlOperation *oper = (GnlOperation *) object;
+
+  if (oper->dynamicsinks) {
+    GST_DEBUG ("Resetting dynamic sinks");
+    gnl_operation_set_sinks (oper, 0);
+  }
+
+  return TRUE;
+}
+
 
 static GstPad *
 gnl_operation_request_new_pad (GstElement * element, GstPadTemplate * templ,
