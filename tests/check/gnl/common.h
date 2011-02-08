@@ -301,3 +301,18 @@ segment_new (gdouble rate, GstFormat format, gint64 start, gint64 stop, gint64 p
   return segment;
 }
 
+static GList *
+copy_segment_list (GList *list)
+{
+  GList *res = NULL;
+
+  while (list) {
+    Segment *pdata = (Segment*) list->data;
+
+    res = g_list_append(res, segment_new(pdata->rate, pdata->format, pdata->start, pdata->stop, pdata->position));
+
+    list = list->next;
+  }
+
+  return res;
+}
