@@ -454,6 +454,241 @@ test_one_bin_after_other_full ()
   fill_pipeline_and_check (comp, segments, seeks);
 }
 
+
+GST_START_TEST (test_complex_operations)
+{
+  guint64 start, stop;
+  gint64 duration;
+  GstElement *comp, *oper, *source1, *source2;
+  GList *segments = NULL, *seeks = NULL;
+
+  comp =
+      gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
+
+  /* TOPOLOGY
+   *
+   * 0           1           2           3           4     ..   6 | Priority
+   * ----------------------------------------------------------------------------
+   *                         [------ oper ----------]             | 1
+   * [--------------------- source1 ----------------]             | 2
+   *                         [------------ source2       ------]  | 3
+   * */
+
+  /*
+     source1
+     Start : 0s
+     Duration : 4s
+     Priority : 3
+   */
+
+  source1 = videotest_in_bin_gnl_src ("source1", 0, 4 * GST_SECOND, 2, 3);
+  fail_if (source1 == NULL);
+  check_start_stop_duration (source1, 0, 4 * GST_SECOND, 4 * GST_SECOND);
+
+  /*
+     source2
+     Start : 2s
+     Duration : 4s
+     Priority : 2
+   */
+
+  source2 =
+      videotest_in_bin_gnl_src ("source2", 2 * GST_SECOND, 4 * GST_SECOND, 2,
+      2);
+  fail_if (source2 == NULL);
+  check_start_stop_duration (source2, 2 * GST_SECOND, 6 * GST_SECOND,
+      4 * GST_SECOND);
+
+  /*
+     operation
+     Start : 2s
+     Duration : 2s
+     Priority : 1
+   */
+
+  oper =
+      new_operation ("oper", "videomixer", 2 * GST_SECOND, 2 * GST_SECOND, 1);
+  fail_if (oper == NULL);
+  check_start_stop_duration (oper, 2 * GST_SECOND, 4 * GST_SECOND,
+      2 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
+  ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
+  ASSERT_OBJECT_REFCOUNT (oper, "oper", 1);
+
+  /* Add source1 */
+  gst_bin_add (GST_BIN (comp), source1);
+  check_start_stop_duration (comp, 0, 4 * GST_SECOND, 4 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
+
+  /* Add source2 */
+  gst_bin_add (GST_BIN (comp), source2);
+  check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
+
+  /* Add operaton */
+
+  gst_bin_add (GST_BIN (comp), oper);
+  check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT (oper, "oper", 1);
+
+  /* Expected segments */
+  segments = g_list_append (segments,
+      segment_new (1.0, GST_FORMAT_TIME, 0, 2 * GST_SECOND, 0));
+
+  /* Seeks */
+  seeks =
+      g_list_append (seeks, new_seek_info (0.5 * GST_SECOND, 0.5 * GST_SECOND,
+          2 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (2.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (4.5 * GST_SECOND, 4.5 * GST_SECOND,
+          6 * GST_SECOND, FALSE));
+  /* and backwards */
+  seeks =
+      g_list_append (seeks, new_seek_info (2.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (0.5 * GST_SECOND, 0.5 * GST_SECOND,
+          2 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (2.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (4.5 * GST_SECOND, 4.5 * GST_SECOND,
+          6 * GST_SECOND, FALSE));
+
+  fill_pipeline_and_check (comp, segments, seeks);
+}
+
+GST_END_TEST;
+
+
+GST_START_TEST (test_complex_operations_bis)
+{
+  guint64 start, stop;
+  gint64 duration;
+  GstElement *comp, *oper, *source1, *source2;
+  GList *segments = NULL, *seeks = NULL;
+
+  comp =
+      gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
+
+  /* TOPOLOGY
+   *
+   * 0           1           2           3           4     ..   6 | Priority
+   * ----------------------------------------------------------------------------
+   * [ ......................[------ oper ----------]..........]  | 1 EXPANDABLE
+   * [--------------------- source1 ----------------]             | 2
+   *                         [------------ source2       ------]  | 3
+   * */
+
+
+  /*
+     source1
+     Start : 0s
+     Duration : 4s
+     Priority : 2
+   */
+
+  source1 = videotest_in_bin_gnl_src ("source1", 0, 4 * GST_SECOND, 3, 2);
+  fail_if (source1 == NULL);
+  check_start_stop_duration (source1, 0, 4 * GST_SECOND, 4 * GST_SECOND);
+
+  /*
+     source2
+     Start : 2s
+     Duration : 4s
+     Priority : 3
+   */
+
+  source2 =
+      videotest_in_bin_gnl_src ("source2", 2 * GST_SECOND, 4 * GST_SECOND, 2,
+      3);
+  fail_if (source2 == NULL);
+  check_start_stop_duration (source2, 2 * GST_SECOND, 6 * GST_SECOND,
+      4 * GST_SECOND);
+
+  /*
+     operation
+     Start : 2s
+     Duration : 2s
+     Priority : 1
+     EXPANDABLE
+   */
+
+  oper =
+      new_operation ("oper", "videomixer", 2 * GST_SECOND, 2 * GST_SECOND, 1);
+  fail_if (oper == NULL);
+  check_start_stop_duration (oper, 2 * GST_SECOND, 4 * GST_SECOND,
+      2 * GST_SECOND);
+  g_object_set (oper, "expandable", TRUE, NULL);
+
+  ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
+  ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
+  ASSERT_OBJECT_REFCOUNT (oper, "oper", 1);
+
+  /* Add source1 */
+  gst_bin_add (GST_BIN (comp), source1);
+  check_start_stop_duration (comp, 0, 4 * GST_SECOND, 4 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
+
+  /* Add source2 */
+  gst_bin_add (GST_BIN (comp), source2);
+  check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
+
+  /* Add operaton */
+
+  gst_bin_add (GST_BIN (comp), oper);
+  check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
+  check_start_stop_duration (oper, 0 * GST_SECOND, 6 * GST_SECOND,
+      6 * GST_SECOND);
+
+  ASSERT_OBJECT_REFCOUNT (oper, "oper", 1);
+
+  /* Expected segments */
+  segments = g_list_append (segments,
+      segment_new (1.0, GST_FORMAT_TIME, 0, 2 * GST_SECOND, 0));
+
+  /* Seeks */
+  seeks =
+      g_list_append (seeks, new_seek_info (0.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (2.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (4.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+  /* and backwards */
+  seeks =
+      g_list_append (seeks, new_seek_info (2.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (0.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+
+  seeks =
+      g_list_append (seeks, new_seek_info (2.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+  seeks =
+      g_list_append (seeks, new_seek_info (4.5 * GST_SECOND, 0 * GST_SECOND,
+          1.5 * GST_SECOND, FALSE));
+
+  fill_pipeline_and_check (comp, segments, seeks);
+}
+
+GST_END_TEST;
+
+
 GST_START_TEST (test_simplest)
 {
   test_simplest_full ();
@@ -498,6 +733,8 @@ gnonlin_suite (void)
   tcase_add_test (tc_chain, test_one_after_other);
   tcase_add_test (tc_chain, test_one_under_another);
   tcase_add_test (tc_chain, test_one_bin_after_other);
+  tcase_add_test (tc_chain, test_complex_operations);
+  tcase_add_test (tc_chain, test_complex_operations_bis);
   return s;
 }
 
