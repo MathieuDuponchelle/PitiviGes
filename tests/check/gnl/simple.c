@@ -473,6 +473,14 @@ test_one_under_another_full (gboolean async)
       gst_element_factory_make_or_warn ("gnlcomposition", "test_composition");
   fail_if (comp == NULL);
 
+  /* TOPOLOGY
+   *
+   * 0           1           2           3           4          5 | Priority
+   * ----------------------------------------------------------------------------
+   * [-      source1       -]                                     | 1
+   *             [-      source2       -]                         | 2
+   * */
+
   /*
      Source 1
      Start : 0s

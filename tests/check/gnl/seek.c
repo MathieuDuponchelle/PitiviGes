@@ -90,6 +90,10 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
             carry_on = FALSE;
             break;
           }
+
+          /* We should have received the segment by then and there should be none left */
+          fail_if (collect->expected_segments != NULL);
+
           while (seeks) {
             SeekInfo *sinfo = (SeekInfo *) seeks->data;
 
@@ -106,13 +110,16 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
                 GST_TIME_FORMAT " %" GST_TIME_FORMAT ")",
                 GST_TIME_ARGS (sinfo->position), GST_TIME_ARGS (sinfo->start),
                 GST_TIME_ARGS (sinfo->stop));
+
             fail_unless_equals_int (gst_element_seek_simple (pipeline,
                     GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH, sinfo->position),
                 !sinfo->expect_failure);
+
             if (!sinfo->expect_failure) {
               g_free (sinfo);
               break;
             }
+
             GST_DEBUG ("Seek failed as expected");
             if (seeks == NULL)
               carry_on = FALSE;
