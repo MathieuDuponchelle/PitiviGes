@@ -93,9 +93,9 @@ compare_segments (Segment * segment, GstEvent * event)
   }
   fail_if (rate != segment->rate);
   fail_if (format != segment->format);
-  fail_if (start != segment->start);
-  fail_if (stop != segment->stop);
-  fail_if (position != segment->position);
+  fail_unless_equals_int64 (start, segment->start);
+  fail_unless_equals_int64 (stop, segment->stop);
+  fail_unless_equals_int64 (position, segment->position);
 
   GST_DEBUG ("Segment was valid, discarding expected Segment");
 
@@ -108,7 +108,7 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
   Segment * segment;
   
   if (GST_EVENT_TYPE (event) == GST_EVENT_NEWSEGMENT) {
-    fail_if (collect->expected_segments == NULL);
+    fail_if (collect->expected_segments == NULL, "Received unexpected segment");
     segment = (Segment *) collect->expected_segments->data;
 
     if (compare_segments (segment, event)) {
@@ -271,7 +271,7 @@ new_operation (const gchar * name, const gchar * factory, guint64 start, gint64 
   GstElement * operation = NULL;
 
   operation = gst_element_factory_make_or_warn (factory, NULL);
-  gnloperation = gst_element_factory_make_or_warn ("gnloperation", NULL);
+  gnloperation = gst_element_factory_make_or_warn ("gnloperation", name);
 
   g_object_set (G_OBJECT (gnloperation),
 		"start", start,
