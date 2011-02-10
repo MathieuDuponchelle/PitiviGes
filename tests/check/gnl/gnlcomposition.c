@@ -391,7 +391,8 @@ GST_START_TEST (test_no_more_pads_race)
   /* FIXME: maybe slow down the videotestsrc steaming thread */
   gst_bin_add (GST_BIN (composition), source2);
 
-  message = gst_bus_timed_pop_filtered (bus, 1 * GST_SECOND, GST_MESSAGE_ERROR);
+  message =
+      gst_bus_timed_pop_filtered (bus, GST_SECOND / 10, GST_MESSAGE_ERROR);
   if (message) {
     if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR) {
       GError *error;
