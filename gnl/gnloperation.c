@@ -686,12 +686,14 @@ remove_sink_pad (GnlOperation * operation, GstPad * sinkpad)
   if (sinkpad) {
     GstPad *target = gst_ghost_pad_get_target ((GstGhostPad *) sinkpad);
 
-    /* release the target pad */
-    gnl_object_ghost_pad_set_target ((GnlObject *) operation, sinkpad, NULL);
-    gst_element_release_request_pad (operation->element, target);
+    if (target) {
+      /* release the target pad */
+      gnl_object_ghost_pad_set_target ((GnlObject *) operation, sinkpad, NULL);
+      gst_element_release_request_pad (operation->element, target);
+      gst_object_unref (target);
+    }
     operation->sinks = g_list_remove (operation->sinks, sinkpad);
     gnl_object_remove_ghost_pad ((GnlObject *) operation, sinkpad);
-    gst_object_unref (target);
     operation->realsinks--;
   }
 
