@@ -39,8 +39,6 @@
  * </refsect2>
  */
 
-GST_BOILERPLATE (GnlOperation, gnl_operation, GnlObject, GNL_TYPE_OBJECT);
-
 static GstStaticPadTemplate gnl_operation_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
@@ -55,6 +53,12 @@ GST_STATIC_PAD_TEMPLATE ("sink%d",
 
 GST_DEBUG_CATEGORY_STATIC (gnloperation);
 #define GST_CAT_DEFAULT gnloperation
+
+#define _do_init \
+  GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation", GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Operation element");
+#define gnl_operation_parent_class parent_class
+G_DEFINE_TYPE_WITH_CODE (GnlOperation, gnl_operation, GNL_TYPE_OBJECT,
+    _do_init);
 
 enum
 {
@@ -92,17 +96,6 @@ static void synchronize_sinks (GnlOperation * operation);
 static gboolean remove_sink_pad (GnlOperation * operation, GstPad * sinkpad);
 
 static void
-gnl_operation_base_init (gpointer g_class)
-{
-  GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
-
-  gst_element_class_set_details_simple (gstclass, "GNonLin Operation",
-      "Filter/Editor",
-      "Encapsulates filters/effects for use with GNL Objects",
-      "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
-}
-
-static void
 gnl_operation_class_init (GnlOperationClass * klass)
 {
   GObjectClass *gobject_class = (GObjectClass *) klass;
@@ -111,8 +104,10 @@ gnl_operation_class_init (GnlOperationClass * klass)
   GstElementClass *gstelement_class = (GstElementClass *) klass;
   GnlObjectClass *gnlobject_class = (GnlObjectClass *) klass;
 
-  GST_DEBUG_CATEGORY_INIT (gnloperation, "gnloperation",
-      GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Operation element");
+  gst_element_class_set_details_simple (gstelement_class, "GNonLin Operation",
+      "Filter/Editor",
+      "Encapsulates filters/effects for use with GNL Objects",
+      "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
 
   gobject_class->dispose = GST_DEBUG_FUNCPTR (gnl_operation_dispose);
 
@@ -193,8 +188,7 @@ gnl_operation_reset (GnlOperation * operation)
 }
 
 static void
-gnl_operation_init (GnlOperation * operation,
-    GnlOperationClass * klass G_GNUC_UNUSED)
+gnl_operation_init (GnlOperation * operation)
 {
   gnl_operation_reset (operation);
   operation->ghostpad = NULL;

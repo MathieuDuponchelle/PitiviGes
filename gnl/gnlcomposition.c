@@ -32,16 +32,21 @@
  * and connects them dynamically to create a composition timeline.
  */
 
-GST_BOILERPLATE (GnlComposition, gnl_composition, GnlObject, GNL_TYPE_OBJECT);
-
 static GstStaticPadTemplate gnl_composition_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_SOMETIMES,
     GST_STATIC_CAPS_ANY);
 
-GST_DEBUG_CATEGORY_STATIC (gnlcomposition);
-#define GST_CAT_DEFAULT gnlcomposition
+GST_DEBUG_CATEGORY_STATIC (gnlcomposition_debug);
+#define GST_CAT_DEFAULT gnlcomposition_debug
+
+#define _do_init \
+  GST_DEBUG_CATEGORY_INIT (gnlcomposition_debug,"gnlcomposition", GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Composition");
+#define gnl_composition_parent_class parent_class
+G_DEFINE_TYPE_WITH_CODE (GnlComposition, gnl_composition, GNL_TYPE_OBJECT,
+    _do_init);
+
 
 enum
 {
@@ -236,17 +241,6 @@ struct _GnlCompositionEntry
 };
 
 static void
-gnl_composition_base_init (gpointer g_class)
-{
-  GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
-
-  gst_element_class_set_details_simple (gstclass, "GNonLin Composition",
-      "Filter/Editor",
-      "Combines GNL objects",
-      "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
-}
-
-static void
 gnl_composition_class_init (GnlCompositionClass * klass)
 {
   GObjectClass *gobject_class;
@@ -257,10 +251,12 @@ gnl_composition_class_init (GnlCompositionClass * klass)
   gstelement_class = (GstElementClass *) klass;
   gstbin_class = (GstBinClass *) klass;
 
-  GST_DEBUG_CATEGORY_INIT (gnlcomposition, "gnlcomposition",
-      GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Composition");
-
   g_type_class_add_private (klass, sizeof (GnlCompositionPrivate));
+
+  gst_element_class_set_details_simple (gstelement_class, "GNonLin Composition",
+      "Filter/Editor",
+      "Combines GNL objects",
+      "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
 
   gobject_class->dispose = GST_DEBUG_FUNCPTR (gnl_composition_dispose);
   gobject_class->finalize = GST_DEBUG_FUNCPTR (gnl_composition_finalize);
@@ -329,8 +325,7 @@ hash_value_destroy (GnlCompositionEntry * entry)
 }
 
 static void
-gnl_composition_init (GnlComposition * comp,
-    GnlCompositionClass * klass G_GNUC_UNUSED)
+gnl_composition_init (GnlComposition * comp)
 {
   GST_OBJECT_FLAG_SET (comp, GNL_OBJECT_SOURCE);
 
@@ -858,7 +853,6 @@ get_new_seek_event (GnlComposition * comp, gboolean initial,
 static GstClockTime
 get_current_position (GnlComposition * comp)
 {
-  GstFormat format = GST_FORMAT_TIME;
   gint64 value = GST_CLOCK_TIME_NONE;
   GstPad *pad;
   GnlObject *obj;
@@ -868,9 +862,9 @@ get_current_position (GnlComposition * comp)
   if (comp->priv->ghostpad) {
     GstPad *peer = gst_pad_get_peer (comp->priv->ghostpad);
     if (peer) {
-      res = gst_pad_query_position (peer, &format, &value);
+      res = gst_pad_query_position (peer, GST_FORMAT_TIME, &value);
       gst_object_unref (peer);
-      if (res && (format == GST_FORMAT_TIME)) {
+      if (res) {
         GST_LOG_OBJECT (comp,
             "Successfully got downstream position %" GST_TIME_FORMAT,
             GST_TIME_ARGS ((guint64) value));
@@ -894,9 +888,9 @@ get_current_position (GnlComposition * comp)
   if (!(pad = get_src_pad ((GstElement *) obj)))
     goto beach;
 
-  res = gst_pad_query_position (pad, &format, &value);
+  res = gst_pad_query_position (pad, GST_FORMAT_TIME, &value);
 
-  if (G_UNLIKELY ((res == FALSE) || (format != GST_FORMAT_TIME))) {
+  if (G_UNLIKELY (res == FALSE)) {
     GST_WARNING_OBJECT (comp,
         "query failed or returned a format different from TIME");
     value = GST_CLOCK_TIME_NONE;

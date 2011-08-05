@@ -42,7 +42,10 @@ GST_STATIC_PAD_TEMPLATE ("src",
 GST_DEBUG_CATEGORY_STATIC (gnlsource);
 #define GST_CAT_DEFAULT gnlsource
 
-GST_BOILERPLATE (GnlSource, gnl_source, GnlObject, GNL_TYPE_OBJECT);
+#define _do_init \
+  GST_DEBUG_CATEGORY_INIT (gnlsource, "gnlsource", GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Source Element");
+#define gnl_source_parent_class parent_class
+G_DEFINE_TYPE_WITH_CODE (GnlSource, gnl_source, GNL_TYPE_OBJECT, _do_init);
 
 struct _GnlSourcePrivate
 {
@@ -80,17 +83,6 @@ static gboolean
 gnl_source_control_element_func (GnlSource * source, GstElement * element);
 
 static void
-gnl_source_base_init (gpointer g_class)
-{
-  GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
-
-  gst_element_class_set_details_simple (gstclass, "GNonLin Source",
-      "Filter/Editor",
-      "Manages source elements",
-      "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
-}
-
-static void
 gnl_source_class_init (GnlSourceClass * klass)
 {
   GObjectClass *gobject_class;
@@ -105,10 +97,12 @@ gnl_source_class_init (GnlSourceClass * klass)
 
   g_type_class_add_private (klass, sizeof (GnlSourcePrivate));
 
-  parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
+  gst_element_class_set_details_simple (gstelement_class, "GNonLin Source",
+      "Filter/Editor",
+      "Manages source elements",
+      "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
 
-  GST_DEBUG_CATEGORY_INIT (gnlsource, "gnlsource",
-      GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Source Element");
+  parent_class = g_type_class_ref (GNL_TYPE_OBJECT);
 
   klass->controls_one = TRUE;
   klass->control_element = GST_DEBUG_FUNCPTR (gnl_source_control_element_func);
@@ -130,7 +124,7 @@ gnl_source_class_init (GnlSourceClass * klass)
 
 
 static void
-gnl_source_init (GnlSource * source, GnlSourceClass * klass G_GNUC_UNUSED)
+gnl_source_init (GnlSource * source)
 {
   GST_OBJECT_FLAG_SET (source, GNL_OBJECT_SOURCE);
   source->element = NULL;

@@ -43,8 +43,11 @@ GST_STATIC_PAD_TEMPLATE ("src",
 GST_DEBUG_CATEGORY_STATIC (gnlurisource);
 #define GST_CAT_DEFAULT gnlurisource
 
-
-GST_BOILERPLATE (GnlURISource, gnl_urisource, GnlSource, GNL_TYPE_SOURCE);
+#define _do_init \
+  GST_DEBUG_CATEGORY_INIT (gnlurisource, "gnlurisource", GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin URI Source Element");
+#define  gnl_urisource_parent_class parent_class
+G_DEFINE_TYPE_WITH_CODE (GnlURISource, gnl_urisource, GNL_TYPE_SOURCE,
+    _do_init);
 
 enum
 {
@@ -63,16 +66,6 @@ gnl_urisource_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
 static void
-gnl_urisource_base_init (gpointer g_class)
-{
-  GstElementClass *gstclass = GST_ELEMENT_CLASS (g_class);
-
-  gst_element_class_set_details_simple (gstclass, "GNonLin URI Source",
-      "Filter/Editor",
-      "High-level URI Source element", "Edward Hervey <bilboed@bilboed.com>");
-}
-
-static void
 gnl_urisource_class_init (GnlURISourceClass * klass)
 {
   GObjectClass *gobject_class;
@@ -84,8 +77,9 @@ gnl_urisource_class_init (GnlURISourceClass * klass)
   gnlobject_class = (GnlObjectClass *) klass;
   parent_class = g_type_class_ref (GNL_TYPE_SOURCE);
 
-  GST_DEBUG_CATEGORY_INIT (gnlurisource, "gnlurisource",
-      GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin URI Source Element");
+  gst_element_class_set_details_simple (gstelement_class, "GNonLin URI Source",
+      "Filter/Editor",
+      "High-level URI Source element", "Edward Hervey <bilboed@bilboed.com>");
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_urisource_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_urisource_get_property);
@@ -101,8 +95,7 @@ gnl_urisource_class_init (GnlURISourceClass * klass)
 }
 
 static void
-gnl_urisource_init (GnlURISource * urisource,
-    GnlURISourceClass * klass G_GNUC_UNUSED)
+gnl_urisource_init (GnlURISource * urisource)
 {
   GstElement *decodebin = NULL;
 

@@ -39,11 +39,13 @@
  */
 
 
-GST_BOILERPLATE (GnlObject, gnl_object, GstBin, GST_TYPE_BIN);
+GST_DEBUG_CATEGORY_STATIC (gnlobject_debug);
+#define GST_CAT_DEFAULT gnlobject_debug
 
-GST_DEBUG_CATEGORY_STATIC (gnlobject);
-#define GST_CAT_DEFAULT gnlobject
-
+#define _do_init \
+  GST_DEBUG_CATEGORY_INIT (gnlobject_debug, "gnlobject", GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Object base class");
+#define gnl_object_parent_class parent_class
+G_DEFINE_TYPE_WITH_CODE (GnlObject, gnl_object, GST_TYPE_BIN, _do_init);
 enum
 {
   PROP_0,
@@ -82,12 +84,6 @@ static gboolean gnl_object_cleanup_func (GnlObject * object);
 static GstStateChangeReturn gnl_object_prepare (GnlObject * object);
 
 static void
-gnl_object_base_init (gpointer g_class G_GNUC_UNUSED)
-{
-
-};
-
-static void
 gnl_object_class_init (GnlObjectClass * klass)
 {
   GObjectClass *gobject_class;
@@ -97,9 +93,6 @@ gnl_object_class_init (GnlObjectClass * klass)
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
   gnlobject_class = (GnlObjectClass *) klass;
-
-  GST_DEBUG_CATEGORY_INIT (gnlobject, "gnlobject",
-      GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Object base class");
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gnl_object_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gnl_object_get_property);
@@ -268,7 +261,7 @@ gnl_object_class_init (GnlObjectClass * klass)
 }
 
 static void
-gnl_object_init (GnlObject * object, GnlObjectClass * klass)
+gnl_object_init (GnlObject * object)
 {
   object->start = 0;
   object->duration = 0;
