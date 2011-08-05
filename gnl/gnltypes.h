@@ -39,7 +39,4 @@ typedef struct _GnlSourceClass GnlSourceClass;
 typedef struct _GnlURISource GnlURISource;
 typedef struct _GnlURISourceClass GnlURISourceClass;
 
-typedef struct _GnlFileSource GnlFileSource;
-typedef struct _GnlFileSourceClass GnlFileSourceClass;
-
 #endif

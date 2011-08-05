@@ -35,7 +35,6 @@ static struct _elements_entry _elements[] = {
   {"gnlcomposition", gnl_composition_get_type},
   {"gnloperation", gnl_operation_get_type},
   {"gnlurisource", gnl_urisource_get_type},
-  {"gnlfilesource", gnl_filesource_get_type},
   {NULL, 0}
 };
 
