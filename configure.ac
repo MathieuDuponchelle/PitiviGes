@@ -3,7 +3,7 @@ AC_PREREQ(2.60)
 dnl initialize autoconf
 dnl when going to/from release please set the nano (fourth number) right !
 dnl releases only do Wall, cvs and prerelease does Werror too
-AC_INIT(GNonLin, 0.10.17.1,
+AC_INIT(GNonLin, 0.11.0.1,
     http://gnonlin.sourceforge.net/,
     gnonlin)
 
@@ -38,15 +38,15 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],
 dnl our libraries and install dirs use major.minor as a version
 GST_MAJORMINOR=$PACKAGE_VERSION_MAJOR.$PACKAGE_VERSION_MINOR
 dnl we override it here if we need to for the release candidate of new series
-GST_MAJORMINOR=0.10
+GST_MAJORMINOR=0.11
 AC_SUBST(GST_MAJORMINOR)
 
 AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 
 dnl *** required versions of GStreamer stuff ***
-GST_REQ=0.10.30
-GSTPB_REQ=0.10.30
+GST_REQ=0.11.0
+GSTPB_REQ=0.11.0
 
 dnl *** autotools stuff ****
 
@@ -112,7 +112,7 @@ AG_GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ], [yes])
 AG_GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ], [yes])
 
 dnl check for uninstalled plugin directories for unit tests
-AG_GST_CHECK_GST_PLUGINS_GOOD($GST_MAJORMINOR, [0.10.25])
+AG_GST_CHECK_GST_PLUGINS_GOOD($GST_MAJORMINOR, [0.11.0])
 
 dnl There are paths for documentation xrefs
 GLIB_PREFIX="`$PKG_CONFIG --variable=prefix glib-2.0`"
@@ -178,7 +178,7 @@ AC_SUBST(GST_OPTION_CFLAGS)
 dnl FIXME: do we want to rename to GST_ALL_* ?
 dnl prefer internal headers to already installed ones
 dnl add GST_OPTION_CFLAGS, but overridable
-GST_CFLAGS="$GST_CFLAGS $GLIB_EXTRA_CFLAGS \$(GST_OPTION_CFLAGS)"
+GST_CFLAGS="$GST_CFLAGS $GLIB_EXTRA_CFLAGS \$(GST_OPTION_CFLAGS) -DGST_USE_UNSTABLE_API"
 AC_SUBST(GST_CFLAGS)
 AC_SUBST(GST_LIBS)
 
