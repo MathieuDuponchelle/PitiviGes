@@ -105,6 +105,11 @@ static void
 discoverer_discovered_cb (GstDiscoverer * discoverer,
     GstDiscovererInfo * info, GError * err, GESTimeline * timeline);
 
+void look_for_transition (GESTrackObject * track_object,
+    GESTimelineLayer * layer);
+void track_object_removed_cb (GESTrack * track, GESTrackObject * track_object,
+    GESTimeline * timeline);
+
 static void
 ges_timeline_get_property (GObject * object, guint property_id,
     GValue * value, GParamSpec * pspec)
@@ -659,7 +664,7 @@ static void
 layer_object_removed_cb (GESTimelineLayer * layer, GESTimelineObject * object,
     GESTimeline * timeline)
 {
-  GList *tmp, *trackobjects;
+  GList *trackobjects, *tmp;
 
   if (ges_timeline_object_is_moving_from_layer (object)) {
     GST_DEBUG ("TimelineObject %p is moving from a layer to another, not doing"
@@ -685,10 +690,10 @@ layer_object_removed_cb (GESTimelineLayer * layer, GESTimelineObject * object,
 
       ges_timeline_object_release_track_object (object, trobj);
     }
-
     /* removing the reference added by _get_track_objects() */
     g_object_unref (trobj);
   }
+
   g_list_free (trackobjects);
 
   GST_DEBUG ("Done");
