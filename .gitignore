@@ -42,3 +42,9 @@ log
 /bindings/python/ges.c
 
 /m4
+
+.cproject
+.project
+
+.anjuta_sym_db.db
+*.anjuta
