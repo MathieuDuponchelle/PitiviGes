@@ -15,6 +15,7 @@ noinst_PROGRAMS = 	\
 	thumbnails	\
 	overlays	\
 	text_properties	\
+	keyframes \
 	$(graphical)
 
 AM_CFLAGS =  -I$(top_srcdir) $(GST_PBUTILS_CFLAGS) $(GST_CFLAGS) $(GTK_CFLAGS) -export-dynamic
