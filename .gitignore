@@ -45,6 +45,7 @@ log
 
 .cproject
 .project
+.pydevproject
 
 .anjuta_sym_db.db
 *.anjuta
