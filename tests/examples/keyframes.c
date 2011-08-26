@@ -22,8 +22,20 @@
 
 GESTimelineObject *make_source (gchar * path, guint64 start, guint64 duration,
     guint64 inpoint, gint priority);
-void add_effect (gchar * bin_desc, GESTimelineObject * source,
+GESTrackObject *create_effect (gchar * bin_desc, GESTimelineObject * source,
     GESTrack * track);
+GstInterpolationControlSource
+    * effect_property_control_source (GESTrackObject * track_object,
+    gchar * propname, GstInterpolateMode mode);
+GstElement *find_effect_element_in_track_object (GESTrackObject * track_object);
+GESTimelinePipeline *init_pipeline (gchar * file_path, gdouble inpoint,
+    gdouble duration);
+void init_effects (GESTimelineObject * timeline_object, GESTrack * track,
+    gdouble inpoint, gdouble duration);
+void add_keyframe_to_control_source (GstInterpolationControlSource *
+    control_source, gdouble time, gdouble value);
+void add_keyframe_to_control_source_uint (GstInterpolationControlSource *
+    control_source, gdouble time, guint value);
 
 GESTimelineObject *
 make_source (gchar * path, guint64 start, guint64 duration, guint64 inpoint,
@@ -34,9 +46,7 @@ make_source (gchar * path, guint64 start, guint64 duration, guint64 inpoint,
   GESTimelineObject *ret =
       GES_TIMELINE_OBJECT (ges_timeline_filesource_new (uri));
 
-  g_object_set (ret,
-      "start", (guint64) start,
-      "duration", (guint64) duration,
+  g_object_set (ret, "start", (guint64) start, "duration", (guint64) duration,
       "priority", (guint32) priority, "in-point", (guint64) inpoint, NULL);
 
   g_free (uri);
@@ -44,13 +54,178 @@ make_source (gchar * path, guint64 start, guint64 duration, guint64 inpoint,
   return ret;
 }
 
-void
-add_effect (gchar * bin_desc, GESTimelineObject * source, GESTrack * track)
+GESTrackObject *
+create_effect (gchar * bin_desc, GESTimelineObject * source, GESTrack * track)
 {
   GESTrackObject *effect = NULL;
-  effect = GES_TRACK_OBJECT (ges_track_parse_launch_effect_new (bin_desc));
+  GESTrackParseLaunchEffect *foo = ges_track_parse_launch_effect_new (bin_desc);
+  effect = GES_TRACK_OBJECT (foo);
   ges_timeline_object_add_track_object (GES_TIMELINE_OBJECT (source), effect);
   ges_track_add_object (track, effect);
+  return effect;
+}
+
+void
+add_keyframe_to_control_source (GstInterpolationControlSource * control_source,
+    gdouble time, gdouble value)
+{
+  GstClockTime timestamp = (guint64) (time * GST_SECOND);
+  GValue g_value = { 0, };
+  g_value_init (&g_value, G_TYPE_DOUBLE);
+  g_value_set_double (&g_value, value);
+  gst_interpolation_control_source_set (control_source, timestamp, &g_value);
+}
+
+void
+add_keyframe_to_control_source_uint (GstInterpolationControlSource *
+    control_source, gdouble time, guint value)
+{
+  GstClockTime timestamp = (guint64) (time * GST_SECOND);
+  GValue g_value = { 0, };
+  g_value_init (&g_value, G_TYPE_UINT);
+  g_value_set_uint (&g_value, value);
+  gst_interpolation_control_source_set (control_source, timestamp, &g_value);
+}
+
+GstInterpolationControlSource *
+effect_property_control_source (GESTrackObject * track_object, gchar * propname,
+    GstInterpolateMode mode)
+{
+  GstInterpolationControlSource *control_source;
+  GstController *controller;
+
+  GstElement *target = find_effect_element_in_track_object (track_object);
+
+  /* add a controller to the source */
+  if (!(controller = gst_object_control_properties (G_OBJECT (target),
+              propname, NULL))) {
+    GST_WARNING ("can't control source element");
+  }
+  control_source = gst_interpolation_control_source_new ();
+
+  gst_controller_set_control_source (controller, propname,
+      GST_CONTROL_SOURCE (control_source));
+  gst_interpolation_control_source_set_interpolation_mode (control_source,
+      mode);
+
+  return control_source;
+}
+
+GstElement *
+find_effect_element_in_track_object (GESTrackObject * track_object)
+{
+  GstIterator *it;
+  gboolean done = FALSE;
+  gpointer data;
+  const gchar *klass;
+  GstElementFactory *factory;
+  GstElement *effect_element = NULL;
+  GstBin *bin = GST_BIN (ges_track_object_get_element (track_object));
+
+  it = gst_bin_iterate_recurse (bin);
+
+  while (!done) {
+    switch (gst_iterator_next (it, &data)) {
+      case GST_ITERATOR_OK:{
+        gchar **categories;
+        guint category;
+        GstElement *child = GST_ELEMENT_CAST (data);
+        factory = gst_element_get_factory (child);
+        klass = gst_element_factory_get_klass (factory);
+
+        categories = g_strsplit (klass, "/", 0);
+        for (category = 0; categories[category]; category++) {
+          if (g_strcmp0 (categories[category], "Effect") == 0) {
+            g_print ("Found Effect Element %s\n", GST_ELEMENT_NAME (child));
+            effect_element = child;
+          }
+        }
+        g_strfreev (categories);
+        gst_object_unref (child);
+        break;
+      }
+      case GST_ITERATOR_RESYNC:
+        /* FIXME, properly restart the process */
+        GST_DEBUG ("iterator resync");
+        gst_iterator_resync (it);
+        break;
+
+      case GST_ITERATOR_DONE:
+        GST_DEBUG ("iterator done");
+        done = TRUE;
+        break;
+
+      default:
+        break;
+    }
+  }
+  gst_iterator_free (it);
+  return effect_element;
+}
+
+void
+init_effects (GESTimelineObject * timeline_object, GESTrack * track,
+    gdouble inpoint, gdouble duration)
+{
+  GESTrackObject *videobalance;
+  GESTrackObject *gamma;
+  GstInterpolationControlSource *saturation_control;
+  GstInterpolationControlSource *gamma_control;
+  gfloat end = (gfloat) (inpoint + duration);
+  gfloat middle = (gfloat) (inpoint + duration * 0.5);
+
+  videobalance = create_effect (
+      (gchar *) "videobalance", timeline_object, track);
+
+  saturation_control = effect_property_control_source (videobalance,
+      (gchar *) "saturation", GST_INTERPOLATE_LINEAR);
+
+  add_keyframe_to_control_source (saturation_control, inpoint, 0);
+  add_keyframe_to_control_source (saturation_control, middle, 1.5);
+  add_keyframe_to_control_source (saturation_control, end, 0);
+
+  gamma = create_effect ((gchar *) "gamma", timeline_object, track);
+
+  gamma_control = effect_property_control_source (gamma,
+      (gchar *) "gamma", GST_INTERPOLATE_QUADRATIC);
+
+  add_keyframe_to_control_source (gamma_control, inpoint, 0);
+  add_keyframe_to_control_source (gamma_control, middle, 2.0);
+  add_keyframe_to_control_source (gamma_control, end, 0);
+}
+
+GESTimelinePipeline *
+init_pipeline (gchar * file_path, gdouble inpoint, gdouble duration)
+{
+  GESTimeline *timeline;
+  GESTrack *video_track;
+  GESTimelineLayer *layer;
+  GESTimelineObject *file_source;
+  GstClockTime duration_time;
+
+  GESTimelinePipeline *pipeline;
+  pipeline = ges_timeline_pipeline_new ();
+
+  ges_timeline_pipeline_set_mode (pipeline, TIMELINE_MODE_PREVIEW_VIDEO);
+
+  timeline = ges_timeline_new ();
+  ges_timeline_pipeline_add_timeline (pipeline, timeline);
+
+  video_track = ges_track_video_raw_new ();
+  ges_timeline_add_track (timeline, video_track);
+
+  layer = GES_TIMELINE_LAYER (ges_timeline_layer_new ());
+
+  if (!ges_timeline_add_layer (timeline, layer))
+    exit (-1);
+
+  duration_time = (guint64) (duration * GST_SECOND);
+  file_source = make_source (file_path, 0, duration_time,
+      (guint64) (inpoint * GST_SECOND), 1);
+  ges_timeline_layer_add_object (layer, file_source);
+  init_effects (file_source, video_track, inpoint, duration);
+
+  return pipeline;
 }
 
 int
@@ -64,11 +239,6 @@ main (int argc, char **argv)
   GMainLoop *mainloop;
   gchar *file_path;
   gdouble duration, inpoint;
-
-  GESTimeline *timeline;
-  GESTrack *video_track;
-  GESTimelineLayer *layer;
-  GESTimelineObject *file_source;
 
   if (!g_thread_supported ())
     g_thread_init (NULL);
@@ -98,33 +268,11 @@ main (int argc, char **argv)
   inpoint = (gdouble) atof (argv[2]);
   duration = (gdouble) atof (argv[3]);
 
-  pipeline = ges_timeline_pipeline_new ();
-
-  ges_timeline_pipeline_set_mode (pipeline, TIMELINE_MODE_PREVIEW_VIDEO);
-
-  timeline = ges_timeline_new ();
-  ges_timeline_pipeline_add_timeline (pipeline, timeline);
-
-  video_track = ges_track_video_raw_new ();
-  ges_timeline_add_track (timeline, video_track);
-
-  layer = GES_TIMELINE_LAYER (ges_timeline_layer_new ());
-
-  if (!ges_timeline_add_layer (timeline, layer))
-    exit (-1);
-
-  file_source = make_source (file_path, 0, (guint64) (duration * GST_SECOND),
-      (guint64) (inpoint * GST_SECOND), 1);
-  ges_timeline_layer_add_object (layer, file_source);
-
-  add_effect ((gchar *) "videobalance hue=-1", file_source, video_track);
-  add_effect ((gchar *) "agingtv", file_source, video_track);
-  add_effect ((gchar *) "vertigotv", file_source, video_track);
-
+  pipeline = init_pipeline (file_path, inpoint, duration);
   mainloop = g_main_loop_new (NULL, FALSE);
+
   g_timeout_add_seconds (duration, (GSourceFunc) g_main_loop_quit, mainloop);
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
   g_main_loop_run (mainloop);
-
   return 0;
 }
