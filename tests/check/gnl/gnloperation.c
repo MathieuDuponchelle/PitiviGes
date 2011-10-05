@@ -28,10 +28,9 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
@@ -57,8 +56,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_WARNING ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -102,8 +100,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_ERROR ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -129,8 +126,6 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
 
 GST_START_TEST (test_simple_operation)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *oper, *source;
   GList *segments = NULL;
 
@@ -217,8 +212,6 @@ GST_END_TEST;
 
 GST_START_TEST (test_pyramid_operations)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *oper1, *oper2, *source;
   GList *segments = NULL;
 
@@ -306,8 +299,6 @@ GST_END_TEST;
 
 GST_START_TEST (test_pyramid_operations2)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *oper, *source1, *source2, *def;
   GList *segments = NULL;
 
@@ -403,8 +394,6 @@ GST_END_TEST;
 
 GST_START_TEST (test_pyramid_operations_expandable)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *oper, *source1, *source2, *def;
   GList *segments = NULL;
 
@@ -495,8 +484,6 @@ GST_END_TEST;
 
 GST_START_TEST (test_complex_operations)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *oper, *source1, *source2;
   GList *segments = NULL;
 
@@ -591,8 +578,6 @@ GST_END_TEST;
 
 GST_START_TEST (test_complex_operations_bis)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *oper, *source1, *source2;
   GList *segments = NULL;
 
@@ -697,7 +682,6 @@ gnonlin_suite (void)
 {
   Suite *s = suite_create ("gnloperation");
   TCase *tc_chain = tcase_create ("gnloperation");
-  guint major, minor, micro, nano;
 
   suite_add_tcase (s, tc_chain);
 
@@ -705,8 +689,11 @@ gnonlin_suite (void)
   tcase_add_test (tc_chain, test_pyramid_operations);
   tcase_add_test (tc_chain, test_pyramid_operations2);
   tcase_add_test (tc_chain, test_pyramid_operations_expandable);
-  tcase_add_test (tc_chain, test_complex_operations);
-  tcase_add_test (tc_chain, test_complex_operations_bis);
+  if (gst_default_registry_check_feature_version ("videomixer", 0, 11, 0)) {
+    tcase_add_test (tc_chain, test_complex_operations);
+    tcase_add_test (tc_chain, test_complex_operations_bis);
+  } else
+    GST_WARNING ("videomixer element not available, skipping 1 test");
 
   return s;
 }

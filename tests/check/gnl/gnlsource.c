@@ -8,8 +8,6 @@ GST_START_TEST (test_simple_videotestsrc)
   GstBus *bus;
   GstMessage *message;
   gboolean carry_on = TRUE;
-  guint64 start, stop;
-  gint64 duration;
   GstPad *sinkpad;
 
   pipeline = gst_pipeline_new ("test_pipeline");
@@ -44,11 +42,10 @@ GST_START_TEST (test_simple_videotestsrc)
   g_signal_connect (G_OBJECT (gnlsource), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
+  sinkpad = gst_element_get_static_pad (sink, "sink");
   fail_if (sinkpad == NULL);
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (pipeline);
 
@@ -78,8 +75,7 @@ GST_START_TEST (test_simple_videotestsrc)
           carry_on = FALSE;
           break;
         case GST_MESSAGE_ERROR:
-          GST_WARNING ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -114,8 +110,6 @@ GST_START_TEST (test_videotestsrc_in_bin)
   GstBus *bus;
   GstMessage *message;
   gboolean carry_on = TRUE;
-  guint64 start, stop;
-  gint64 duration;
   GstPad *sinkpad;
 
   pipeline = gst_pipeline_new ("test_pipeline");
@@ -149,11 +143,10 @@ GST_START_TEST (test_videotestsrc_in_bin)
   g_signal_connect (G_OBJECT (gnlsource), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
+  sinkpad = gst_element_get_static_pad (sink, "sink");
   fail_if (sinkpad == NULL);
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (pipeline);
 
@@ -183,8 +176,7 @@ GST_START_TEST (test_videotestsrc_in_bin)
           carry_on = FALSE;
           break;
         case GST_MESSAGE_ERROR:
-          GST_WARNING ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -216,7 +208,6 @@ gnonlin_suite (void)
 {
   Suite *s = suite_create ("gnlsource");
   TCase *tc_chain = tcase_create ("gnlsource");
-  guint major, minor, micro, nano;
 
   suite_add_tcase (s, tc_chain);
 

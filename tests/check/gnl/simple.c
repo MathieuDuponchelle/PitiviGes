@@ -14,8 +14,6 @@ test_simplest_full (gboolean async)
   GstBus *bus;
   GstMessage *message;
   gboolean carry_on = TRUE;
-  guint64 start, stop;
-  gint64 duration;
   GstPad *sinkpad;
 
   pipeline = gst_pipeline_new ("test_pipeline");
@@ -63,10 +61,9 @@ test_simplest_full (gboolean async)
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
@@ -94,8 +91,7 @@ test_simplest_full (gboolean async)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_WARNING ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -141,8 +137,7 @@ test_simplest_full (gboolean async)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_ERROR ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -170,8 +165,6 @@ test_simplest_full (gboolean async)
 static void
 test_time_duration_full (gboolean async)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *source1, *source2;
 
   comp =
@@ -251,8 +244,6 @@ test_one_after_other_full (gboolean async)
   GstBus *bus;
   GstMessage *message;
   gboolean carry_on = TRUE;
-  guint64 start, stop;
-  gint64 duration;
   GstPad *sinkpad;
 
   pipeline = gst_pipeline_new ("test_pipeline");
@@ -347,10 +338,9 @@ test_one_after_other_full (gboolean async)
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
@@ -378,8 +368,7 @@ test_one_after_other_full (gboolean async)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_WARNING ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -429,8 +418,7 @@ test_one_after_other_full (gboolean async)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_ERROR ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -464,8 +452,6 @@ test_one_under_another_full (gboolean async)
   GstBus *bus;
   GstMessage *message;
   gboolean carry_on = TRUE;
-  guint64 start, stop;
-  gint64 duration;
   GstPad *sinkpad;
 
   pipeline = gst_pipeline_new ("test_pipeline");
@@ -552,10 +538,9 @@ test_one_under_another_full (gboolean async)
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
@@ -576,7 +561,7 @@ test_one_under_another_full (gboolean async)
           carry_on = FALSE;
           break;
         case GST_MESSAGE_ERROR:
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -608,8 +593,6 @@ test_one_bin_after_other_full (gboolean async)
   GstBus *bus;
   GstMessage *message;
   gboolean carry_on = TRUE;
-  guint64 start, stop;
-  gint64 duration;
   GstPad *sinkpad;
 
   pipeline = gst_pipeline_new ("test_pipeline");
@@ -703,10 +686,9 @@ test_one_bin_after_other_full (gboolean async)
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
@@ -734,7 +716,7 @@ test_one_bin_after_other_full (gboolean async)
           fail_if (FALSE);
           break;
         case GST_MESSAGE_ERROR:
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -780,7 +762,7 @@ test_one_bin_after_other_full (gboolean async)
           fail_if (FALSE);
           break;
         case GST_MESSAGE_ERROR:
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }

@@ -30,7 +30,6 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
   GstBus *bus;
   GstMessage *message;
   gboolean carry_on = TRUE;
-  gboolean have_seeked = FALSE;
   GstPad *sinkpad;
   GList *ltofree = seeks;
 
@@ -51,10 +50,9 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_BLOCKING,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
@@ -81,8 +79,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_WARNING ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
           break;
         case GST_MESSAGE_ASYNC_DONE:
           GST_DEBUG ("prerolling done");
@@ -153,11 +150,9 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
 }
 
 static void
-test_simplest_full ()
+test_simplest_full (void)
 {
   GstElement *comp, *source1;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL;
   GList *seeks = NULL;
 
@@ -219,11 +214,9 @@ test_simplest_full ()
 }
 
 static void
-test_one_after_other_full ()
+test_one_after_other_full (void)
 {
   GstElement *comp, *source1, *source2;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL, *seeks = NULL;
 
   comp =
@@ -303,11 +296,9 @@ test_one_after_other_full ()
 }
 
 static void
-test_one_under_another_full ()
+test_one_under_another_full (void)
 {
   GstElement *comp, *source1, *source2;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL, *seeks = NULL;
 
   comp =
@@ -381,11 +372,9 @@ test_one_under_another_full ()
 }
 
 static void
-test_one_bin_after_other_full ()
+test_one_bin_after_other_full (void)
 {
   GstElement *comp, *source1, *source2;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL, *seeks = NULL;
 
   comp =
@@ -464,8 +453,6 @@ test_one_bin_after_other_full ()
 
 GST_START_TEST (test_complex_operations)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *oper, *source1, *source2;
   GList *segments = NULL, *seeks = NULL;
 
@@ -578,8 +565,6 @@ GST_END_TEST;
 
 GST_START_TEST (test_complex_operations_bis)
 {
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *oper, *source1, *source2;
   GList *segments = NULL, *seeks = NULL;
 
@@ -740,8 +725,12 @@ gnonlin_suite (void)
   tcase_add_test (tc_chain, test_one_after_other);
   tcase_add_test (tc_chain, test_one_under_another);
   tcase_add_test (tc_chain, test_one_bin_after_other);
-  tcase_add_test (tc_chain, test_complex_operations);
-  tcase_add_test (tc_chain, test_complex_operations_bis);
+  if (gst_default_registry_check_feature_version ("videomixer", 0, 11, 0)) {
+    tcase_add_test (tc_chain, test_complex_operations);
+    tcase_add_test (tc_chain, test_complex_operations_bis);
+  } else
+    GST_WARNING ("videomixer element not available, skipping 1 test");
+
   return s;
 }
 

@@ -28,10 +28,9 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
@@ -57,8 +56,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_WARNING ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -102,8 +100,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_ERROR ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -130,8 +127,6 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
 GST_START_TEST (test_one_space_another)
 {
   GstElement *comp, *source1, *source2;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL;
 
   comp =
@@ -208,9 +203,6 @@ GST_END_TEST;
 GST_START_TEST (test_one_default_another)
 {
   GstElement *comp, *source1, *source2, *source3, *defaultsrc;
-  gboolean carry_on = TRUE;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL;
 
   comp =
@@ -328,8 +320,6 @@ GST_END_TEST;
 GST_START_TEST (test_one_expandable_another)
 {
   GstElement *comp, *source1, *source2, *source3, *defaultsrc;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL;
 
   comp =
@@ -448,14 +438,12 @@ GST_END_TEST;
 GST_START_TEST (test_renegotiation)
 {
   GstElement *pipeline;
-  GstElement *comp, *sink, *source1, *source2, *source3, *defaultsrc;
+  GstElement *comp, *sink, *source1, *source2, *source3;
   GstElement *audioconvert;
   CollectStructure *collect;
   GstBus *bus;
   GstMessage *message;
   gboolean carry_on = TRUE;
-  guint64 start, stop;
-  gint64 duration;
   GstPad *sinkpad;
   GstCaps *caps;
 
@@ -524,7 +512,7 @@ GST_START_TEST (test_renegotiation)
   audioconvert = gst_element_factory_make_or_warn ("audioconvert", "aconv");
 
   gst_bin_add_many (GST_BIN (pipeline), comp, audioconvert, sink, NULL);
-  caps = gst_caps_from_string ("audio/x-raw-int");
+  caps = gst_caps_from_string ("audio/x-raw,format=(string)S16LE");
   gst_element_link_filtered (audioconvert, sink, caps);
   gst_caps_unref (caps);
 
@@ -546,10 +534,9 @@ GST_START_TEST (test_renegotiation)
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
 
-  sinkpad = gst_element_get_pad (sink, "sink");
-  gst_pad_add_event_probe (sinkpad, G_CALLBACK (sinkpad_event_probe), collect);
-  gst_pad_add_buffer_probe (sinkpad, G_CALLBACK (sinkpad_buffer_probe),
-      collect);
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_DATA,
+      (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
 
@@ -577,8 +564,7 @@ GST_START_TEST (test_renegotiation)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_WARNING ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -632,8 +618,7 @@ GST_START_TEST (test_renegotiation)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          GST_ERROR ("Saw an ERROR");
-          fail_if (TRUE);
+          fail_error_message (message);
         default:
           break;
       }
@@ -663,8 +648,6 @@ GST_END_TEST;
 GST_START_TEST (test_one_bin_space_another)
 {
   GstElement *comp, *source1, *source2;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL;
 
   comp =
@@ -733,8 +716,6 @@ GST_END_TEST;
 GST_START_TEST (test_one_above_another)
 {
   GstElement *comp, *source1, *source2;
-  guint64 start, stop;
-  gint64 duration;
   GList *segments = NULL;
 
   comp =

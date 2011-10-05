@@ -27,27 +27,30 @@ typedef struct
 static int composition_pad_added;
 static int composition_pad_removed;
 static int seek_events;
+static gulong blockprobeid;
 
-static gboolean
-on_source1_pad_event_cb (GstPad * pad, GstEvent * event, gpointer user_data)
+static GstProbeReturn
+on_source1_pad_event_cb (GstPad * pad, GstProbeType ptype,
+    GstEvent * event, gpointer user_data)
 {
   if (event->type == GST_EVENT_SEEK)
     ++seek_events;
 
-  return TRUE;
+  return GST_PROBE_OK;
 }
 
 static void
 on_source1_pad_added_cb (GstElement * source, GstPad * pad, gpointer user_data)
 {
-  gst_pad_add_event_probe (pad, G_CALLBACK (on_source1_pad_event_cb), NULL);
+  gst_pad_add_probe (pad, GST_PROBE_TYPE_EVENT,
+      (GstPadProbeCallback) on_source1_pad_event_cb, NULL, NULL);
 }
 
 static void
 on_composition_pad_added_cb (GstElement * composition, GstPad * pad,
     GstElement * sink)
 {
-  GstPad *s = gst_element_get_pad (sink, "sink");
+  GstPad *s = gst_element_get_static_pad (sink, "sink");
   gst_pad_link (pad, s);
   ++composition_pad_added;
   gst_object_unref (s);
@@ -63,8 +66,6 @@ on_composition_pad_removed_cb (GstElement * composition, GstPad * pad,
 GST_START_TEST (test_change_object_start_stop_in_current_stack)
 {
   GstElement *pipeline;
-  guint64 start, stop;
-  gint64 duration;
   GstElement *comp, *source1, *def, *sink;
   GstBus *bus;
   GstMessage *message;
@@ -148,18 +149,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
           fail_if (TRUE);
         }
         case GST_MESSAGE_ERROR:
-        {
-          GError *error;
-          char *debug;
-
-          gst_message_parse_error (message, &error, &debug);
-
-          GST_WARNING ("Saw an ERROR %s: %s (%s)",
-              gst_object_get_name (message->src), error->message, debug);
-
-          g_error_free (error);
-          fail_if (TRUE);
-        }
+          fail_error_message (message);
         default:
           break;
       }
@@ -240,14 +230,12 @@ GST_START_TEST (test_remove_invalid_object)
 
 GST_END_TEST;
 
-static void
-pad_block (GstPad * pad, gboolean blocked, gpointer user_data)
+static GstProbeReturn
+pad_block (GstPad * pad, GstProbeType ptype, gpointer bedata,
+    gpointer user_data)
 {
   GstPad *ghost;
   GstBin *bin;
-
-  if (!blocked)
-    return;
 
   bin = GST_BIN (user_data);
 
@@ -256,14 +244,14 @@ pad_block (GstPad * pad, gboolean blocked, gpointer user_data)
 
   gst_element_add_pad (GST_ELEMENT (bin), ghost);
 
-  gst_pad_set_blocked_async (pad, FALSE, pad_block, NULL);
+  gst_pad_remove_probe (pad, blockprobeid);
+
+  return GST_PROBE_OK;
 }
 
 static void
 no_more_pads_test_cb (GObject * object, TestClosure * c)
 {
-  GstElement *source2 = GST_ELEMENT (object);
-
   GST_WARNING ("NO MORE PADS");
   gst_bin_add (GST_BIN (c->composition), c->source3);
 }
@@ -272,7 +260,7 @@ GST_START_TEST (test_no_more_pads_race)
 {
   GstElement *source1, *source2, *source3;
   GstBin *bin;
-  GstElement *videotestsrc1, *videotestsrc2, *videotestsrc3;
+  GstElement *videotestsrc1, *videotestsrc2;
   GstElement *operation;
   GstElement *composition;
   GstElement *videomixer, *fakesink;
@@ -340,7 +328,9 @@ GST_START_TEST (test_no_more_pads_race)
   bin = GST_BIN (gst_bin_new (NULL));
   videotestsrc2 = gst_element_factory_make ("videotestsrc", "videotestsrc2");
   pad = gst_element_get_static_pad (videotestsrc2, "src");
-  gst_pad_set_blocked_async (pad, TRUE, pad_block, bin);
+  blockprobeid =
+      gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCKING,
+      (GstPadProbeCallback) pad_block, bin, NULL);
   gst_bin_add (bin, videotestsrc2);
   gst_bin_add (GST_BIN (source2), GST_ELEMENT (bin));
   g_object_set (source2, "start", 0 * GST_SECOND, "duration", 5 * GST_SECOND,
@@ -378,11 +368,7 @@ GST_START_TEST (test_no_more_pads_race)
   message = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE,
       GST_MESSAGE_ASYNC_DONE | GST_MESSAGE_ERROR);
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR) {
-    GError *error;
-    gchar *debug;
-
-    gst_message_parse_error (message, &error, &debug);
-    fail_if (TRUE, "error: %s - %s", error->message, debug);
+    fail_error_message (message);
   }
   gst_message_unref (message);
 
@@ -395,11 +381,7 @@ GST_START_TEST (test_no_more_pads_race)
       gst_bus_timed_pop_filtered (bus, GST_SECOND / 10, GST_MESSAGE_ERROR);
   if (message) {
     if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR) {
-      GError *error;
-      gchar *debug;
-
-      gst_message_parse_error (message, &error, &debug);
-      fail_if (TRUE, error->message);
+      fail_error_message (message);
     } else {
       fail_if (TRUE);
     }
@@ -424,7 +406,7 @@ gnonlin_suite (void)
 
   tcase_add_test (tc_chain, test_change_object_start_stop_in_current_stack);
   tcase_add_test (tc_chain, test_remove_invalid_object);
-  if (gst_default_registry_check_feature_version ("videomixer", 0, 10, 0)) {
+  if (gst_default_registry_check_feature_version ("videomixer", 0, 11, 0)) {
     tcase_add_test (tc_chain, test_no_more_pads_race);
   } else {
     GST_WARNING ("videomixer element not available, skipping 1 test");
