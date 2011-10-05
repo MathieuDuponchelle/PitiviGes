@@ -89,7 +89,7 @@ static gboolean gnl_operation_remove_element (GstBin * bin,
     GstElement * element);
 
 static GstPad *gnl_operation_request_new_pad (GstElement * element,
-    GstPadTemplate * templ, const gchar * name);
+    GstPadTemplate * templ, const gchar * name, const GstCaps * caps);
 static void gnl_operation_release_pad (GstElement * element, GstPad * pad);
 
 static void synchronize_sinks (GnlOperation * operation);
@@ -204,7 +204,7 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
   gboolean havesrc = FALSE;
   gboolean done = FALSE;
   GstIterator *pads;
-  gpointer res;
+  GValue item = { 0, };
 
   if (isdynamic)
     *isdynamic = FALSE;
@@ -212,17 +212,17 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
   pads = gst_element_iterate_pads (element);
 
   while (!done) {
-    switch (gst_iterator_next (pads, &res)) {
+    switch (gst_iterator_next (pads, &item)) {
       case GST_ITERATOR_OK:
       {
-        GstPad *pad = (GstPad *) res;
+        GstPad *pad = g_value_get_object (&item);
 
         if (gst_pad_get_direction (pad) == GST_PAD_SRC)
           havesrc = TRUE;
         else if (gst_pad_get_direction (pad) == GST_PAD_SINK)
           havesink = TRUE;
 
-        gst_object_unref (pad);
+        g_value_reset (&item);
         break;
       }
       case GST_ITERATOR_RESYNC:
@@ -236,6 +236,8 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
         break;
     }
   }
+
+  g_value_unset (&item);
   gst_iterator_free (pads);
 
   if (G_LIKELY ((factory = gst_element_get_factory (element)))) {
@@ -286,14 +288,18 @@ get_src_pad (GstElement * element)
 {
   GstIterator *it;
   GstIteratorResult itres;
-  GstPad *srcpad;
+  GValue item = { 0, };
+  GstPad *srcpad = NULL;
 
   it = gst_element_iterate_src_pads (element);
-  itres = gst_iterator_next (it, (gpointer) & srcpad);
+  itres = gst_iterator_next (it, &item);
   if (itres != GST_ITERATOR_OK) {
     GST_DEBUG ("%s doesn't have a src pad !", GST_ELEMENT_NAME (element));
-    srcpad = NULL;
+  } else {
+    srcpad = g_value_get_object (&item);
+    gst_object_ref (srcpad);
   }
+  g_value_reset (&item);
   gst_iterator_free (it);
   return srcpad;
 }
@@ -307,17 +313,16 @@ get_nb_static_sinks (GnlOperation * oper)
 {
   GstIterator *sinkpads;
   gboolean done = FALSE;
-  gpointer val;
   guint nbsinks = 0;
+  GValue item = { 0, };
 
   sinkpads = gst_element_iterate_sink_pads (oper->element);
 
   while (!done) {
-    switch (gst_iterator_next (sinkpads, &val)) {
+    switch (gst_iterator_next (sinkpads, &item)) {
       case GST_ITERATOR_OK:{
-        GstPad *pad = (GstPad *) val;
         nbsinks++;
-        gst_object_unref (pad);
+        g_value_unset (&item);
       }
         break;
       case GST_ITERATOR_RESYNC:
@@ -330,6 +335,8 @@ get_nb_static_sinks (GnlOperation * oper)
         break;
     }
   }
+
+  g_value_reset (&item);
   gst_iterator_free (sinkpads);
 
   GST_DEBUG ("We found %d static sinks", nbsinks);
@@ -459,7 +466,7 @@ get_unused_static_sink_pad (GnlOperation * operation)
 {
   GstIterator *pads;
   gboolean done = FALSE;
-  gpointer val;
+  GValue item = { 0, };
   GstPad *ret = NULL;
 
   if (!operation->element)
@@ -468,10 +475,10 @@ get_unused_static_sink_pad (GnlOperation * operation)
   pads = gst_element_iterate_pads (operation->element);
 
   while (!done) {
-    switch (gst_iterator_next (pads, &val)) {
+    switch (gst_iterator_next (pads, &item)) {
       case GST_ITERATOR_OK:
       {
-        GstPad *pad = (GstPad *) val;
+        GstPad *pad = g_value_get_object (&item);
 
         if (gst_pad_get_direction (pad) == GST_PAD_SINK) {
           GList *tmp = operation->sinks;
@@ -494,13 +501,12 @@ get_unused_static_sink_pad (GnlOperation * operation)
 
           /* 2. if not taken, return that pad */
           if (!istaken) {
+            gst_object_ref (pad);
             ret = pad;
             done = TRUE;
-          } else {
-            gst_object_unref (pad);
           }
-        } else
-          gst_object_unref (pad);
+        }
+        g_value_reset (&item);
         break;
       }
       case GST_ITERATOR_RESYNC:
@@ -515,6 +521,8 @@ get_unused_static_sink_pad (GnlOperation * operation)
         break;
     }
   }
+
+  g_value_unset (&item);
   gst_iterator_free (pads);
 
   if (ret)
@@ -531,7 +539,7 @@ get_unlinked_sink_ghost_pad (GnlOperation * operation)
 {
   GstIterator *pads;
   gboolean done = FALSE;
-  gpointer val;
+  GValue item = { 0, };
   GstPad *ret = NULL;
 
   if (!operation->element)
@@ -540,19 +548,20 @@ get_unlinked_sink_ghost_pad (GnlOperation * operation)
   pads = gst_element_iterate_sink_pads ((GstElement *) operation);
 
   while (!done) {
-    switch (gst_iterator_next (pads, &val)) {
+    switch (gst_iterator_next (pads, &item)) {
       case GST_ITERATOR_OK:
       {
-        GstPad *pad = (GstPad *) val;
+        GstPad *pad = g_value_get_object (&item);
         GstPad *peer = gst_pad_get_peer (pad);
 
         if (peer == NULL) {
           ret = pad;
+          gst_object_ref (ret);
           done = TRUE;
         } else {
           gst_object_unref (peer);
-          gst_object_unref (pad);
         }
+        g_value_unset (&item);
         break;
       }
       case GST_ITERATOR_RESYNC:
@@ -567,6 +576,8 @@ get_unlinked_sink_ghost_pad (GnlOperation * operation)
         break;
     }
   }
+
+  g_value_reset (&item);
   gst_iterator_free (pads);
 
   if (ret)
@@ -744,7 +755,7 @@ gnl_operation_cleanup (GnlObject * object)
 
 static GstPad *
 gnl_operation_request_new_pad (GstElement * element, GstPadTemplate * templ,
-    const gchar * name)
+    const gchar * name, const GstCaps * caps)
 {
   GnlOperation *operation = (GnlOperation *) element;
   GstPad *ret;

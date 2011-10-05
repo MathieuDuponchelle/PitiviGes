@@ -57,6 +57,7 @@ struct _GnlSourcePrivate
 
   gulong padremovedid;          /* signal handler for element pad-removed signal */
   gulong padaddedid;            /* signal handler for element pad-added signal */
+  gulong probeid;               /* source pad probe id */
 
   gboolean pendingblock;        /* We have a pending pad_block */
   gboolean areblocked;          /* We already got blocked */
@@ -77,7 +78,9 @@ static gboolean gnl_source_send_event (GstElement * element, GstEvent * event);
 static GstStateChangeReturn
 gnl_source_change_state (GstElement * element, GstStateChange transition);
 
-static void pad_blocked_cb (GstPad * pad, gboolean blocked, GnlSource * source);
+static GstProbeReturn
+pad_blocked_cb (GstPad * pad, GstProbeType probetype,
+    gpointer udata, GnlSource * source);
 
 static gboolean
 gnl_source_control_element_func (GnlSource * source, GstElement * element);
@@ -213,9 +216,9 @@ element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
 
   GST_DEBUG_OBJECT (pad, "valid pad, about to add event probe and pad block");
 
-
-  if (!(gst_pad_set_blocked_async (pad, TRUE,
-              (GstPadBlockCallback) pad_blocked_cb, source)))
+  source->priv->probeid = gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCK,
+      (GstPadProbeCallback) pad_blocked_cb, source, NULL);
+  if (source->priv->probeid == 0)
     GST_WARNING_OBJECT (source, "Couldn't set Async pad blocking");
   else {
     source->priv->ghostedpad = pad;
@@ -241,9 +244,8 @@ element_pad_removed_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
       GST_DEBUG_OBJECT (source, "Clearing up ghostpad");
 
       source->priv->areblocked = FALSE;
-      gst_pad_set_blocked_async (pad, FALSE,
-          (GstPadBlockCallback) pad_blocked_cb, source);
-
+      gst_pad_remove_probe (pad, source->priv->probeid);
+      source->priv->probeid = 0;
 
       gnl_object_remove_ghost_pad ((GnlObject *) source,
           source->priv->ghostpad);
@@ -258,16 +260,16 @@ element_pad_removed_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
 }
 
 static gint
-compare_src_pad (GstPad * pad, GstCaps * caps)
+compare_src_pad (GValue * item, GstCaps * caps)
 {
-  gint ret;
+  gint ret = 1;
+  GstPad *pad = g_value_get_object (item);
+
+  GST_DEBUG_OBJECT (pad, "Trying pad for caps %" GST_PTR_FORMAT, caps);
 
   if (gst_pad_accept_caps (pad, caps))
     ret = 0;
-  else {
-    gst_object_unref (pad);
-    ret = 1;
-  }
+
   return ret;
 }
 
@@ -281,18 +283,23 @@ compare_src_pad (GstPad * pad, GstCaps * caps)
 static gboolean
 get_valid_src_pad (GnlSource * source, GstElement * element, GstPad ** pad)
 {
+  gboolean res = FALSE;
   GstIterator *srcpads;
+  GValue item = { 0, };
 
   g_return_val_if_fail (pad, FALSE);
 
   srcpads = gst_element_iterate_src_pads (element);
-  *pad = (GstPad *) gst_iterator_find_custom (srcpads,
-      (GCompareFunc) compare_src_pad, GNL_OBJECT (source)->caps);
+  if (gst_iterator_find_custom (srcpads, (GCompareFunc) compare_src_pad, &item,
+          GNL_OBJECT (source)->caps)) {
+    *pad = g_value_get_object (&item);
+    gst_object_ref (pad);
+    g_value_reset (&item);
+    res = TRUE;
+  }
   gst_iterator_free (srcpads);
 
-  if (*pad)
-    return TRUE;
-  return FALSE;
+  return res;
 }
 
 static gpointer
@@ -322,8 +329,8 @@ ghost_seek_pad (GnlSource * source)
 
   GST_DEBUG_OBJECT (source, "about to unblock %s:%s", GST_DEBUG_PAD_NAME (pad));
   source->priv->areblocked = FALSE;
-  gst_pad_set_blocked_async (pad, FALSE,
-      (GstPadBlockCallback) pad_blocked_cb, source);
+  gst_pad_remove_probe (pad, source->priv->probeid);
+  source->priv->probeid = 0;
   gst_element_no_more_pads (GST_ELEMENT (source));
 
   source->priv->pendingblock = FALSE;
@@ -332,16 +339,18 @@ beach:
   return NULL;
 }
 
-static void
-pad_blocked_cb (GstPad * pad, gboolean blocked, GnlSource * source)
+static GstProbeReturn
+pad_blocked_cb (GstPad * pad, GstProbeType ptype, gpointer unused_data,
+    GnlSource * source)
 {
-  GST_DEBUG_OBJECT (source, "blocked:%d pad:%s:%s",
-      blocked, GST_DEBUG_PAD_NAME (pad));
+  GST_DEBUG_OBJECT (pad, "probe callback");
 
-  if (blocked && !(source->priv->ghostpad) && !(source->priv->areblocked)) {
+  if (!source->priv->ghostpad && !source->priv->areblocked) {
     source->priv->areblocked = TRUE;
     g_thread_create ((GThreadFunc) ghost_seek_pad, source, FALSE, NULL);
   }
+
+  return GST_PROBE_OK;
 }
 
 
@@ -536,8 +545,8 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
           GST_LOG_OBJECT (source, "Trying to async block source pad %s:%s",
               GST_DEBUG_PAD_NAME (pad));
           source->priv->ghostedpad = pad;
-          gst_pad_set_blocked_async (pad, TRUE,
-              (GstPadBlockCallback) pad_blocked_cb, source);
+          source->priv->probeid = gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCK,
+              (GstPadProbeCallback) pad_blocked_cb, source, NULL);
           gst_object_unref (pad);
         }
       }
@@ -561,8 +570,8 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
             gst_ghost_pad_get_target ((GstGhostPad *) source->priv->ghostpad);
 
         if (target) {
-          gst_pad_set_blocked_async (target, FALSE,
-              (GstPadBlockCallback) pad_blocked_cb, source);
+          gst_pad_remove_probe (target, source->priv->probeid);
+          source->priv->probeid = 0;
           gst_object_unref (target);
         }
         gnl_object_remove_ghost_pad ((GnlObject *) source,

@@ -35,6 +35,8 @@ struct _GnlPadPrivate
   GstPadDirection dir;
   GstPadEventFunction eventfunc;
   GstPadQueryFunction queryfunc;
+
+  gulong probeid;
 };
 
 static GstEvent *
@@ -222,87 +224,81 @@ invalid_format:
 }
 
 static GstEvent *
-translate_outgoing_new_segment (GnlObject * object, GstEvent * event)
+translate_outgoing_segment (GnlObject * object, GstEvent * event)
 {
+  const GstSegment *orig;
+  GstSegment *segment;
   GstEvent *event2;
-  gboolean update;
-  gdouble rate;
-  GstFormat format;
-  gint64 start, stop, stream;
-  guint64 nstream;
 
   /* only modify the streamtime */
-  gst_event_parse_new_segment (event, &update, &rate, &format,
-      &start, &stop, &stream);
+  gst_event_parse_segment (event, &orig);
 
   GST_DEBUG_OBJECT (object,
-      "Got NEWSEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
-      GST_TIME_FORMAT, GST_TIME_ARGS (start), GST_TIME_ARGS (stop),
-      GST_TIME_ARGS (stream));
+      "Got SEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
+      GST_TIME_FORMAT, GST_TIME_ARGS (orig->start), GST_TIME_ARGS (orig->stop),
+      GST_TIME_ARGS (orig->time));
 
-  if (G_UNLIKELY (format != GST_FORMAT_TIME)) {
+  if (G_UNLIKELY (orig->format != GST_FORMAT_TIME)) {
     GST_WARNING_OBJECT (object,
-        "Can't translate newsegments with format != GST_FORMAT_TIME");
+        "Can't translate segments with format != GST_FORMAT_TIME");
     return event;
   }
 
-  gnl_media_to_object_time (object, stream, &nstream);
+  segment = gst_segment_copy (orig);
 
-  if (G_UNLIKELY (nstream > G_MAXINT64))
+  gnl_media_to_object_time (object, orig->time, &segment->time);
+
+  if (G_UNLIKELY (segment->time > G_MAXINT64))
     GST_WARNING_OBJECT (object, "Return value too big...");
 
   GST_DEBUG_OBJECT (object,
-      "Sending NEWSEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
-      GST_TIME_FORMAT, GST_TIME_ARGS (start), GST_TIME_ARGS (stop),
-      GST_TIME_ARGS (nstream));
-  event2 =
-      gst_event_new_new_segment (update, rate, format, start, stop,
-      (gint64) nstream);
+      "Sending SEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
+      GST_TIME_FORMAT, GST_TIME_ARGS (segment->start),
+      GST_TIME_ARGS (segment->stop), GST_TIME_ARGS (segment->time));
+
+  event2 = gst_event_new_segment (segment);
   gst_event_unref (event);
 
   return event2;
 }
 
 static GstEvent *
-translate_incoming_new_segment (GnlObject * object, GstEvent * event)
+translate_incoming_segment (GnlObject * object, GstEvent * event)
 {
   GstEvent *event2;
-  gboolean update;
-  gdouble rate;
-  GstFormat format;
-  gint64 start, stop, stream;
-  guint64 nstream;
+  const GstSegment *orig;
+  GstSegment *segment;
 
   /* only modify the streamtime */
-  gst_event_parse_new_segment (event, &update, &rate, &format,
-      &start, &stop, &stream);
+  gst_event_parse_segment (event, &orig);
 
   GST_DEBUG_OBJECT (object,
-      "Got NEWSEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
-      GST_TIME_FORMAT, GST_TIME_ARGS (start), GST_TIME_ARGS (stop),
-      GST_TIME_ARGS (stream));
+      "Got SEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
+      GST_TIME_FORMAT, GST_TIME_ARGS (orig->start), GST_TIME_ARGS (orig->stop),
+      GST_TIME_ARGS (orig->time));
 
-  if (G_UNLIKELY (format != GST_FORMAT_TIME)) {
+  if (G_UNLIKELY (orig->format != GST_FORMAT_TIME)) {
     GST_WARNING_OBJECT (object,
-        "Can't translate newsegments with format != GST_FORMAT_TIME");
+        "Can't translate segments with format != GST_FORMAT_TIME");
     return event;
   }
 
-  if (!gnl_object_to_media_time (object, stream, &nstream)) {
+  segment = gst_segment_copy (orig);
+
+  if (!gnl_object_to_media_time (object, orig->time, &segment->time)) {
     GST_DEBUG ("Can't convert media_time, using 0");
-    nstream = 0;
+    segment->time = 0;
   };
 
-  if (G_UNLIKELY (nstream > G_MAXINT64))
+  if (G_UNLIKELY (segment->time > G_MAXINT64))
     GST_WARNING_OBJECT (object, "Return value too big...");
 
   GST_DEBUG_OBJECT (object,
-      "Sending NEWSEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
-      GST_TIME_FORMAT, GST_TIME_ARGS (start), GST_TIME_ARGS (stop),
-      GST_TIME_ARGS (nstream));
-  event2 =
-      gst_event_new_new_segment (update, rate, format, start, stop,
-      (gint64) nstream);
+      "Sending SEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
+      GST_TIME_FORMAT, GST_TIME_ARGS (segment->start),
+      GST_TIME_ARGS (segment->stop), GST_TIME_ARGS (segment->time));
+
+  event2 = gst_event_new_segment (segment);
   gst_event_unref (event);
 
   return event2;
@@ -326,8 +322,8 @@ internalpad_event_function (GstPad * internal, GstEvent * event)
   switch (priv->dir) {
     case GST_PAD_SRC:{
       switch (GST_EVENT_TYPE (event)) {
-        case GST_EVENT_NEWSEGMENT:
-          event = translate_outgoing_new_segment (object, event);
+        case GST_EVENT_SEGMENT:
+          event = translate_outgoing_segment (object, event);
           break;
         default:
           break;
@@ -499,8 +495,8 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
       break;
     case GST_PAD_SINK:{
       switch (GST_EVENT_TYPE (event)) {
-        case GST_EVENT_NEWSEGMENT:
-          event = translate_incoming_new_segment (object, event);
+        case GST_EVENT_SEGMENT:
+          event = translate_incoming_segment (object, event);
           break;
         default:
           break;
@@ -753,20 +749,54 @@ gnl_object_ghost_pad_set_target (GnlObject * object, GstPad * ghost,
     return FALSE;
 
   if (target) {
-    GstCaps *negotiated_caps;
+    GstCaps *current_caps;
 
     /* if the target has negotiated caps, forward them to the ghost */
-    if ((negotiated_caps = gst_pad_get_negotiated_caps (target))) {
-      gst_pad_set_caps (ghost, negotiated_caps);
-      gst_caps_unref (negotiated_caps);
+    /* FIXME : I'm not sure we need this anymore */
+    if ((current_caps = gst_pad_get_current_caps (target))) {
+      gst_pad_set_caps (ghost, current_caps);
+      gst_caps_unref (current_caps);
     }
   }
 
 
-  if (!GST_OBJECT_IS_FLOATING (ghost))
+  if (!g_object_is_floating (ghost))
     control_internal_pad (ghost, object);
 
   return TRUE;
+}
+
+gboolean
+gnl_ghostpad_add_probe_outside (GstPad * pad, GstProbeType mask,
+    GstPadProbeCallback callback,
+    gpointer user_data, GDestroyNotify destroy_data)
+{
+  GnlPadPrivate *priv = gst_pad_get_element_private (pad);
+
+  g_return_val_if_fail (priv, FALSE);
+  if (G_UNLIKELY (priv->probeid))
+    GST_WARNING_OBJECT (pad, "Pad already had a probe set !");
+
+  priv->probeid =
+      gst_pad_add_probe (pad, mask, callback, user_data, destroy_data);
+
+  if (G_UNLIKELY (priv->probeid == 0))
+    return FALSE;
+
+  return TRUE;
+}
+
+void
+gnl_ghostpad_remove_probe (GstPad * pad)
+{
+  GnlPadPrivate *priv = gst_pad_get_element_private (pad);
+
+  g_return_if_fail (priv);
+
+  if (priv->probeid) {
+    gst_pad_remove_probe (pad, priv->probeid);
+    priv->probeid = 0;
+  }
 }
 
 void

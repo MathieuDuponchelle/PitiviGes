@@ -44,6 +44,12 @@ gboolean gnl_object_ghost_pad_set_target (GnlObject * object,
 
 void gnl_object_remove_ghost_pad (GnlObject * object, GstPad * ghost);
 
+gboolean gnl_ghostpad_add_probe_outside (GstPad *pad, GstProbeType mask,
+					 GstPadProbeCallback callback,
+					 gpointer user_data,
+					 GDestroyNotify destroy_data);
+void gnl_ghostpad_remove_probe (GstPad *pad);
+
 void gnl_init_ghostpad_category (void);
 
 G_END_DECLS
