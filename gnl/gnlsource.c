@@ -199,6 +199,8 @@ static void
 element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
     GnlSource * source)
 {
+  GstCaps *srccaps;
+
   GST_DEBUG_OBJECT (source, "pad %s:%s", GST_DEBUG_PAD_NAME (pad));
 
   if (source->priv->ghostpad || source->priv->pendingblock) {
@@ -209,10 +211,13 @@ element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
     return;
   }
 
-  if (!(gst_pad_accept_caps (pad, GNL_OBJECT (source)->caps))) {
+  srccaps = gst_pad_get_caps (pad, NULL);
+  if (!gst_caps_can_intersect (srccaps, GNL_OBJECT (source)->caps)) {
+    gst_caps_unref (srccaps);
     GST_DEBUG_OBJECT (source, "Pad doesn't have valid caps, ignoring");
     return;
   }
+  gst_caps_unref (srccaps);
 
   GST_DEBUG_OBJECT (pad, "valid pad, about to add event probe and pad block");
 
@@ -266,11 +271,16 @@ compare_src_pad (GValue * item, GstCaps * caps)
 {
   gint ret = 1;
   GstPad *pad = g_value_get_object (item);
+  GstCaps *padcaps;
 
   GST_DEBUG_OBJECT (pad, "Trying pad for caps %" GST_PTR_FORMAT, caps);
 
-  if (gst_pad_accept_caps (pad, caps))
+  padcaps = gst_pad_get_caps (pad, NULL);
+
+  if (gst_caps_can_intersect (padcaps, caps))
     ret = 0;
+
+  gst_caps_unref (padcaps);
 
   return ret;
 }
