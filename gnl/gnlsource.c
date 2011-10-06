@@ -244,8 +244,10 @@ element_pad_removed_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
       GST_DEBUG_OBJECT (source, "Clearing up ghostpad");
 
       source->priv->areblocked = FALSE;
-      gst_pad_remove_probe (pad, source->priv->probeid);
-      source->priv->probeid = 0;
+      if (source->priv->probeid) {
+        gst_pad_remove_probe (pad, source->priv->probeid);
+        source->priv->probeid = 0;
+      }
 
       gnl_object_remove_ghost_pad ((GnlObject *) source,
           source->priv->ghostpad);
@@ -329,8 +331,10 @@ ghost_seek_pad (GnlSource * source)
 
   GST_DEBUG_OBJECT (source, "about to unblock %s:%s", GST_DEBUG_PAD_NAME (pad));
   source->priv->areblocked = FALSE;
-  gst_pad_remove_probe (pad, source->priv->probeid);
-  source->priv->probeid = 0;
+  if (source->priv->probeid) {
+    gst_pad_remove_probe (pad, source->priv->probeid);
+    source->priv->probeid = 0;
+  }
   gst_element_no_more_pads (GST_ELEMENT (source));
 
   source->priv->pendingblock = FALSE;
@@ -570,8 +574,10 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
             gst_ghost_pad_get_target ((GstGhostPad *) source->priv->ghostpad);
 
         if (target) {
-          gst_pad_remove_probe (target, source->priv->probeid);
-          source->priv->probeid = 0;
+          if (source->priv->probeid) {
+            gst_pad_remove_probe (target, source->priv->probeid);
+            source->priv->probeid = 0;
+          }
           gst_object_unref (target);
         }
         gnl_object_remove_ghost_pad ((GnlObject *) source,
