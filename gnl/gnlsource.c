@@ -293,7 +293,7 @@ get_valid_src_pad (GnlSource * source, GstElement * element, GstPad ** pad)
   if (gst_iterator_find_custom (srcpads, (GCompareFunc) compare_src_pad, &item,
           GNL_OBJECT (source)->caps)) {
     *pad = g_value_get_object (&item);
-    gst_object_ref (pad);
+    gst_object_ref (*pad);
     g_value_reset (&item);
     res = TRUE;
   }
