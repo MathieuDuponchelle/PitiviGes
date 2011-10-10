@@ -142,10 +142,11 @@ static void
 gnl_source_dispose (GObject * object)
 {
   GnlSource *source = (GnlSource *) object;
+  GnlSourcePrivate *priv = source->priv;
 
   GST_DEBUG_OBJECT (object, "dispose");
 
-  if (source->priv->dispose_has_run)
+  if (priv->dispose_has_run)
     return;
 
   if (source->element) {
@@ -153,17 +154,17 @@ gnl_source_dispose (GObject * object)
     source->element = NULL;
   }
 
-  source->priv->dispose_has_run = TRUE;
-  if (source->priv->event)
-    gst_event_unref (source->priv->event);
+  priv->dispose_has_run = TRUE;
+  if (priv->event)
+    gst_event_unref (priv->event);
 
-  if (source->priv->ghostpad)
-    gnl_object_remove_ghost_pad ((GnlObject *) object, source->priv->ghostpad);
-  source->priv->ghostpad = NULL;
+  if (priv->ghostpad)
+    gnl_object_remove_ghost_pad ((GnlObject *) object, priv->ghostpad);
+  priv->ghostpad = NULL;
 
-  if (source->priv->staticpad) {
-    gst_object_unref (source->priv->staticpad);
-    source->priv->staticpad = NULL;
+  if (priv->staticpad) {
+    gst_object_unref (priv->staticpad);
+    priv->staticpad = NULL;
   }
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
@@ -200,14 +201,14 @@ element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
     GnlSource * source)
 {
   GstCaps *srccaps;
+  GnlSourcePrivate *priv = source->priv;
 
   GST_DEBUG_OBJECT (source, "pad %s:%s", GST_DEBUG_PAD_NAME (pad));
 
-  if (source->priv->ghostpad || source->priv->pendingblock) {
+  if (priv->ghostpad || priv->pendingblock) {
     GST_WARNING_OBJECT (source,
         "We already have (pending) ghost-ed a valid source pad (ghostpad:%s:%s, pendingblock:%d",
-        GST_DEBUG_PAD_NAME (source->priv->ghostpad),
-        source->priv->pendingblock);
+        GST_DEBUG_PAD_NAME (priv->ghostpad), priv->pendingblock);
     return;
   }
 
@@ -221,13 +222,13 @@ element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
 
   GST_DEBUG_OBJECT (pad, "valid pad, about to add event probe and pad block");
 
-  source->priv->probeid = gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCK,
+  priv->probeid = gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCK,
       (GstPadProbeCallback) pad_blocked_cb, source, NULL);
-  if (source->priv->probeid == 0)
+  if (priv->probeid == 0)
     GST_WARNING_OBJECT (source, "Couldn't set Async pad blocking");
   else {
-    source->priv->ghostedpad = pad;
-    source->priv->pendingblock = TRUE;
+    priv->ghostedpad = pad;
+    priv->pendingblock = TRUE;
   }
 
   GST_DEBUG_OBJECT (source, "Done handling pad %s:%s",
@@ -238,29 +239,30 @@ static void
 element_pad_removed_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
     GnlSource * source)
 {
-  GST_DEBUG_OBJECT (source, "pad %s:%s (controlled pad %s:%s)",
-      GST_DEBUG_PAD_NAME (pad), GST_DEBUG_PAD_NAME (source->priv->ghostedpad));
+  GnlSourcePrivate *priv = source->priv;
 
-  if (pad == source->priv->ghostedpad) {
+  GST_DEBUG_OBJECT (source, "pad %s:%s (controlled pad %s:%s)",
+      GST_DEBUG_PAD_NAME (pad), GST_DEBUG_PAD_NAME (priv->ghostedpad));
+
+  if (pad == priv->ghostedpad) {
     GST_DEBUG_OBJECT (source,
         "The removed pad is the controlled pad, clearing up");
 
-    if (source->priv->ghostpad) {
+    if (priv->ghostpad) {
       GST_DEBUG_OBJECT (source, "Clearing up ghostpad");
 
-      source->priv->areblocked = FALSE;
-      if (source->priv->probeid) {
-        gst_pad_remove_probe (pad, source->priv->probeid);
-        source->priv->probeid = 0;
+      priv->areblocked = FALSE;
+      if (priv->probeid) {
+        gst_pad_remove_probe (pad, priv->probeid);
+        priv->probeid = 0;
       }
 
-      gnl_object_remove_ghost_pad ((GnlObject *) source,
-          source->priv->ghostpad);
-      source->priv->ghostpad = NULL;
+      gnl_object_remove_ghost_pad ((GnlObject *) source, priv->ghostpad);
+      priv->ghostpad = NULL;
     }
 
-    source->priv->pendingblock = FALSE;
-    source->priv->ghostedpad = NULL;
+    priv->pendingblock = FALSE;
+    priv->ghostedpad = NULL;
   } else {
     GST_DEBUG_OBJECT (source, "The removed pad is NOT our controlled pad");
   }
@@ -317,37 +319,38 @@ get_valid_src_pad (GnlSource * source, GstElement * element, GstPad ** pad)
 static gpointer
 ghost_seek_pad (GnlSource * source)
 {
-  GstPad *pad = source->priv->ghostedpad;
+  GnlSourcePrivate *priv = source->priv;
+  GstPad *pad = priv->ghostedpad;
 
-  if (source->priv->ghostpad || !pad)
+  if (priv->ghostpad || !pad)
     goto beach;
 
   GST_DEBUG_OBJECT (source, "ghosting %s:%s", GST_DEBUG_PAD_NAME (pad));
 
-  source->priv->ghostpad = gnl_object_ghost_pad_full
+  priv->ghostpad = gnl_object_ghost_pad_full
       ((GnlObject *) source, GST_PAD_NAME (pad), pad, TRUE);
   GST_DEBUG_OBJECT (source, "emitting no more pads");
-  gst_pad_set_active (source->priv->ghostpad, TRUE);
+  gst_pad_set_active (priv->ghostpad, TRUE);
 
-  if (source->priv->event) {
+  if (priv->event) {
     GST_DEBUG_OBJECT (source, "sending queued seek event");
-    if (!(gst_pad_send_event (source->priv->ghostpad, source->priv->event)))
+    if (!(gst_pad_send_event (priv->ghostpad, priv->event)))
       GST_ELEMENT_ERROR (source, RESOURCE, SEEK,
           (NULL), ("Sending initial seek to upstream element failed"));
     else
       GST_DEBUG_OBJECT (source, "queued seek sent");
-    source->priv->event = NULL;
+    priv->event = NULL;
   }
 
   GST_DEBUG_OBJECT (source, "about to unblock %s:%s", GST_DEBUG_PAD_NAME (pad));
-  source->priv->areblocked = FALSE;
-  if (source->priv->probeid) {
-    gst_pad_remove_probe (pad, source->priv->probeid);
-    source->priv->probeid = 0;
+  priv->areblocked = FALSE;
+  if (priv->probeid) {
+    gst_pad_remove_probe (pad, priv->probeid);
+    priv->probeid = 0;
   }
   gst_element_no_more_pads (GST_ELEMENT (source));
 
-  source->priv->pendingblock = FALSE;
+  priv->pendingblock = FALSE;
 
 beach:
   return NULL;
@@ -392,7 +395,7 @@ has_dynamic_srcpads (GstElement * element)
       break;
     }
 
-    templates = g_list_next (templates);
+    templates = templates->next;
   }
 
   return ret;
@@ -401,6 +404,7 @@ has_dynamic_srcpads (GstElement * element)
 static gboolean
 gnl_source_control_element_func (GnlSource * source, GstElement * element)
 {
+  GnlSourcePrivate *priv = source->priv;
   GstPad *pad = NULL;
 
   g_return_val_if_fail (source->element == NULL, FALSE);
@@ -412,20 +416,20 @@ gnl_source_control_element_func (GnlSource * source, GstElement * element)
   gst_object_ref (element);
 
   if (get_valid_src_pad (source, source->element, &pad)) {
-    source->priv->staticpad = pad;
+    priv->staticpad = pad;
     GST_DEBUG_OBJECT (source,
         "There is a valid source pad, we consider the object as NOT having dynamic pads");
-    source->priv->dynamicpads = FALSE;
+    priv->dynamicpads = FALSE;
   } else {
-    source->priv->dynamicpads = has_dynamic_srcpads (element);
+    priv->dynamicpads = has_dynamic_srcpads (element);
     GST_DEBUG_OBJECT (source, "No valid source pad yet, dynamicpads:%d",
-        source->priv->dynamicpads);
-    if (source->priv->dynamicpads) {
+        priv->dynamicpads);
+    if (priv->dynamicpads) {
       /* connect to pad-added/removed signals */
-      source->priv->padremovedid = g_signal_connect
+      priv->padremovedid = g_signal_connect
           (G_OBJECT (element), "pad-removed",
           G_CALLBACK (element_pad_removed_cb), source);
-      source->priv->padaddedid =
+      priv->padaddedid =
           g_signal_connect (G_OBJECT (element), "pad-added",
           G_CALLBACK (element_pad_added_cb), source);
     }
@@ -460,6 +464,7 @@ static gboolean
 gnl_source_remove_element (GstBin * bin, GstElement * element)
 {
   GnlSource *source = (GnlSource *) bin;
+  GnlSourcePrivate *priv = source->priv;
   gboolean pret;
 
   GST_DEBUG_OBJECT (source, "Removing element %s", GST_ELEMENT_NAME (element));
@@ -473,28 +478,28 @@ gnl_source_remove_element (GstBin * bin, GstElement * element)
 
   if (pret) {
     /* remove ghostpad */
-    if (source->priv->ghostpad) {
-      gnl_object_remove_ghost_pad ((GnlObject *) bin, source->priv->ghostpad);
-      source->priv->ghostpad = NULL;
+    if (priv->ghostpad) {
+      gnl_object_remove_ghost_pad ((GnlObject *) bin, priv->ghostpad);
+      priv->ghostpad = NULL;
     }
 
     /* discard events */
-    if (source->priv->event) {
-      gst_event_unref (source->priv->event);
-      source->priv->event = NULL;
+    if (priv->event) {
+      gst_event_unref (priv->event);
+      priv->event = NULL;
     }
 
     /* remove signal handlers */
-    if (source->priv->padremovedid) {
-      g_signal_handler_disconnect (source->element, source->priv->padremovedid);
-      source->priv->padremovedid = 0;
+    if (priv->padremovedid) {
+      g_signal_handler_disconnect (source->element, priv->padremovedid);
+      priv->padremovedid = 0;
     }
-    if (source->priv->padaddedid) {
-      g_signal_handler_disconnect (source->element, source->priv->padaddedid);
-      source->priv->padaddedid = 0;
+    if (priv->padaddedid) {
+      g_signal_handler_disconnect (source->element, priv->padaddedid);
+      priv->padaddedid = 0;
     }
 
-    source->priv->dynamicpads = FALSE;
+    priv->dynamicpads = FALSE;
     gst_object_unref (element);
     source->element = NULL;
   }
@@ -529,6 +534,7 @@ static GstStateChangeReturn
 gnl_source_change_state (GstElement * element, GstStateChange transition)
 {
   GnlSource *source = (GnlSource *) element;
+  GnlSourcePrivate *priv = source->priv;
   GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
 
   switch (transition) {
@@ -541,25 +547,25 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
       }
 
       GST_LOG_OBJECT (source, "ghostpad:%p, dynamicpads:%d",
-          source->priv->ghostpad, source->priv->dynamicpads);
+          priv->ghostpad, priv->dynamicpads);
 
-      if (!(source->priv->ghostpad) && !source->priv->pendingblock) {
+      if (!(priv->ghostpad) && !priv->pendingblock) {
         GstPad *pad;
 
         GST_LOG_OBJECT (source, "no ghostpad and not dynamic pads");
 
         /* Do an async block on valid source pad */
 
-        if (!source->priv->staticpad
+        if (!priv->staticpad
             && !(get_valid_src_pad (source, source->element, &pad))) {
           GST_DEBUG_OBJECT (source, "Couldn't find a valid source pad");
         } else {
-          if (source->priv->staticpad)
-            pad = gst_object_ref (source->priv->staticpad);
+          if (priv->staticpad)
+            pad = gst_object_ref (priv->staticpad);
           GST_LOG_OBJECT (source, "Trying to async block source pad %s:%s",
               GST_DEBUG_PAD_NAME (pad));
-          source->priv->ghostedpad = pad;
-          source->priv->probeid = gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCK,
+          priv->ghostedpad = pad;
+          priv->probeid = gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCK,
               (GstPadProbeCallback) pad_blocked_cb, source, NULL);
           gst_object_unref (pad);
         }
@@ -579,23 +585,22 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
 
   switch (transition) {
     case GST_STATE_CHANGE_PAUSED_TO_READY:
-      if (source->priv->ghostpad) {
+      if (priv->ghostpad) {
         GstPad *target =
-            gst_ghost_pad_get_target ((GstGhostPad *) source->priv->ghostpad);
+            gst_ghost_pad_get_target ((GstGhostPad *) priv->ghostpad);
 
         if (target) {
-          if (source->priv->probeid) {
-            gst_pad_remove_probe (target, source->priv->probeid);
-            source->priv->probeid = 0;
+          if (priv->probeid) {
+            gst_pad_remove_probe (target, priv->probeid);
+            priv->probeid = 0;
           }
           gst_object_unref (target);
         }
-        gnl_object_remove_ghost_pad ((GnlObject *) source,
-            source->priv->ghostpad);
-        source->priv->ghostpad = NULL;
-        source->priv->ghostedpad = NULL;
-        source->priv->areblocked = FALSE;
-        source->priv->pendingblock = FALSE;
+        gnl_object_remove_ghost_pad ((GnlObject *) source, priv->ghostpad);
+        priv->ghostpad = NULL;
+        priv->ghostedpad = NULL;
+        priv->areblocked = FALSE;
+        priv->pendingblock = FALSE;
       }
     default:
       break;

@@ -330,6 +330,7 @@ gnl_object_to_media_time (GnlObject * object, GstClockTime otime,
         (object->media_start == GST_CLOCK_TIME_NONE) ? 0 : object->media_start;
     return FALSE;
   }
+
   if (G_UNLIKELY ((otime >= object->stop))) {
     GST_DEBUG_OBJECT (object, "ObjectTime is after stop");
     if (G_LIKELY (GST_CLOCK_TIME_IS_VALID (object->media_stop)))
@@ -393,6 +394,7 @@ gnl_media_to_object_time (GnlObject * object, GstClockTime mtime,
     *otime = object->start;
     return FALSE;
   }
+
   if (G_UNLIKELY ((object->media_stop != GST_CLOCK_TIME_NONE)
           && (mtime >= object->media_stop))) {
     GST_DEBUG_OBJECT (object,
@@ -504,8 +506,7 @@ update_values (GnlObject * object)
 
   /* check if rate has changed */
   if ((object->media_duration != GST_CLOCK_TIME_NONE)
-      && (object->duration)
-      && (object->media_duration)
+      && (object->duration) && (object->media_duration)
       && (((gdouble) object->media_duration / (gdouble) object->duration) !=
           object->rate)) {
     object->rate =

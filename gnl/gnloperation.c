@@ -243,7 +243,7 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
   if (G_LIKELY ((factory = gst_element_get_factory (element)))) {
 
     for (templates = gst_element_factory_get_static_pad_templates (factory);
-        templates; templates = g_list_next (templates)) {
+        templates; templates = templates->next) {
       GstStaticPadTemplate *template = (GstStaticPadTemplate *) templates->data;
 
       if (template->direction == GST_PAD_SRC)
@@ -258,6 +258,7 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
     GList *tmp =
         gst_element_class_get_pad_template_list (GST_ELEMENT_GET_CLASS
         (element));
+
     while (tmp) {
       GstPadTemplate *template = (GstPadTemplate *) tmp->data;
 
@@ -268,7 +269,7 @@ element_is_valid_filter (GstElement * element, gboolean * isdynamic)
           *isdynamic = TRUE;
         havesink = TRUE;
       }
-      tmp = g_list_next (tmp);
+      tmp = tmp->next;
     }
   }
   return (havesink && havesrc);
@@ -301,6 +302,7 @@ get_src_pad (GstElement * element)
   }
   g_value_reset (&item);
   gst_iterator_free (it);
+
   return srcpad;
 }
 
@@ -481,11 +483,11 @@ get_unused_static_sink_pad (GnlOperation * operation)
         GstPad *pad = g_value_get_object (&item);
 
         if (gst_pad_get_direction (pad) == GST_PAD_SINK) {
-          GList *tmp = operation->sinks;
+          GList *tmp;
           gboolean istaken = FALSE;
 
           /* 1. figure out if one of our sink ghostpads has this pad as target */
-          for (; tmp; tmp = g_list_next (tmp)) {
+          for (tmp = operation->sinks; tmp; tmp = tmp->next) {
             GstGhostPad *gpad = (GstGhostPad *) tmp->data;
             GstPad *target = gst_ghost_pad_get_target (gpad);
 
@@ -602,7 +604,7 @@ get_request_sink_pad (GnlOperation * operation)
   templates = gst_element_class_get_pad_template_list
       (GST_ELEMENT_GET_CLASS (operation->element));
 
-  for (; templates; templates = g_list_next (templates)) {
+  for (; templates; templates = templates->next) {
     GstPadTemplate *templ = (GstPadTemplate *) templates->data;
 
     GST_LOG_OBJECT (operation->element, "Trying template %s",
