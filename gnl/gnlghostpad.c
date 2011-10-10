@@ -435,7 +435,8 @@ internalpad_query_function (GstPad * internal, GstQuery * query)
   GnlObject *object = priv->object;
   gboolean ret;
 
-  GST_DEBUG_OBJECT (internal, "querytype:%d", GST_QUERY_TYPE (query));
+  GST_DEBUG_OBJECT (internal, "querytype:%s",
+      gst_query_type_get_name (GST_QUERY_TYPE (query)));
 
   if (!(priv->queryfunc)) {
     GST_WARNING_OBJECT (internal,
