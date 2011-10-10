@@ -35,8 +35,6 @@ struct _GnlPadPrivate
   GstPadDirection dir;
   GstPadEventFunction eventfunc;
   GstPadQueryFunction queryfunc;
-
-  gulong probeid;
 };
 
 static GstEvent *
@@ -595,7 +593,7 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
   if (G_UNLIKELY (!(priv = gst_pad_get_element_private (internal)))) {
     GST_DEBUG_OBJECT (internal,
         "Creating a GnlPadPrivate to put in element_private");
-    priv = g_slice_new (GnlPadPrivate);
+    priv = g_slice_new0 (GnlPadPrivate);
 
     /* Remember existing pad functions */
     priv->eventfunc = GST_PAD_EVENTFUNC (internal);
@@ -696,7 +694,7 @@ gnl_object_ghost_pad_no_target (GnlObject * object, const gchar * name,
   GST_DEBUG ("grabbing existing pad functions");
 
   /* remember the existing ghostpad event/query/link/unlink functions */
-  priv = g_slice_new (GnlPadPrivate);
+  priv = g_slice_new0 (GnlPadPrivate);
   priv->dir = dir;
   priv->object = object;
 
@@ -764,39 +762,6 @@ gnl_object_ghost_pad_set_target (GnlObject * object, GstPad * ghost,
     control_internal_pad (ghost, object);
 
   return TRUE;
-}
-
-gboolean
-gnl_ghostpad_add_probe_outside (GstPad * pad, GstProbeType mask,
-    GstPadProbeCallback callback,
-    gpointer user_data, GDestroyNotify destroy_data)
-{
-  GnlPadPrivate *priv = gst_pad_get_element_private (pad);
-
-  g_return_val_if_fail (priv, FALSE);
-  if (G_UNLIKELY (priv->probeid))
-    GST_WARNING_OBJECT (pad, "Pad already had a probe set !");
-
-  priv->probeid =
-      gst_pad_add_probe (pad, mask, callback, user_data, destroy_data);
-
-  if (G_UNLIKELY (priv->probeid == 0))
-    return FALSE;
-
-  return TRUE;
-}
-
-void
-gnl_ghostpad_remove_probe (GstPad * pad)
-{
-  GnlPadPrivate *priv = gst_pad_get_element_private (pad);
-
-  g_return_if_fail (priv);
-
-  if (priv->probeid) {
-    gst_pad_remove_probe (pad, priv->probeid);
-    priv->probeid = 0;
-  }
 }
 
 void
