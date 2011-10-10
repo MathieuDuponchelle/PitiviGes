@@ -563,7 +563,7 @@ get_unlinked_sink_ghost_pad (GnlOperation * operation)
         } else {
           gst_object_unref (peer);
         }
-        g_value_unset (&item);
+        g_value_reset (&item);
         break;
       }
       case GST_ITERATOR_RESYNC:
@@ -579,7 +579,7 @@ get_unlinked_sink_ghost_pad (GnlOperation * operation)
     }
   }
 
-  g_value_reset (&item);
+  g_value_unset (&item);
   gst_iterator_free (pads);
 
   if (ret)
