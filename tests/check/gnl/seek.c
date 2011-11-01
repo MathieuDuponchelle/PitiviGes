@@ -51,7 +51,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
       G_CALLBACK (composition_pad_added_cb), collect);
 
   sinkpad = gst_element_get_static_pad (sink, "sink");
-  gst_pad_add_probe (sinkpad, GST_PROBE_TYPE_EVENT,
+  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_EVENT,
       (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));

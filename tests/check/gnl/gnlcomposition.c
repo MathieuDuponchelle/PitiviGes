@@ -29,20 +29,20 @@ static int composition_pad_removed;
 static int seek_events;
 static gulong blockprobeid;
 
-static GstProbeReturn
-on_source1_pad_event_cb (GstPad * pad, GstProbeType ptype,
+static GstPadProbeReturn
+on_source1_pad_event_cb (GstPad * pad, GstPadProbeType ptype,
     GstEvent * event, gpointer user_data)
 {
   if (event->type == GST_EVENT_SEEK)
     ++seek_events;
 
-  return GST_PROBE_OK;
+  return GST_PAD_PROBE_OK;
 }
 
 static void
 on_source1_pad_added_cb (GstElement * source, GstPad * pad, gpointer user_data)
 {
-  gst_pad_add_probe (pad, GST_PROBE_TYPE_EVENT,
+  gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_EVENT,
       (GstPadProbeCallback) on_source1_pad_event_cb, NULL, NULL);
 }
 
@@ -230,8 +230,8 @@ GST_START_TEST (test_remove_invalid_object)
 
 GST_END_TEST;
 
-static GstProbeReturn
-pad_block (GstPad * pad, GstProbeType ptype, gpointer bedata,
+static GstPadProbeReturn
+pad_block (GstPad * pad, GstPadProbeType ptype, gpointer bedata,
     gpointer user_data)
 {
   GstPad *ghost;
@@ -246,7 +246,7 @@ pad_block (GstPad * pad, GstProbeType ptype, gpointer bedata,
 
   gst_pad_remove_probe (pad, blockprobeid);
 
-  return GST_PROBE_OK;
+  return GST_PAD_PROBE_OK;
 }
 
 static void
@@ -329,7 +329,7 @@ GST_START_TEST (test_no_more_pads_race)
   videotestsrc2 = gst_element_factory_make ("videotestsrc", "videotestsrc2");
   pad = gst_element_get_static_pad (videotestsrc2, "src");
   blockprobeid =
-      gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCKING,
+      gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCKING,
       (GstPadProbeCallback) pad_block, bin, NULL);
   gst_bin_add (bin, videotestsrc2);
   gst_bin_add (GST_BIN (source2), GST_ELEMENT (bin));

@@ -95,7 +95,7 @@ compare_segments (Segment * segment, GstEvent * event)
   return TRUE;
 }
 
-static GstProbeReturn
+static GstPadProbeReturn
 sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * collect)
 {
   Segment * segment;
@@ -111,24 +111,24 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
     collect->gotsegment = TRUE;
   }
 
-  return GST_PROBE_OK;
+  return GST_PAD_PROBE_OK;
 }
 
-static GstProbeReturn
+static GstPadProbeReturn
 sinkpad_buffer_probe (GstPad * sinkpad, GstBuffer * buffer, CollectStructure * collect)
 {
   fail_if(!collect->gotsegment);
-  return GST_PROBE_OK;
+  return GST_PAD_PROBE_OK;
 }
 
-static GstProbeReturn
-sinkpad_probe (GstPad *sinkpad, GstProbeType ptype, gpointer data, CollectStructure * collect)
+static GstPadProbeReturn
+sinkpad_probe (GstPad *sinkpad, GstPadProbeType ptype, gpointer data, CollectStructure * collect)
 {
-  if (ptype & GST_PROBE_TYPE_BUFFER)
+  if (ptype & GST_PAD_PROBE_TYPE_BUFFER)
     return sinkpad_buffer_probe (sinkpad, (GstBuffer*) data, collect);
-  if (ptype & GST_PROBE_TYPE_EVENT)
+  if (ptype & GST_PAD_PROBE_TYPE_EVENT)
     return sinkpad_event_probe (sinkpad, (GstEvent *) data, collect);
-  return GST_PROBE_OK;
+  return GST_PAD_PROBE_OK;
 }
 
 static GstElement *

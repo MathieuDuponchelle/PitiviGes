@@ -78,8 +78,8 @@ static gboolean gnl_source_send_event (GstElement * element, GstEvent * event);
 static GstStateChangeReturn
 gnl_source_change_state (GstElement * element, GstStateChange transition);
 
-static GstProbeReturn
-pad_blocked_cb (GstPad * pad, GstProbeType probetype,
+static GstPadProbeReturn
+pad_blocked_cb (GstPad * pad, GstPadProbeType probetype,
     gpointer udata, GnlSource * source);
 
 static gboolean
@@ -222,7 +222,7 @@ element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
 
   GST_DEBUG_OBJECT (pad, "valid pad, about to add event probe and pad block");
 
-  priv->probeid = gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCK,
+  priv->probeid = gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCK,
       (GstPadProbeCallback) pad_blocked_cb, source, NULL);
   if (priv->probeid == 0)
     GST_WARNING_OBJECT (source, "Couldn't set Async pad blocking");
@@ -356,8 +356,8 @@ beach:
   return NULL;
 }
 
-static GstProbeReturn
-pad_blocked_cb (GstPad * pad, GstProbeType ptype, gpointer unused_data,
+static GstPadProbeReturn
+pad_blocked_cb (GstPad * pad, GstPadProbeType ptype, gpointer unused_data,
     GnlSource * source)
 {
   GST_DEBUG_OBJECT (pad, "probe callback");
@@ -367,7 +367,7 @@ pad_blocked_cb (GstPad * pad, GstProbeType ptype, gpointer unused_data,
     g_thread_create ((GThreadFunc) ghost_seek_pad, source, FALSE, NULL);
   }
 
-  return GST_PROBE_OK;
+  return GST_PAD_PROBE_OK;
 }
 
 
@@ -565,7 +565,7 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
           GST_LOG_OBJECT (source, "Trying to async block source pad %s:%s",
               GST_DEBUG_PAD_NAME (pad));
           priv->ghostedpad = pad;
-          priv->probeid = gst_pad_add_probe (pad, GST_PROBE_TYPE_BLOCK,
+          priv->probeid = gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCK,
               (GstPadProbeCallback) pad_blocked_cb, source, NULL);
           gst_object_unref (pad);
         }
