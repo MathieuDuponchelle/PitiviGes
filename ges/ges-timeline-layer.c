@@ -36,14 +36,16 @@
 
 #define LAYER_HEIGHT 10
 
-void track_object_added_cb (GESTimelineObject * object,
+static void track_object_added_cb (GESTimelineObject * object,
     GESTrackObject * track_object, GESTimelineLayer * layer);
-static void track_object_start_changed_cb (GESTrackObject * track_object,
+static void track_object_changed_cb (GESTrackObject * track_object,
     GParamSpec * arg G_GNUC_UNUSED, GESTimelineObject * object);
-void calculate_transition (GESTrackObject * track_object,
+static void calculate_transitions (GESTrackObject * track_object,
+    GESTimelineObject * object);
+static void calculate_next_transition (GESTrackObject * track_object,
     GESTimelineObject * object);
 
-void
+static void
 timeline_object_height_changed_cb (GESTimelineObject * obj,
     GESTrackEffect * tr_eff, GESTimelineObject * second_obj);
 
@@ -317,8 +319,7 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
       (GCompareFunc) objects_start_compare);
 
   if (layer->priv->auto_transition) {
-    if (GES_IS_TIMELINE_SOURCE (object)
-        && (ges_timeline_layer_get_priority (layer) != 99)) {
+    if (GES_IS_TIMELINE_SOURCE (object)) {
       g_signal_connect (G_OBJECT (object), "track-object-added",
           G_CALLBACK (track_object_added_cb), layer);
     }
@@ -352,21 +353,46 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
   return TRUE;
 }
 
-void
+static void
+track_object_duration_cb (GESTrackObject * track_object,
+    GParamSpec * arg G_GNUC_UNUSED, GESTimelineObject * object)
+{
+  if (G_LIKELY (GES_IS_TRACK_SOURCE (track_object)))
+    GST_DEBUG ("Here we should recalculate");
+  calculate_next_transition (track_object, object);
+}
+
+static void
 track_object_added_cb (GESTimelineObject * object,
     GESTrackObject * track_object, GESTimelineLayer * layer)
 {
   if (GES_IS_TRACK_SOURCE (track_object)) {
     g_signal_connect (G_OBJECT (track_object), "notify::start",
-        G_CALLBACK (track_object_start_changed_cb), object);
-    calculate_transition (track_object, object);
+        G_CALLBACK (track_object_changed_cb), object);
+    g_signal_connect (G_OBJECT (track_object), "notify::duration",
+        G_CALLBACK (track_object_duration_cb), object);
+    calculate_transitions (track_object, object);
   }
 
   g_object_unref (layer);
   return;
 }
 
-void
+static void
+track_object_removed_cb (GESTimelineObject * object,
+    GESTrackObject * track_object, GESTimelineLayer * layer)
+{
+  if (GES_IS_TRACK_SOURCE (track_object)) {
+    g_signal_handlers_disconnect_by_func (track_object, track_object_changed_cb,
+        object);
+    calculate_transitions (track_object, object);
+  }
+
+  g_object_unref (layer);
+  return;
+}
+
+static void
 timeline_object_height_changed_cb (GESTimelineObject * obj,
     GESTrackEffect * tr_eff, GESTimelineObject * second_obj)
 {
@@ -376,69 +402,111 @@ timeline_object_height_changed_cb (GESTimelineObject * obj,
 }
 
 static void
-track_object_start_changed_cb (GESTrackObject * track_object,
+track_object_changed_cb (GESTrackObject * track_object,
     GParamSpec * arg G_GNUC_UNUSED, GESTimelineObject * object)
 {
-  if (GES_IS_TRACK_SOURCE (track_object)) {
-    calculate_transition (track_object, object);
-  }
+  if (G_LIKELY (GES_IS_TRACK_SOURCE (track_object)))
+    calculate_transitions (track_object, object);
 }
 
-void
-calculate_transition (GESTrackObject * track_object, GESTimelineObject * object)
+static void
+calculate_next_transition_with_list (GESTrackObject * track_object,
+    GList * tckobjs_in_layer, GESTimelineObject * object)
 {
-  GList *list, *cur, *compared, *compared_next, *tmp;
+  GList *compared;
 
-  list = track_get_by_layer (track_object);
-  cur = g_list_find (list, track_object);
-
-  compared = cur->prev;
+  if (!(compared = g_list_find (tckobjs_in_layer, track_object)))
+    return;
 
   if (compared == NULL)
-    goto next;
+    /* This is the last TrackObject of the Track */
+    return;
 
-  while (!GES_IS_TRACK_SOURCE (compared->data)) {
-    compared = compared->prev;
+  do {
+    compared = compared->next;
     if (compared == NULL)
-      goto next;
+      return;
+  } while (!GES_IS_TRACK_SOURCE (compared->data));
+
+  compare (compared, track_object, FALSE);
+}
+
+
+static void
+calculate_next_transition (GESTrackObject * track_object,
+    GESTimelineObject * object)
+{
+  GList *tckobjs_in_layer = track_get_by_layer (track_object);
+
+  if (ges_track_object_get_track (track_object)) {
+    calculate_next_transition_with_list (track_object,
+        tckobjs_in_layer, object);
   }
+
+  /* FIXME Looks like we are leaking tckobjs_in_layer refs here? */
+}
+
+static void
+calculate_transitions (GESTrackObject * track_object,
+    GESTimelineObject * object)
+{
+  GList *tckobjs_in_layer, *compared;
+
+  tckobjs_in_layer = track_get_by_layer (track_object);
+  if (!(compared = g_list_find (tckobjs_in_layer, track_object)))
+    return;
+
+  do {
+    compared = compared->prev;
+
+    if (compared == NULL) {
+      /* Nothing before, let's check after */
+      calculate_next_transition_with_list (track_object, tckobjs_in_layer,
+          object);
+      goto done;
+
+    }
+  } while (!GES_IS_TRACK_SOURCE (compared->data));
 
   compare (compared, track_object, TRUE);
 
-next:
-  cur = g_list_find (list, track_object);
-  compared_next = cur->next;
+  calculate_next_transition_with_list (track_object, tckobjs_in_layer, object);
 
-  if (compared_next == NULL)
-    return;
-
-  while (!GES_IS_TRACK_SOURCE (compared_next->data)) {
-    compared_next = compared_next->next;
-    if (compared_next == NULL)
-      return;
-  }
-
-  compare (compared_next, track_object, FALSE);
-
-  for (tmp = list; tmp; tmp = tmp->next)
-    g_object_unref (tmp->data);
-  g_list_free (list);
+done:
+  g_list_free_full (tckobjs_in_layer, g_object_unref);
 }
 
 
+/* Compare:
+ * @compared: The #GList of #GESTrackObjects that we compare with @track_object
+ * @track_object: The #GESTrackObject that serves as a reference
+ * @ahead: %TRUE if we are comparing frontward %FALSE if we are comparing
+ * backward*/
 static void
 compare (GList * compared, GESTrackObject * track_object, gboolean ahead)
 {
   GList *tmp;
   gint64 start, duration, compared_start, compared_duration, end, compared_end,
       tr_start, tr_duration;
-  GESTimelineStandardTransition *tr = NULL;
+  GESTimelineStandardTransition *trans = NULL;
   GESTrack *track;
   GESTimelineLayer *layer;
   GESTimelineObject *object, *compared_object, *first_object, *second_object;
   gint priority;
 
+  g_return_if_fail (compared);
+
+  GST_DEBUG ("Recalculating transitions");
+
   object = ges_track_object_get_timeline_object (track_object);
+
+  if (!object) {
+    GST_WARNING ("Trackobject not in a timeline object: "
+        "Can not calulate transitions");
+
+    return;
+  }
+
   compared_object = ges_track_object_get_timeline_object (compared->data);
   layer = ges_timeline_object_get_layer (object);
 
@@ -450,53 +518,73 @@ compare (GList * compared, GESTrackObject * track_object, gboolean ahead)
   compared_end = compared_start + compared_duration;
 
   if (ahead) {
+    /* Make sure we remove the last transition we created it is not needed
+     * FIXME make it a smarter way */
+    if (compared->prev && GES_IS_TRACK_TRANSITION (compared->prev->data)) {
+      trans = GES_TIMELINE_STANDARD_TRANSITION
+          (ges_track_object_get_timeline_object (compared->prev->data));
+      g_object_get (compared->prev->data, "start", &tr_start, "duration",
+          &tr_duration, NULL);
+      if (tr_start >= compared_start && tr_start + tr_duration <= compared_end)
+        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (trans));
+      trans = NULL;
+    }
+
     for (tmp = compared->next; tmp; tmp = tmp->next) {
-      if GES_IS_TRACK_TRANSITION
-        (tmp->data) {
+      /* If we have a transitionm we recaluculate its values */
+      if (GES_IS_TRACK_TRANSITION (tmp->data)) {
         g_object_get (tmp->data, "start", &tr_start, "duration", &tr_duration,
             NULL);
+
         if (tr_start + tr_duration == compared_start + compared_duration) {
-          tr = GES_TIMELINE_STANDARD_TRANSITION
-              (ges_track_object_get_timeline_object (tmp->data));
+          GESTimelineObject *tlobj;
+          tlobj = ges_track_object_get_timeline_object (tmp->data);
+
+          trans = GES_TIMELINE_STANDARD_TRANSITION (tlobj);
           break;
         }
-        }
+      }
     }
 
     if (compared_end <= start) {
-      if (tr) {
-        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (tr));
+      if (trans) {
+        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (trans));
         g_object_get (compared_object, "priority", &priority, NULL);
         g_object_set (object, "priority", priority, NULL);
       }
+
       goto clean;
     } else if (start > compared_start && end < compared_end) {
-      if (tr) {
-        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (tr));
-      }
-      if (start - compared_start < compared_end - end) {
-        ges_track_object_set_start (track_object, compared_end - duration + 1);
-        compare (compared, track_object, FALSE);
-      } else {
-        ges_track_object_set_start (track_object, compared_start - 1);
-        compare (compared, track_object, FALSE);
+      if (trans) {
+        /* Transition not needed anymore */
+        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (trans));
       }
       goto clean;
     } else if (start <= compared_start) {
-      if (tr) {
-        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (tr));
+      if (trans) {
+        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (trans));
       }
+
       goto clean;
     }
 
   } else {
+    if (compared->next && GES_IS_TRACK_TRANSITION (compared->next->data)) {
+      trans = GES_TIMELINE_STANDARD_TRANSITION
+          (ges_track_object_get_timeline_object (compared->next->data));
+      g_object_get (compared->prev->data, "start", &tr_start, "duration",
+          &tr_duration, NULL);
+      if (tr_start >= compared_start && tr_start + tr_duration <= compared_end)
+        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (trans));
+      trans = NULL;
+    }
     for (tmp = compared->prev; tmp; tmp = tmp->prev) {
       if GES_IS_TRACK_TRANSITION
         (tmp->data) {
         g_object_get (tmp->data, "start", &tr_start, "duration", &tr_duration,
             NULL);
         if (tr_start == compared_start) {
-          tr = GES_TIMELINE_STANDARD_TRANSITION
+          trans = GES_TIMELINE_STANDARD_TRANSITION
               (ges_track_object_get_timeline_object (tmp->data));
           break;
         }
@@ -504,40 +592,38 @@ compare (GList * compared, GESTrackObject * track_object, gboolean ahead)
     }
 
     if (start + duration <= compared_start) {
-      if (tr) {
-        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (tr));
+      if (trans) {
+        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (trans));
         g_object_get (object, "priority", &priority, NULL);
         g_object_set (compared_object, "priority", priority, NULL);
       }
       goto clean;
+
     } else if (start > compared_start) {
-      if (tr) {
-        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (tr));
-      }
+      if (trans)
+        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (trans));
+
       goto clean;
     } else if (start < compared_start && end > compared_end) {
-      if (tr) {
-        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (tr));
+      if (trans) {
+        ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (trans));
       }
-      if (compared_start - start < end - compared_end) {
-        ges_track_object_set_start (track_object, compared_end - duration - 1);
-        compare (compared, track_object, TRUE);
-      } else {
-        ges_track_object_set_start (track_object, compared_start + 1);
-      }
+
       goto clean;
     }
   }
 
-  if (tr == NULL) {
+  if (!trans) {
     gint height;
-    tr = ges_timeline_standard_transition_new_for_nick ((gchar *) "crossfade");
+
+    trans =
+        ges_timeline_standard_transition_new_for_nick ((gchar *) "crossfade");
     track = ges_track_object_get_track (track_object);
 
-    ges_timeline_object_set_supported_formats (GES_TIMELINE_OBJECT (tr),
+    ges_timeline_object_set_supported_formats (GES_TIMELINE_OBJECT (trans),
         track->type);
 
-    ges_timeline_layer_add_object (layer, GES_TIMELINE_OBJECT (tr));
+    ges_timeline_layer_add_object (layer, GES_TIMELINE_OBJECT (trans));
 
     if (ahead) {
       first_object = ges_track_object_get_timeline_object (compared->data);
@@ -554,10 +640,10 @@ compare (GList * compared, GESTrackObject * track_object, gboolean ahead)
   }
 
   if (ahead) {
-    g_object_set (tr, "start", start, "duration",
+    g_object_set (trans, "start", start, "duration",
         compared_duration + compared_start - start, NULL);
   } else {
-    g_object_set (tr, "start", compared_start, "duration",
+    g_object_set (trans, "start", compared_start, "duration",
         start + duration - compared_start, NULL);
   }
 
@@ -695,8 +781,21 @@ void
 ges_timeline_layer_set_auto_transition (GESTimelineLayer * layer,
     gboolean auto_transition)
 {
+
+  GList *tmp;
   g_return_if_fail (GES_IS_TIMELINE_LAYER (layer));
 
+  if (auto_transition) {
+    for (tmp = layer->priv->objects_start; tmp; tmp = tmp->next) {
+      if (GES_IS_TIMELINE_SOURCE (tmp->data)) {
+        g_signal_connect (G_OBJECT (tmp->data), "track-object-added",
+            G_CALLBACK (track_object_added_cb), layer);
+        g_signal_connect (G_OBJECT (tmp->data), "track-object-removed",
+            G_CALLBACK (track_object_removed_cb), layer);
+      }
+    }
+    /* FIXME calculate all the transitions at that time */
+  }
   layer->priv->auto_transition = auto_transition;
 }
 
