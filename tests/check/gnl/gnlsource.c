@@ -44,7 +44,7 @@ GST_START_TEST (test_simple_videotestsrc)
 
   sinkpad = gst_element_get_static_pad (sink, "sink");
   fail_if (sinkpad == NULL);
-  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_DATA,
+  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_DATA_DOWNSTREAM,
       (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (pipeline);
@@ -145,7 +145,7 @@ GST_START_TEST (test_videotestsrc_in_bin)
 
   sinkpad = gst_element_get_static_pad (sink, "sink");
   fail_if (sinkpad == NULL);
-  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_DATA,
+  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_DATA_DOWNSTREAM,
       (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (pipeline);

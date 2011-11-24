@@ -303,7 +303,8 @@ translate_incoming_segment (GnlObject * object, GstEvent * event)
 }
 
 static gboolean
-internalpad_event_function (GstPad * internal, GstEvent * event)
+internalpad_event_function (GstPad * internal, GstObject * parent,
+    GstEvent * event)
 {
   GnlPadPrivate *priv = gst_pad_get_element_private (internal);
   GnlObject *object = priv->object;
@@ -343,7 +344,7 @@ internalpad_event_function (GstPad * internal, GstEvent * event)
       break;
   }
   GST_DEBUG_OBJECT (internal, "Calling priv->eventfunc %p", priv->eventfunc);
-  res = priv->eventfunc (internal, event);
+  res = priv->eventfunc (internal, parent, event);
 
   return res;
 }
@@ -429,7 +430,8 @@ translate_incoming_duration_query (GnlObject * object, GstQuery * query)
 }
 
 static gboolean
-internalpad_query_function (GstPad * internal, GstQuery * query)
+internalpad_query_function (GstPad * internal, GstObject * parent,
+    GstQuery * query)
 {
   GnlPadPrivate *priv = gst_pad_get_element_private (internal);
   GnlObject *object = priv->object;
@@ -444,7 +446,7 @@ internalpad_query_function (GstPad * internal, GstQuery * query)
     return FALSE;
   }
 
-  if ((ret = priv->queryfunc (internal, query))) {
+  if ((ret = priv->queryfunc (internal, parent, query))) {
 
     switch (priv->dir) {
       case GST_PAD_SRC:
@@ -466,7 +468,8 @@ internalpad_query_function (GstPad * internal, GstQuery * query)
 }
 
 static gboolean
-ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
+ghostpad_event_function (GstPad * ghostpad, GstObject * parent,
+    GstEvent * event)
 {
   GnlPadPrivate *priv;
   GnlObject *object;
@@ -508,7 +511,7 @@ ghostpad_event_function (GstPad * ghostpad, GstEvent * event)
 
   if (event) {
     GST_DEBUG_OBJECT (ghostpad, "Calling priv->eventfunc");
-    ret = priv->eventfunc (ghostpad, event);
+    ret = priv->eventfunc (ghostpad, parent, event);
     GST_DEBUG_OBJECT (ghostpad, "Returned from calling priv->eventfunc : %d",
         ret);
   }
@@ -525,7 +528,8 @@ no_function:
 }
 
 static gboolean
-ghostpad_query_function (GstPad * ghostpad, GstQuery * query)
+ghostpad_query_function (GstPad * ghostpad, GstObject * parent,
+    GstQuery * query)
 {
   GnlPadPrivate *priv = gst_pad_get_element_private (ghostpad);
   GnlObject *object = GNL_OBJECT (GST_PAD_PARENT (ghostpad));
@@ -538,7 +542,7 @@ ghostpad_query_function (GstPad * ghostpad, GstQuery * query)
       /* skip duration upstream query, we'll fill it in ourselves */
       break;
     default:
-      pret = priv->queryfunc (ghostpad, query);
+      pret = priv->queryfunc (ghostpad, parent, query);
   }
 
   if (pret) {

@@ -79,8 +79,7 @@ static GstStateChangeReturn
 gnl_source_change_state (GstElement * element, GstStateChange transition);
 
 static GstPadProbeReturn
-pad_blocked_cb (GstPad * pad, GstPadProbeType probetype,
-    gpointer udata, GnlSource * source);
+pad_blocked_cb (GstPad * pad, GstPadProbeInfo * info, GnlSource * source);
 
 static gboolean
 gnl_source_control_element_func (GnlSource * source, GstElement * element);
@@ -212,7 +211,8 @@ element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
     return;
   }
 
-  srccaps = gst_pad_get_caps (pad, NULL);
+  /* FIXME: pass filter caps to query_caps directly */
+  srccaps = gst_pad_query_caps (pad, NULL);
   if (!gst_caps_can_intersect (srccaps, GNL_OBJECT (source)->caps)) {
     gst_caps_unref (srccaps);
     GST_DEBUG_OBJECT (source, "Pad doesn't have valid caps, ignoring");
@@ -277,7 +277,8 @@ compare_src_pad (GValue * item, GstCaps * caps)
 
   GST_DEBUG_OBJECT (pad, "Trying pad for caps %" GST_PTR_FORMAT, caps);
 
-  padcaps = gst_pad_get_caps (pad, NULL);
+  /* FIXME: can pass the filter caps right away.. */
+  padcaps = gst_pad_query_caps (pad, NULL);
 
   if (gst_caps_can_intersect (padcaps, caps))
     ret = 0;
@@ -357,13 +358,13 @@ beach:
 }
 
 static GstPadProbeReturn
-pad_blocked_cb (GstPad * pad, GstPadProbeType ptype, gpointer unused_data,
-    GnlSource * source)
+pad_blocked_cb (GstPad * pad, GstPadProbeInfo * info, GnlSource * source)
 {
   GST_DEBUG_OBJECT (pad, "probe callback");
 
   if (!source->priv->ghostpad && !source->priv->areblocked) {
     source->priv->areblocked = TRUE;
+    GST_DEBUG_OBJECT (pad, "starting thread to call ghost_seek_pad");
     g_thread_create ((GThreadFunc) ghost_seek_pad, source, FALSE, NULL);
   }
 

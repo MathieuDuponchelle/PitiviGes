@@ -29,7 +29,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
       G_CALLBACK (composition_pad_added_cb), collect);
 
   sinkpad = gst_element_get_static_pad (sink, "sink");
-  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_DATA,
+  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_DATA_DOWNSTREAM,
       (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
@@ -535,7 +535,7 @@ GST_START_TEST (test_renegotiation)
       G_CALLBACK (composition_pad_added_cb), collect);
 
   sinkpad = gst_element_get_static_pad (sink, "sink");
-  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_DATA,
+  gst_pad_add_probe (sinkpad, GST_PAD_PROBE_TYPE_DATA_DOWNSTREAM,
       (GstPadProbeCallback) sinkpad_probe, collect, NULL);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));

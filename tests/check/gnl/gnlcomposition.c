@@ -30,10 +30,10 @@ static int seek_events;
 static gulong blockprobeid;
 
 static GstPadProbeReturn
-on_source1_pad_event_cb (GstPad * pad, GstPadProbeType ptype,
-    GstEvent * event, gpointer user_data)
+on_source1_pad_event_cb (GstPad * pad, GstPadProbeInfo * info,
+    gpointer user_data)
 {
-  if (event->type == GST_EVENT_SEEK)
+  if (GST_EVENT_TYPE (info->data) == GST_EVENT_SEEK)
     ++seek_events;
 
   return GST_PAD_PROBE_OK;
@@ -42,7 +42,7 @@ on_source1_pad_event_cb (GstPad * pad, GstPadProbeType ptype,
 static void
 on_source1_pad_added_cb (GstElement * source, GstPad * pad, gpointer user_data)
 {
-  gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_EVENT,
+  gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_EVENT_UPSTREAM,
       (GstPadProbeCallback) on_source1_pad_event_cb, NULL, NULL);
 }
 

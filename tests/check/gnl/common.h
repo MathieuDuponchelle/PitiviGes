@@ -122,12 +122,12 @@ sinkpad_buffer_probe (GstPad * sinkpad, GstBuffer * buffer, CollectStructure * c
 }
 
 static GstPadProbeReturn
-sinkpad_probe (GstPad *sinkpad, GstPadProbeType ptype, gpointer data, CollectStructure * collect)
+sinkpad_probe (GstPad *sinkpad, GstPadProbeInfo * info, CollectStructure * collect)
 {
-  if (ptype & GST_PAD_PROBE_TYPE_BUFFER)
-    return sinkpad_buffer_probe (sinkpad, (GstBuffer*) data, collect);
-  if (ptype & GST_PAD_PROBE_TYPE_EVENT)
-    return sinkpad_event_probe (sinkpad, (GstEvent *) data, collect);
+  if (info->type & GST_PAD_PROBE_TYPE_BUFFER)
+    return sinkpad_buffer_probe (sinkpad, (GstBuffer*) info->data, collect);
+  if (info->type & GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM)
+    return sinkpad_event_probe (sinkpad, (GstEvent *) info->data, collect);
   return GST_PAD_PROBE_OK;
 }
 

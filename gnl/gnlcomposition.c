@@ -167,8 +167,8 @@ static GstStateChangeReturn
 gnl_composition_change_state (GstElement * element, GstStateChange transition);
 
 static GstPad *get_src_pad (GstElement * element);
-static GstPadProbeReturn pad_blocked (GstPad * pad, GstPadProbeType type,
-    gpointer type_data, GnlComposition * comp);
+static GstPadProbeReturn pad_blocked (GstPad * pad, GstPadProbeInfo * info,
+    GnlComposition * comp);
 static inline void gnl_composition_remove_ghostpad (GnlComposition * comp);
 
 static gboolean
@@ -997,9 +997,10 @@ handle_seek_event (GnlComposition * comp, GstEvent * event)
 }
 
 static gboolean
-gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
+gnl_composition_event_handler (GstPad * ghostpad, GstObject * parent,
+    GstEvent * event)
 {
-  GnlComposition *comp = (GnlComposition *) gst_pad_get_parent (ghostpad);
+  GnlComposition *comp = (GnlComposition *) parent;
   GnlCompositionPrivate *priv = comp->priv;
   gboolean res = TRUE;
 
@@ -1101,7 +1102,7 @@ gnl_composition_event_handler (GstPad * ghostpad, GstEvent * event)
      * configured at this point*/
     if (priv->waitingpads == 0) {
       GST_DEBUG_OBJECT (comp, "About to call gnl_event_pad_func()");
-      res = priv->gnl_event_pad_func (priv->ghostpad, event);
+      res = priv->gnl_event_pad_func (priv->ghostpad, parent, event);
       GST_DEBUG_OBJECT (comp, "Done calling gnl_event_pad_func() %d", res);
     } else
       gst_event_unref (event);
@@ -1116,8 +1117,7 @@ beach:
 }
 
 static GstPadProbeReturn
-pad_blocked (GstPad * pad, GstPadProbeType type, gpointer type_data,
-    GnlComposition * comp)
+pad_blocked (GstPad * pad, GstPadProbeInfo * info, GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (comp, "Pad : %s:%s", GST_DEBUG_PAD_NAME (pad));
 
@@ -1211,7 +1211,7 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target,
 
   if (target && (priv->ghosteventprobe == 0)) {
     priv->ghosteventprobe =
-        gst_pad_add_probe (target, GST_PAD_PROBE_TYPE_EVENT,
+        gst_pad_add_probe (target, GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
         (GstPadProbeCallback) ghost_event_probe_handler, comp, NULL);
     GST_DEBUG_OBJECT (comp, "added event probe %d", priv->ghosteventprobe);
   }
