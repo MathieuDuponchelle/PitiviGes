@@ -114,6 +114,9 @@ struct _GESTimelineObjectPrivate
   GList *mappings;
 
   guint nb_effects;
+
+  /* The formats supported by this TimelineObject */
+  GESTrackType supportedformats;
 };
 
 enum
@@ -125,6 +128,7 @@ enum
   PROP_PRIORITY,
   PROP_HEIGHT,
   PROP_LAYER,
+  PROP_SUPPORTED_FORMATS,
   PROP_LAST
 };
 
@@ -155,6 +159,9 @@ ges_timeline_object_get_property (GObject * object, guint property_id,
     case PROP_LAYER:
       g_value_set_object (value, tobj->priv->layer);
       break;
+    case PROP_SUPPORTED_FORMATS:
+      g_value_set_flags (value, tobj->priv->supportedformats);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -178,6 +185,10 @@ ges_timeline_object_set_property (GObject * object, guint property_id,
       break;
     case PROP_PRIORITY:
       ges_timeline_object_set_priority (tobj, g_value_get_uint (value));
+      break;
+    case PROP_SUPPORTED_FORMATS:
+      ges_timeline_object_set_supported_formats (tobj,
+          g_value_get_flags (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -254,6 +265,21 @@ ges_timeline_object_class_init (GESTimelineObjectClass * klass)
       G_PARAM_READABLE);
   g_object_class_install_property (object_class, PROP_HEIGHT,
       properties[PROP_HEIGHT]);
+
+  /**
+   * GESTimelineObject:supported-formats:
+   *
+   * The formats supported by the object.
+   *
+   * Since: 0.10.XX
+   */
+  properties[PROP_SUPPORTED_FORMATS] = g_param_spec_flags ("supported-formats",
+      "Supported formats", "Formats supported by the file",
+      GES_TYPE_TRACK_TYPE, GES_TRACK_TYPE_UNKNOWN,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
+
+  g_object_class_install_property (object_class, PROP_SUPPORTED_FORMATS,
+      properties[PROP_SUPPORTED_FORMATS]);
 
   /**
    * GESTimelineObject:layer
@@ -1106,6 +1132,38 @@ update_height (GESTimelineObject * object)
     g_object_notify (G_OBJECT (object), "height");
 #endif
   }
+}
+
+/**
+ * ges_timeline_object_set_supported_formats:
+ * @self: the #GESTimelineObject to set supported formats on
+ * @supportedformats: the #GESTrackType defining formats supported by @self
+ *
+ * Sets the formats supported by the file.
+ *
+ * Since: 0.10.XX
+ */
+void
+ges_timeline_object_set_supported_formats (GESTimelineObject * self,
+    GESTrackType supportedformats)
+{
+  self->priv->supportedformats = supportedformats;
+}
+
+/**
+ * ges_timeline_object_get_supported_formats:
+ * @self: the #GESTimelineObject
+ *
+ * Get the formats supported by @self.
+ *
+ * Returns: The formats supported by @self.
+ *
+ * Since: 0.10.XX
+ */
+GESTrackType
+ges_timeline_object_get_supported_formats (GESTimelineObject * self)
+{
+  return self->priv->supportedformats;
 }
 
 /*
