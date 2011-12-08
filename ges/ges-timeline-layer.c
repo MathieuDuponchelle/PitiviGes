@@ -39,11 +39,11 @@
 static void track_object_added_cb (GESTimelineObject * object,
     GESTrackObject * track_object, GESTimelineLayer * layer);
 static void track_object_changed_cb (GESTrackObject * track_object,
-    GParamSpec * arg G_GNUC_UNUSED, GESTimelineObject * object);
+    GParamSpec * arg G_GNUC_UNUSED, GESTimelineLayer * layer);
 static void calculate_transitions (GESTrackObject * track_object,
-    GESTimelineObject * object);
+    GESTimelineLayer * layer);
 static void calculate_next_transition (GESTrackObject * track_object,
-    GESTimelineObject * object);
+    GESTimelineLayer * layer);
 
 static void
 timeline_object_height_changed_cb (GESTimelineObject * obj,
@@ -82,7 +82,7 @@ static guint ges_timeline_layer_signals[LAST_SIGNAL] = { 0 };
 
 static gboolean ges_timeline_layer_resync_priorities (GESTimelineLayer * layer);
 
-static GList *track_get_by_layer (GESTrackObject * track_object);
+static GList *track_get_by_layer (GESTimelineLayer * layer, GESTrack * track);
 
 static void compare (GList * compared, GESTrackObject * track_object,
     gboolean ahead);
@@ -264,33 +264,24 @@ objects_start_compare (GESTimelineObject * a, GESTimelineObject * b)
  */
 
 static GList *
-track_get_by_layer (GESTrackObject * track_object)
+track_get_by_layer (GESTimelineLayer * layer, GESTrack * track)
 {
-  GESTrack *track;
   GList *tck_objects_list = NULL, *tmp = NULL, *return_list = NULL;
-  GESTimelineLayer *layer;
   GESTimelineObject *tl_obj;
-  gint priority, compared_priority;
-
-  track = ges_track_object_get_track (track_object);
-  tl_obj = ges_track_object_get_timeline_object (track_object);
-  layer = ges_timeline_object_get_layer (tl_obj);
-  priority = ges_timeline_layer_get_priority (layer);
 
   tck_objects_list = ges_track_get_objects (track);
   for (tmp = tck_objects_list; tmp; tmp = tmp->next) {
     tl_obj = ges_track_object_get_timeline_object (tmp->data);
-    layer = ges_timeline_object_get_layer (tl_obj);
-    compared_priority = ges_timeline_layer_get_priority (layer);
-    if (compared_priority == priority) {
-      g_object_ref (tmp->data);
+
+    if (ges_timeline_object_get_layer (tl_obj) == layer) {
+
+      /*  We still the reference from tck_objects_list */
       return_list = g_list_append (return_list, tmp->data);
-    }
+
+    } else
+      g_object_unref (tmp->data);
   }
 
-  for (tmp = tck_objects_list; tmp; tmp = tmp->next)
-    g_object_unref (tmp->data);
-  g_list_free (tck_objects_list);
   return return_list;
 }
 
@@ -355,11 +346,11 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
 
 static void
 track_object_duration_cb (GESTrackObject * track_object,
-    GParamSpec * arg G_GNUC_UNUSED, GESTimelineObject * object)
+    GParamSpec * arg G_GNUC_UNUSED, GESTimelineLayer * layer)
 {
   if (G_LIKELY (GES_IS_TRACK_SOURCE (track_object)))
     GST_DEBUG ("Here we should recalculate");
-  calculate_next_transition (track_object, object);
+  calculate_next_transition (track_object, layer);
 }
 
 static void
@@ -368,10 +359,10 @@ track_object_added_cb (GESTimelineObject * object,
 {
   if (GES_IS_TRACK_SOURCE (track_object)) {
     g_signal_connect (G_OBJECT (track_object), "notify::start",
-        G_CALLBACK (track_object_changed_cb), object);
+        G_CALLBACK (track_object_changed_cb), layer);
     g_signal_connect (G_OBJECT (track_object), "notify::duration",
-        G_CALLBACK (track_object_duration_cb), object);
-    calculate_transitions (track_object, object);
+        G_CALLBACK (track_object_duration_cb), layer);
+    calculate_transitions (track_object, layer);
   }
 
   g_object_unref (layer);
@@ -385,7 +376,7 @@ track_object_removed_cb (GESTimelineObject * object,
   if (GES_IS_TRACK_SOURCE (track_object)) {
     g_signal_handlers_disconnect_by_func (track_object, track_object_changed_cb,
         object);
-    calculate_transitions (track_object, object);
+    calculate_transitions (track_object, layer);
   }
 
   g_object_unref (layer);
@@ -403,15 +394,15 @@ timeline_object_height_changed_cb (GESTimelineObject * obj,
 
 static void
 track_object_changed_cb (GESTrackObject * track_object,
-    GParamSpec * arg G_GNUC_UNUSED, GESTimelineObject * object)
+    GParamSpec * arg G_GNUC_UNUSED, GESTimelineLayer * layer)
 {
   if (G_LIKELY (GES_IS_TRACK_SOURCE (track_object)))
-    calculate_transitions (track_object, object);
+    calculate_transitions (track_object, layer);
 }
 
 static void
 calculate_next_transition_with_list (GESTrackObject * track_object,
-    GList * tckobjs_in_layer, GESTimelineObject * object)
+    GList * tckobjs_in_layer, GESTimelineLayer * layer)
 {
   GList *compared;
 
@@ -434,25 +425,25 @@ calculate_next_transition_with_list (GESTrackObject * track_object,
 
 static void
 calculate_next_transition (GESTrackObject * track_object,
-    GESTimelineObject * object)
+    GESTimelineLayer * layer)
 {
-  GList *tckobjs_in_layer = track_get_by_layer (track_object);
+  GESTrack *track = ges_track_object_get_track (track_object);
+  GList *tckobjs_in_layer = track_get_by_layer (layer, track);
 
   if (ges_track_object_get_track (track_object)) {
-    calculate_next_transition_with_list (track_object,
-        tckobjs_in_layer, object);
+    calculate_next_transition_with_list (track_object, tckobjs_in_layer, layer);
   }
 
-  /* FIXME Looks like we are leaking tckobjs_in_layer refs here? */
+  g_list_free_full (tckobjs_in_layer, g_object_unref);
 }
 
 static void
-calculate_transitions (GESTrackObject * track_object,
-    GESTimelineObject * object)
+calculate_transitions (GESTrackObject * track_object, GESTimelineLayer * layer)
 {
   GList *tckobjs_in_layer, *compared;
+  GESTrack *track = ges_track_object_get_track (track_object);
 
-  tckobjs_in_layer = track_get_by_layer (track_object);
+  tckobjs_in_layer = track_get_by_layer (layer, track);
   if (!(compared = g_list_find (tckobjs_in_layer, track_object)))
     return;
 
@@ -462,7 +453,7 @@ calculate_transitions (GESTrackObject * track_object,
     if (compared == NULL) {
       /* Nothing before, let's check after */
       calculate_next_transition_with_list (track_object, tckobjs_in_layer,
-          object);
+          layer);
       goto done;
 
     }
@@ -470,7 +461,7 @@ calculate_transitions (GESTrackObject * track_object,
 
   compare (compared, track_object, TRUE);
 
-  calculate_next_transition_with_list (track_object, tckobjs_in_layer, object);
+  calculate_next_transition_with_list (track_object, tckobjs_in_layer, layer);
 
 done:
   g_list_free_full (tckobjs_in_layer, g_object_unref);
@@ -648,7 +639,6 @@ compare (GList * compared, GESTrackObject * track_object, gboolean ahead)
   }
 
 clean:
-  g_object_unref (track_object);
   g_object_unref (layer);
 }
 
