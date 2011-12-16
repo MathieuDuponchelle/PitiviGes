@@ -376,7 +376,6 @@ ges_track_set_timeline (GESTrack * track, GESTimeline * timeline)
   if (timeline)
     g_signal_connect (G_OBJECT (timeline), "notify::duration",
         G_CALLBACK (timeline_duration_cb), track);
-
   track->priv->timeline = timeline;
 }
 
