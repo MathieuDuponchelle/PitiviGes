@@ -255,6 +255,7 @@ ges_timeline_init (GESTimeline * self)
 
   self->priv->layers = NULL;
   self->priv->tracks = NULL;
+  self->priv->duration = 0;
 
   /* New discoverer with a 15s timeout */
   self->priv->discoverer = gst_discoverer_new (15 * GST_SECOND, NULL);
