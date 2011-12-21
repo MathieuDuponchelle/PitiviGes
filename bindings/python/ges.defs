@@ -1090,6 +1090,15 @@
   )
 )
 
+(define-method trim_start
+  (of-object "GESTimelineObject")
+  (c-name "ges_timeline_object_trim_start")
+  (return-type "gboolean")
+  (parameters
+    '("gint64" "position")
+  )
+)
+
 (define-method get_supported_formats
   (of-object "GESTimelineObject")
   (c-name "ges_timeline_object_get_supported_formats")
@@ -1931,6 +1940,15 @@
     '("const-gchar*" "first_property_name")
   )
   (varargs #t)
+)
+
+(define-method trim_start
+  (of-object "GESTrackObject")
+  (c-name "ges_track_object_trim_start")
+  (return-type "gboolean")
+  (parameters
+    '("gint64" "position")
+  )
 )
 
 

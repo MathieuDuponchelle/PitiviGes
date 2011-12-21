@@ -90,6 +90,9 @@ static guint ges_track_object_signals[LAST_SIGNAL] = { 0 };
 static GstElement *ges_track_object_create_gnl_object_func (GESTrackObject *
     object);
 
+static gboolean ges_track_object_trim_start_func (GESTrackObject * object,
+    guint64 position);
+
 static void gnlobject_start_cb (GstElement * gnlobject, GParamSpec * arg
     G_GNUC_UNUSED, GESTrackObject * obj);
 
@@ -309,6 +312,7 @@ ges_track_object_class_init (GESTrackObjectClass * klass)
       G_TYPE_NONE, 2, GST_TYPE_ELEMENT, G_TYPE_PARAM);
 
   klass->create_gnl_object = ges_track_object_create_gnl_object_func;
+  klass->trim_start = ges_track_object_trim_start_func;
   /*  There is no 'get_props_hashtable' default implementation */
   klass->get_props_hastable = NULL;
   klass->list_children_properties = default_list_children_properties;
@@ -808,6 +812,29 @@ done:
   GST_DEBUG ("Returning res:%d", res);
 
   return res;
+}
+
+/* Default implementation of the trim_start virtual function */
+static gboolean
+ges_track_object_trim_start_func (GESTrackObject * object, guint64 position)
+{
+  guint64 start, inpoint, duration;
+
+  start = ges_track_object_get_start (object);
+  inpoint = ges_track_object_get_inpoint (object);
+  duration = ges_track_object_get_duration (object);
+
+  position = MAX (start > inpoint ? start - inpoint : 0, position);
+  position = MIN (position, start + duration);
+
+  inpoint = inpoint + position - start;
+  duration = MAX (0, start + duration - position);
+
+  ges_track_object_set_start (object, position);
+  ges_track_object_set_duration (object, duration);
+  ges_track_object_set_inpoint (object, inpoint);
+
+  return TRUE;
 }
 
 /* INTERNAL USAGE */
@@ -1420,4 +1447,35 @@ prop_hash_not_set:
     GST_ERROR ("The child properties haven't been set on %p", object);
     return NULL;
   }
+}
+
+/**
+ * ges_track_object_trim_start:
+ * @object: a #GESTrackObject
+ * @position: The position to trim the object to
+ *
+ * Trims @object at @position.
+ * Note that it will set the start, inpoint and duration properties of @object
+ * accordingly.
+ *
+ * Since: 0.10.XX
+ */
+gboolean
+ges_track_object_trim_start (GESTrackObject * object, guint64 position)
+{
+  GESTrackObjectClass *class;
+
+  g_return_val_if_fail (GES_IS_TRACK_OBJECT (object), FALSE);
+
+  class = GES_TRACK_OBJECT_GET_CLASS (object);
+
+  if (!class->trim_start) {
+    GST_DEBUG ("No implementation of trim_start found");
+    return FALSE;
+  }
+
+  GST_DEBUG_OBJECT (object, "Trimming to %" GST_TIME_FORMAT,
+      GST_TIME_ARGS (position));
+
+  return class->trim_start (object, position);
 }

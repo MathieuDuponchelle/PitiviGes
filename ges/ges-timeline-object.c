@@ -1229,6 +1229,39 @@ tck_object_added_cb (GESTimelineObject * object,
 }
 
 /**
+ * ges_timeline_object_trim_start:
+ * @object: the #GESTimelineObject to trim
+ * @position: The position at which to trim the @object (in nanosecond)
+ *
+ * Trims @object and its containing #GESTrackObject at @position.
+ * Note that it will set the start, inpoint and duration properties of @object
+ * accordingly.
+ *
+ * Returns: %TRUE if the object as actually been trimed, %FALSE if an error
+ * occured
+ *
+ * Since: 0.10.XX
+ */
+gboolean
+ges_timeline_object_trim_start (GESTimelineObject * object, gint64 position)
+{
+  GList *tmp;
+
+  if (!object->priv->trackobjects) {
+    GST_WARNING_OBJECT (object, "Trying to trim, but not containing"
+        "any TrackObject yet.");
+    return FALSE;
+  }
+
+  object->priv->ignore_notifies = TRUE;
+  for (tmp = object->priv->trackobjects; tmp; tmp = tmp->next)
+    ges_track_object_trim_start (tmp->data, position);
+  object->priv->ignore_notifies = FALSE;
+
+  return TRUE;
+}
+
+/**
  * ges_timeline_object_split:
  * @object: the #GESTimelineObject to split
  * @position: The position at which to split the @object (in nanosecond)

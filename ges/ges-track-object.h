@@ -98,6 +98,7 @@ struct _GESTrackObject {
  * @gnlobject_factorytype: name of the GNonLin GStElementFactory type to use.
  * @create_gnl_object: method to create the GNonLin container object.
  * @create_element: method to return the GstElement to put in the gnlobject.
+ * @trim_start: method to trim the object. Since 0.10.XX
  * @start_changed: start property of gnlobject has changed
  * @media_start_changed: media-start property of gnlobject has changed
  * @duration_changed: duration property glnobject has changed
@@ -123,6 +124,8 @@ struct _GESTrackObjectClass {
   const gchar  *gnlobject_factorytype;
   GstElement*  (*create_gnl_object)        (GESTrackObject * object);
   GstElement*  (*create_element)           (GESTrackObject * object);
+  gboolean     (*trim_start)               (GESTrackObject * object,
+                                            guint64 position);
 
   void (*start_changed)        (GESTrackObject *object, guint64 start);
   void (*media_start_changed)  (GESTrackObject *object, guint64 media_start);
@@ -206,6 +209,9 @@ void ges_track_object_set_child_property_by_pspec (GESTrackObject * object,
 void ges_track_object_set_child_property (GESTrackObject * object,
 					  const gchar * first_property_name,
 					  ...) G_GNUC_NULL_TERMINATED;
+
+gboolean ges_track_object_trim_start (GESTrackObject * object,
+                                      guint64 position);
 
 G_END_DECLS
 #endif /* _GES_TRACK_OBJECT */
