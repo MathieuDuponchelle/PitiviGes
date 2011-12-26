@@ -388,6 +388,20 @@ load_from_uri (GESFormatter * formatter, GESTimeline * timeline,
   return ret;
 }
 
+gboolean
+ges_formatter_add_source (GESFormatter * formatter, const gchar * source,
+    const gchar * uri)
+{
+  GESFormatterClass *klass = GES_FORMATTER_GET_CLASS (formatter);
+
+  if (klass->add_source)
+    return klass->add_source (formatter, source, uri);
+
+  GST_ERROR ("not implemented!");
+
+  return FALSE;
+}
+
 /**
  * ges_formatter_save_to_uri:
  * @formatter: a #GESFormatter

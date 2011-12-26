@@ -16,7 +16,8 @@ static gboolean save_pitivi_timeline_to_uri (GESFormatter * pitivi_formatter,
 static gboolean load_pitivi_file_from_uri (GESFormatter * self,
     GESTimeline * timeline, const gchar * uri);
 static void ges_pitivi_formatter_finalize (GObject * object);
-
+gboolean add_pitivi_source (GESFormatter * formatter, const gchar * source,
+    const gchar * uri);
 
 typedef struct SrcMapping
 {
@@ -80,6 +81,7 @@ ges_pitivi_formatter_class_init (GESPitiviFormatterClass * klass)
 
   formatter_klass->save_to_uri = save_pitivi_timeline_to_uri;
   formatter_klass->load_from_uri = load_pitivi_file_from_uri;
+  formatter_klass->add_source = add_pitivi_source;
   object_class->finalize = ges_pitivi_formatter_finalize;
 }
 
@@ -141,6 +143,52 @@ ges_pitivi_formatter_new (void)
 }
 
 /* Project saving functions */
+
+gboolean
+add_pitivi_source (GESFormatter * self, const gchar * source, const gchar * uri)
+{
+  xmlDocPtr doc;
+  xmlNodeSetPtr nodes;
+  xmlXPathObjectPtr xpathObj;
+  xmlNodePtr parent;
+  xmlNodePtr newline;
+  xmlNodePtr new;
+  GESPitiviFormatterPrivate *priv = GES_PITIVI_FORMATTER (self)->priv;
+
+  if (!(doc = xmlParseFile (uri))) {
+    GST_ERROR ("The xptv file for uri %s was badly formed or did not exist",
+        uri);
+    return FALSE;
+  }
+
+  xmlKeepBlanksDefault (0);
+
+  priv->xpathCtx = xmlXPathNewContext (doc);
+
+  xpathObj = xmlXPathEvalExpression ((const xmlChar *)
+      "/pitivi/factories/sources", priv->xpathCtx);
+
+  xpathObj = xpathObj;
+  nodes = xpathObj->nodesetval;
+  parent = nodes->nodeTab[0];
+
+  new = xmlNewText ((xmlChar *) " ");
+  xmlAddChild (parent, new);
+
+  new = xmlNewNode (0, (xmlChar *) "unused_source");
+  xmlNodeSetContent (new, (xmlChar *) source);
+
+  xmlAddChild (parent, new);
+
+  newline = xmlNewText ((xmlChar *) "\n  ");
+  xmlAddNextSibling (new, newline);
+
+  xmlXPathFreeContext (priv->xpathCtx);
+  xmlSaveFormatFile (uri, doc, 1);
+  xmlFreeDoc (doc);
+
+  return TRUE;
+}
 
 static void inline
 write_int_attribute (xmlTextWriterPtr writer, guint64 nb, const gchar * attr,

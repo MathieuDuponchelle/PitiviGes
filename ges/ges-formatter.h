@@ -99,6 +99,9 @@ typedef gboolean (*GESFormatterSaveMethod) (GESFormatter * formatter,
 					      GESTimeline * timeline);
 typedef gboolean (*GESFormatterLoadMethod) (GESFormatter * formatter,
 					      GESTimeline * timeline);
+typedef gboolean (*GESFormatterAddSource) (GESFormatter *formatter,
+					   const gchar *source,
+					   const gchar *uri);
 
 /**
  * GESFormatterClass:
@@ -118,6 +121,7 @@ struct _GESFormatterClass {
   GESFormatterCanSaveURIMethod can_save_uri;
   GESFormatterLoadFromURIMethod load_from_uri;
   GESFormatterSaveToURIMethod save_to_uri;
+  GESFormatterAddSource add_source;
 
   /*< private >*/
   /* FIXME : formatter name */
@@ -146,6 +150,10 @@ gboolean ges_formatter_load_from_uri    (GESFormatter * formatter,
 
 gboolean ges_formatter_save_to_uri      (GESFormatter * formatter,
 					 GESTimeline *timeline,
+					 const gchar *uri);
+
+gboolean ges_formatter_add_source       (GESFormatter *formatter,
+					 const gchar *source,
 					 const gchar *uri);
 
 /* Non-standard methods. WILL BE DEPRECATED */

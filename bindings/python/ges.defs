@@ -488,6 +488,16 @@
   )
 )
 
+(define-method add_source
+  (of-object "GESFormatter")
+  (c-name "ges_formatter_add_source")
+  (return-type "gboolean")
+  (parameters
+    '("const-gchar*" "source")
+    '("const-gchar*" "uri")
+  )
+)
+
 (define-method load_from_uri
   (of-object "GESFormatter")
   (c-name "ges_formatter_load_from_uri")
