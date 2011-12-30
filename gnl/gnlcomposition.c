@@ -658,10 +658,11 @@ eos_main_thread (GnlComposition * comp)
 
 static GstPadProbeReturn
 ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
-    GstPadProbeType type, GstEvent * event, GnlComposition * comp)
+    GstPadProbeInfo * info, GnlComposition * comp)
 {
   GstPadProbeReturn retval = GST_PAD_PROBE_OK;
   GnlCompositionPrivate *priv = comp->priv;
+  GstEvent *event = GST_PAD_PROBE_INFO_EVENT (info);
 
   GST_DEBUG_OBJECT (comp, "event: %s", GST_EVENT_TYPE_NAME (event));
 
@@ -1111,8 +1112,6 @@ gnl_composition_event_handler (GstPad * ghostpad, GstObject * parent,
   }
 
 beach:
-  gst_object_unref (comp);
-
   return res;
 }
 
@@ -1189,7 +1188,8 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target,
       if (!priv->toplevelentry->probeid) {
         /* If it's not blocked, block it */
         priv->toplevelentry->probeid =
-            gst_pad_add_probe (ptarget, GST_PAD_PROBE_TYPE_BLOCKING,
+            gst_pad_add_probe (ptarget,
+            GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM | GST_PAD_PROBE_TYPE_IDLE,
             (GstPadProbeCallback) pad_blocked, comp, NULL);
       }
 
@@ -2038,7 +2038,8 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
       GST_LOG_OBJECT (comp, "block_async(%s:%s, TRUE)",
           GST_DEBUG_PAD_NAME (srcpad));
       oldentry->probeid =
-          gst_pad_add_probe (srcpad, GST_PAD_PROBE_TYPE_BLOCKING,
+          gst_pad_add_probe (srcpad,
+          GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM | GST_PAD_PROBE_TYPE_IDLE,
           (GstPadProbeCallback) pad_blocked, comp, NULL);
     }
   }
@@ -2188,7 +2189,9 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
     if (entry && !entry->probeid) {
       GST_LOG_OBJECT (comp, "Setting BLOCKING probe on %s:%s",
           GST_DEBUG_PAD_NAME (srcpad));
-      entry->probeid = gst_pad_add_probe (srcpad, GST_PAD_PROBE_TYPE_BLOCKING,
+      entry->probeid =
+          gst_pad_add_probe (srcpad,
+          GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM | GST_PAD_PROBE_TYPE_IDLE,
           (GstPadProbeCallback) pad_blocked, comp, NULL);
     }
 
@@ -2671,7 +2674,9 @@ object_pad_added (GnlObject * object G_GNUC_UNUSED, GstPad * pad,
   if (!entry->probeid) {
     GST_DEBUG_OBJECT (comp, "pad %s:%s was added, blocking it",
         GST_DEBUG_PAD_NAME (pad));
-    entry->probeid = gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCKING,
+    entry->probeid =
+        gst_pad_add_probe (pad,
+        GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM | GST_PAD_PROBE_TYPE_IDLE,
         (GstPadProbeCallback) pad_blocked, comp, NULL);
   }
 }

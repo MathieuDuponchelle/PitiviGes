@@ -100,6 +100,8 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
 {
   Segment * segment;
   
+  GST_DEBUG_OBJECT (sinkpad, "event:%p , collect:%p", event, collect);
+
   if (GST_EVENT_TYPE (event) == GST_EVENT_SEGMENT) {
     fail_if (collect->expected_segments == NULL, "Received unexpected segment");
     segment = (Segment *) collect->expected_segments->data;
@@ -117,6 +119,7 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
 static GstPadProbeReturn
 sinkpad_buffer_probe (GstPad * sinkpad, GstBuffer * buffer, CollectStructure * collect)
 {
+  GST_DEBUG_OBJECT (sinkpad, "buffer:%p , collect:%p", buffer, collect);
   fail_if(!collect->gotsegment);
   return GST_PAD_PROBE_OK;
 }

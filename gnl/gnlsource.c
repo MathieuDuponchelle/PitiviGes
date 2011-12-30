@@ -222,7 +222,7 @@ element_pad_added_cb (GstElement * element G_GNUC_UNUSED, GstPad * pad,
 
   GST_DEBUG_OBJECT (pad, "valid pad, about to add event probe and pad block");
 
-  priv->probeid = gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCK,
+  priv->probeid = gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM,
       (GstPadProbeCallback) pad_blocked_cb, source, NULL);
   if (priv->probeid == 0)
     GST_WARNING_OBJECT (source, "Couldn't set Async pad blocking");
@@ -566,7 +566,8 @@ gnl_source_change_state (GstElement * element, GstStateChange transition)
           GST_LOG_OBJECT (source, "Trying to async block source pad %s:%s",
               GST_DEBUG_PAD_NAME (pad));
           priv->ghostedpad = pad;
-          priv->probeid = gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCK,
+          priv->probeid =
+              gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM,
               (GstPadProbeCallback) pad_blocked_cb, source, NULL);
           gst_object_unref (pad);
         }

@@ -532,7 +532,7 @@ ghostpad_query_function (GstPad * ghostpad, GstObject * parent,
     GstQuery * query)
 {
   GnlPadPrivate *priv = gst_pad_get_element_private (ghostpad);
-  GnlObject *object = GNL_OBJECT (GST_PAD_PARENT (ghostpad));
+  GnlObject *object = GNL_OBJECT (parent);
   gboolean pret = TRUE;
 
   GST_DEBUG_OBJECT (ghostpad, "querytype:%s", GST_QUERY_TYPE_NAME (query));
@@ -662,6 +662,7 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
     return NULL;
   }
 
+  GST_DEBUG_OBJECT (object, "activating ghostpad");
   /* activate pad */
   gst_pad_set_active (ghost, TRUE);
   /* add it to element */

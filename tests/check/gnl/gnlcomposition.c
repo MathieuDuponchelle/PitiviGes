@@ -231,8 +231,7 @@ GST_START_TEST (test_remove_invalid_object)
 GST_END_TEST;
 
 static GstPadProbeReturn
-pad_block (GstPad * pad, GstPadProbeType ptype, gpointer bedata,
-    gpointer user_data)
+pad_block (GstPad * pad, GstPadProbeInfo * info, gpointer user_data)
 {
   GstPad *ghost;
   GstBin *bin;
