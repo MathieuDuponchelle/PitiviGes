@@ -146,10 +146,12 @@ gnl_filesource_get_property (GObject * object, guint prop_id,
       const gchar *uri = NULL;;
 
       g_object_get (fs, "uri", &uri, NULL);
-      if (uri != NULL && g_str_has_prefix (uri, "file://"))
-        g_value_set_string (value, uri + 7);
-      else
+      if (uri != NULL && g_str_has_prefix (uri, "file://")) {
+        /* URIs may contain escaped characters, need to unescape those */
+        g_value_take_string (value, g_filename_from_uri (uri, NULL, NULL));
+      } else {
         g_value_set_string (value, NULL);
+      }
     }
       break;
     default:
