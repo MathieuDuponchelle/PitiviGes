@@ -1,6 +1,7 @@
 
 #include <gst/check/gstcheck.h>
 
+#ifndef fail_unless_equals_int64
 #define fail_unless_equals_int64(a, b)					\
 G_STMT_START {								\
   gint64 first = a;							\
@@ -9,6 +10,7 @@ G_STMT_START {								\
     "'" #a "' (%" G_GINT64_FORMAT ") is not equal to '" #b"' (%"	\
     G_GINT64_FORMAT ")", first, second);				\
 } G_STMT_END;
+#endif
 
 #define check_start_stop_duration(object, startval, stopval, durval)	\
   G_STMT_START { guint64 start, stop;					\
