@@ -109,7 +109,7 @@ gnl_filesource_set_location (GnlFileSource * fs, const gchar * location)
   GST_DEBUG_OBJECT (fs, "location: '%s'", location);
 
   if (g_ascii_strncasecmp (location, "file://", 7))
-    tmp = g_strdup_printf ("file://%s", location);
+    tmp = gst_filename_to_uri (location, NULL);
   else
     tmp = g_strdup (location);
   GST_DEBUG ("%s", tmp);
