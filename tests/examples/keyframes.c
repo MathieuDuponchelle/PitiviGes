@@ -1,6 +1,6 @@
 /* GStreamer Editing Services
- * Copyright (C) 2010 Brandon Lewis <brandon@alum.berkeley.edu>
- *
+ * Copyright (C) 2011 Lubosz Sarnecki
+ * Copyright (C) 2012 Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -20,24 +20,7 @@
 #include <stdlib.h>
 #include <ges/ges.h>
 
-GESTimelineObject *make_source (gchar * path, guint64 start, guint64 duration,
-    guint64 inpoint, gint priority);
-GESTrackObject *create_effect (gchar * bin_desc, GESTimelineObject * source,
-    GESTrack * track);
-GstInterpolationControlSource
-    * effect_property_control_source (GESTrackObject * track_object,
-    gchar * propname, GstInterpolateMode mode);
-GstElement *find_effect_element_in_track_object (GESTrackObject * track_object);
-GESTimelinePipeline *init_pipeline (gchar * file_path, gdouble inpoint,
-    gdouble duration);
-void init_effects (GESTimelineObject * timeline_object, GESTrack * track,
-    gdouble inpoint, gdouble duration);
-void add_keyframe_to_control_source (GstInterpolationControlSource *
-    control_source, gdouble time, gdouble value);
-void add_keyframe_to_control_source_uint (GstInterpolationControlSource *
-    control_source, gdouble time, guint value);
-
-GESTimelineObject *
+static GESTimelineObject *
 make_source (gchar * path, guint64 start, guint64 duration, guint64 inpoint,
     gint priority)
 {
@@ -54,7 +37,7 @@ make_source (gchar * path, guint64 start, guint64 duration, guint64 inpoint,
   return ret;
 }
 
-GESTrackObject *
+static GESTrackObject *
 create_effect (gchar * bin_desc, GESTimelineObject * source, GESTrack * track)
 {
   GESTrackObject *effect = NULL;
@@ -65,136 +48,26 @@ create_effect (gchar * bin_desc, GESTimelineObject * source, GESTrack * track)
   return effect;
 }
 
-void
-add_keyframe_to_control_source (GstInterpolationControlSource * control_source,
-    gdouble time, gdouble value)
-{
-  GstClockTime timestamp = (guint64) (time * GST_SECOND);
-  GValue g_value = { 0, };
-  g_value_init (&g_value, G_TYPE_DOUBLE);
-  g_value_set_double (&g_value, value);
-  gst_interpolation_control_source_set (control_source, timestamp, &g_value);
-}
-
-void
-add_keyframe_to_control_source_uint (GstInterpolationControlSource *
-    control_source, gdouble time, guint value)
-{
-  GstClockTime timestamp = (guint64) (time * GST_SECOND);
-  GValue g_value = { 0, };
-  g_value_init (&g_value, G_TYPE_UINT);
-  g_value_set_uint (&g_value, value);
-  gst_interpolation_control_source_set (control_source, timestamp, &g_value);
-}
-
-GstInterpolationControlSource *
-effect_property_control_source (GESTrackObject * track_object, gchar * propname,
-    GstInterpolateMode mode)
-{
-  GstInterpolationControlSource *control_source;
-  GstController *controller;
-
-  GstElement *target = find_effect_element_in_track_object (track_object);
-
-  /* add a controller to the source */
-  if (!(controller = gst_object_control_properties (G_OBJECT (target),
-              propname, NULL))) {
-    GST_WARNING ("can't control source element");
-  }
-  control_source = gst_interpolation_control_source_new ();
-
-  gst_controller_set_control_source (controller, propname,
-      GST_CONTROL_SOURCE (control_source));
-  gst_interpolation_control_source_set_interpolation_mode (control_source,
-      mode);
-
-  return control_source;
-}
-
-GstElement *
-find_effect_element_in_track_object (GESTrackObject * track_object)
-{
-  GstIterator *it;
-  gboolean done = FALSE;
-  gpointer data;
-  const gchar *klass;
-  GstElementFactory *factory;
-  GstElement *effect_element = NULL;
-  GstBin *bin = GST_BIN (ges_track_object_get_element (track_object));
-
-  it = gst_bin_iterate_recurse (bin);
-
-  while (!done) {
-    switch (gst_iterator_next (it, &data)) {
-      case GST_ITERATOR_OK:{
-        gchar **categories;
-        guint category;
-        GstElement *child = GST_ELEMENT_CAST (data);
-        factory = gst_element_get_factory (child);
-        klass = gst_element_factory_get_klass (factory);
-
-        categories = g_strsplit (klass, "/", 0);
-        for (category = 0; categories[category]; category++) {
-          if (g_strcmp0 (categories[category], "Effect") == 0) {
-            g_print ("Found Effect Element %s\n", GST_ELEMENT_NAME (child));
-            effect_element = child;
-          }
-        }
-        g_strfreev (categories);
-        gst_object_unref (child);
-        break;
-      }
-      case GST_ITERATOR_RESYNC:
-        /* FIXME, properly restart the process */
-        GST_DEBUG ("iterator resync");
-        gst_iterator_resync (it);
-        break;
-
-      case GST_ITERATOR_DONE:
-        GST_DEBUG ("iterator done");
-        done = TRUE;
-        break;
-
-      default:
-        break;
-    }
-  }
-  gst_iterator_free (it);
-  return effect_element;
-}
-
-void
+static void
 init_effects (GESTimelineObject * timeline_object, GESTrack * track,
     gdouble inpoint, gdouble duration)
 {
   GESTrackObject *videobalance;
-  GESTrackObject *gamma;
-  GstInterpolationControlSource *saturation_control;
-  GstInterpolationControlSource *gamma_control;
   gfloat end = (gfloat) (inpoint + duration);
-  gfloat middle = (gfloat) (inpoint + duration * 0.5);
+  GESKeyframe *keyframe;
 
   videobalance = create_effect (
       (gchar *) "videobalance", timeline_object, track);
 
-  saturation_control = effect_property_control_source (videobalance,
-      (gchar *) "saturation", GST_INTERPOLATE_LINEAR);
-
-  add_keyframe_to_control_source (saturation_control, inpoint, 0);
-  add_keyframe_to_control_source (saturation_control, middle, 1.5);
-  add_keyframe_to_control_source (saturation_control, end, 0);
-
-  gamma = create_effect ((gchar *) "gamma", timeline_object, track);
-
-  gamma_control = effect_property_control_source (gamma,
-      (gchar *) "gamma", GST_INTERPOLATE_QUADRATIC);
-
-  add_keyframe_to_control_source (gamma_control, inpoint, 0);
-  add_keyframe_to_control_source (gamma_control, middle, 2.0);
-  add_keyframe_to_control_source (gamma_control, end, 0);
+  videobalance = videobalance;
+  keyframe = ges_keyframe_new ();
+  ges_keyframe_add_to_track_effect (keyframe, GES_TRACK_EFFECT (videobalance),
+      (gchar *) "hue", GST_INTERPOLATE_LINEAR);
+  ges_keyframe_set_control_point (keyframe, (gdouble) inpoint, (gdouble) - 1.0);
+  ges_keyframe_set_control_point (keyframe, (gdouble) end, (gdouble) 1.0);
 }
 
-GESTimelinePipeline *
+static GESTimelinePipeline *
 init_pipeline (gchar * file_path, gdouble inpoint, gdouble duration)
 {
   GESTimeline *timeline;
@@ -243,7 +116,9 @@ main (int argc, char **argv)
   if (!g_thread_supported ())
     g_thread_init (NULL);
 
-  ctx = g_option_context_new ("- puts some effects on a media file");
+  ctx =
+      g_option_context_new
+      ("Creates a videobalance effect, adds it to the specified source and interpolates its hue effect from -1 to 1 on the specified time interval");
   g_option_context_set_summary (ctx,
       "Select a file.\n"
       "A file is a triplet of filename, inpoint (in seconds) and duration (in seconds).\n"

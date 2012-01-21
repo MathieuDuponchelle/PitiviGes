@@ -1,9 +1,9 @@
 #ifndef _GES_KEYFRAME
 #define _GES_KEYFRAME
 
-#define GES_KEYFRAME ges_keyframe_get_type()
+#define GES_TYPE_KEYFRAME ges_keyframe_get_type()
 
-#define GES_TYPE_KEYFRAME(obj) \
+#define GES_KEYFRAME(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_KEYFRAME, GESKeyframe))
 
 #define GES_KEYFRAME_CLASS(klass) \
@@ -46,5 +46,12 @@ struct _GESKeyframeClass {
 GType ges_keyframe_get_type (void);
 
 GESKeyframe *ges_keyframe_new (void);
+
+/* Carefully not thought about API, bow before my shrewdness */
+
+gint
+ges_keyframe_add_to_track_effect(GESKeyframe * kf, GESTrackEffect *effect, gchar *propname, GstInterpolateMode mode);
+void
+ges_keyframe_set_control_point(GESKeyframe * kf, gdouble time, gdouble value);
 
 #endif
