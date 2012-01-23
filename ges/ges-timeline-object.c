@@ -419,6 +419,8 @@ ges_timeline_object_create_track_object (GESTimelineObject * object,
   }
 
   res = class->create_track_object (object, track);
+  if (res != NULL)
+    ges_timeline_object_add_track_object (object, res);
   return res;
 
 }
@@ -472,7 +474,6 @@ ges_timeline_object_create_track_objects_func (GESTimelineObject * object,
   }
   ges_track_object_set_timeline_object (result, object);
   ret = ges_track_add_object (track, result);
-  ges_timeline_object_add_track_object (object, result);
   return ret;
 }
 
