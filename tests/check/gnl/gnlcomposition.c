@@ -405,7 +405,8 @@ gnonlin_suite (void)
 
   tcase_add_test (tc_chain, test_change_object_start_stop_in_current_stack);
   tcase_add_test (tc_chain, test_remove_invalid_object);
-  if (gst_default_registry_check_feature_version ("videomixer", 0, 11, 0)) {
+  if (gst_registry_check_feature_version (gst_registry_get (), "videomixer", 0,
+          11, 0)) {
     tcase_add_test (tc_chain, test_no_more_pads_race);
   } else {
     GST_WARNING ("videomixer element not available, skipping 1 test");

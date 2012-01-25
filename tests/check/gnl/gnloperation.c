@@ -689,7 +689,8 @@ gnonlin_suite (void)
   tcase_add_test (tc_chain, test_pyramid_operations);
   tcase_add_test (tc_chain, test_pyramid_operations2);
   tcase_add_test (tc_chain, test_pyramid_operations_expandable);
-  if (gst_default_registry_check_feature_version ("videomixer", 0, 11, 0)) {
+  if (gst_registry_check_feature_version (gst_registry_get (), "videomixer", 0,
+          11, 0)) {
     tcase_add_test (tc_chain, test_complex_operations);
     tcase_add_test (tc_chain, test_complex_operations_bis);
   } else
