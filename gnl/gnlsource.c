@@ -363,9 +363,13 @@ pad_blocked_cb (GstPad * pad, GstPadProbeInfo * info, GnlSource * source)
   GST_DEBUG_OBJECT (pad, "probe callback");
 
   if (!source->priv->ghostpad && !source->priv->areblocked) {
+    GThread *lthread;
+
     source->priv->areblocked = TRUE;
     GST_DEBUG_OBJECT (pad, "starting thread to call ghost_seek_pad");
-    g_thread_create ((GThreadFunc) ghost_seek_pad, source, FALSE, NULL);
+    lthread =
+        g_thread_new ("gnlsourceseek", (GThreadFunc) ghost_seek_pad, source);
+    g_thread_unref (lthread);
   }
 
   return GST_PAD_PROBE_OK;

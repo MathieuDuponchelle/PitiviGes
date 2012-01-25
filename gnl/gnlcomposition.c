@@ -79,7 +79,7 @@ struct _GnlCompositionPrivate
   GList *objects_start;
   GList *objects_stop;
   GHashTable *objects_hash;
-  GMutex *objects_lock;
+  GMutex objects_lock;
 
   /* Update properties
    * can_update: If True, updates should be taken into account immediatly, else
@@ -95,7 +95,7 @@ struct _GnlCompositionPrivate
      flushing : 
      pending_idle :
    */
-  GMutex *flushing_lock;
+  GMutex flushing_lock;
   gboolean flushing;
   guint pending_idle;
 
@@ -200,7 +200,7 @@ static void no_more_pads_object_cb (GstElement * element,
 #define COMP_OBJECTS_LOCK(comp) G_STMT_START {				\
     GST_LOG_OBJECT (comp, "locking objects_lock from thread %p",	\
 		    g_thread_self());					\
-    g_mutex_lock (comp->priv->objects_lock);				\
+    g_mutex_lock (&comp->priv->objects_lock);				\
     GST_LOG_OBJECT (comp, "locked objects_lock from thread %p",		\
 		    g_thread_self());					\
   } G_STMT_END
@@ -208,14 +208,14 @@ static void no_more_pads_object_cb (GstElement * element,
 #define COMP_OBJECTS_UNLOCK(comp) G_STMT_START {			\
     GST_LOG_OBJECT (comp, "unlocking objects_lock from thread %p",	\
 		    g_thread_self());					\
-    g_mutex_unlock (comp->priv->objects_lock);				\
+    g_mutex_unlock (&comp->priv->objects_lock);				\
   } G_STMT_END
 
 
 #define COMP_FLUSHING_LOCK(comp) G_STMT_START {				\
     GST_LOG_OBJECT (comp, "locking flushing_lock from thread %p",	\
 		    g_thread_self());					\
-    g_mutex_lock (comp->priv->flushing_lock);				\
+    g_mutex_lock (&comp->priv->flushing_lock);				\
     GST_LOG_OBJECT (comp, "locked flushing_lock from thread %p",	\
 		    g_thread_self());					\
   } G_STMT_END
@@ -223,7 +223,7 @@ static void no_more_pads_object_cb (GstElement * element,
 #define COMP_FLUSHING_UNLOCK(comp) G_STMT_START {			\
     GST_LOG_OBJECT (comp, "unlocking flushing_lock from thread %p",	\
 		    g_thread_self());					\
-    g_mutex_unlock (comp->priv->flushing_lock);				\
+    g_mutex_unlock (&comp->priv->flushing_lock);				\
   } G_STMT_END
 
 
@@ -339,14 +339,14 @@ gnl_composition_init (GnlComposition * comp)
 
   priv = G_TYPE_INSTANCE_GET_PRIVATE (comp, GNL_TYPE_COMPOSITION,
       GnlCompositionPrivate);
-  priv->objects_lock = g_mutex_new ();
+  g_mutex_init (&priv->objects_lock);
   priv->objects_start = NULL;
   priv->objects_stop = NULL;
 
   priv->can_update = TRUE;
   priv->update_required = FALSE;
 
-  priv->flushing_lock = g_mutex_new ();
+  g_mutex_init (&priv->flushing_lock);
   priv->flushing = FALSE;
   priv->pending_idle = 0;
 
@@ -415,11 +415,9 @@ gnl_composition_finalize (GObject * object)
   g_hash_table_destroy (priv->objects_hash);
   COMP_OBJECTS_UNLOCK (comp);
 
-  g_mutex_free (priv->objects_lock);
   gst_segment_free (priv->segment);
   gst_segment_free (priv->outside_segment);
 
-  g_mutex_free (priv->flushing_lock);
 
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
