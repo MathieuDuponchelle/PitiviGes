@@ -1,15 +1,10 @@
-built_header_make = gnlmarshal.h
-built_source_make = gnlmarshal.c
 plugin_LTLIBRARIES = libgnl.la
-
-EXTRA_libgnl_la_SOURCES = gnlmarshal.list 
 
 libgnl_la_SOURCES =		\
 	gnl.c			\
 	gnlobject.c		\
 	gnlcomposition.c	\
 	gnlghostpad.c		\
-	gnlmarshal.c		\
 	gnloperation.c		\
 	gnlsource.c		\
 	gnlurisource.c
@@ -32,25 +27,9 @@ gnl_headers =			\
 DISTCLEANFILE = $(CLEANFILES)
 
 #files built on make all/check/instal
-BUILT_SOURCES =			\
-	$(built_header_configure)	\
-	$(built_header_make)		\
-	$(built_source_make)
+BUILT_SOURCES =	$(built_header_configure)
 
-CLEANFILES = $(built_header_make) $(built_source_make)
-
-noinst_HEADERS = $(gnl_headers) $(built_header_make) $(built_header_configure)
-
-gnlmarshal.h: gnlmarshal.list
-	$(AM_V_GEN)glib-genmarshal --header --prefix=gnl_marshal $^ > gnlmarshal.h.tmp && \
-	mv gnlmarshal.h.tmp gnlmarshal.h
-
-gnlmarshal.c: gnlmarshal.list
-	$(AM_V_GEN)echo "#include \"glib-object.h\"" >gnlmarshal.c.tmp && \
-	echo "#include \"gnlmarshal.h\"" >> gnlmarshal.c.tmp && \
-	glib-genmarshal --body --prefix=gnl_marshal $^ >> gnlmarshal.c.tmp && \
-	mv gnlmarshal.c.tmp gnlmarshal.c
-
+noinst_HEADERS = $(gnl_headers) $(built_header_configure)
 
 Android.mk: Makefile.am $(BUILT_SOURCES)
 	androgenizer \

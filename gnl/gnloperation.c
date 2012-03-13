@@ -24,7 +24,6 @@
 #endif
 
 #include "gnl.h"
-#include "gnlmarshal.h"
 
 /**
  * SECTION:element-gnloperation
@@ -137,7 +136,7 @@ gnl_operation_class_init (GnlOperationClass * klass)
   gnl_operation_signals[INPUT_PRIORITY_CHANGED] =
       g_signal_new ("input-priority-changed", G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (GnlOperationClass,
-          input_priority_changed), NULL, NULL, gnl_marshal_VOID__OBJECT_UINT,
+          input_priority_changed), NULL, NULL, g_cclosure_marshal_generic,
       G_TYPE_NONE, 2, GST_TYPE_PAD, G_TYPE_UINT);
 
   gstelement_class->request_new_pad =
