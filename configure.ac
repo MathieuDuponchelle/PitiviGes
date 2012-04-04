@@ -36,10 +36,10 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],
    AC_SUBST(AM_DEFAULT_VERBOSITY)])
 
 dnl our libraries and install dirs use major.minor as a version
-GST_MAJORMINOR=$PACKAGE_VERSION_MAJOR.$PACKAGE_VERSION_MINOR
+GST_API_VERSION=$PACKAGE_VERSION_MAJOR.$PACKAGE_VERSION_MINOR
 dnl we override it here if we need to for the release candidate of new series
-GST_MAJORMINOR=0.11
-AC_SUBST(GST_MAJORMINOR)
+GST_API_VERSION=1.0
+AC_SUBST(GST_API_VERSION)
 
 AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
@@ -106,23 +106,23 @@ AG_GST_GLIB_CHECK([2.31])
 
 dnl checks for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
-AG_GST_CHECK_GST($GST_MAJORMINOR, [$GST_REQ], [yes])
-AG_GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ], [yes])
+AG_GST_CHECK_GST($GST_API_VERSION, [$GST_REQ], [yes])
+AG_GST_CHECK_GST_BASE($GST_API_VERSION, [$GST_REQ], [yes])
 
-AG_GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ], [yes])
+AG_GST_CHECK_GST_PLUGINS_BASE($GST_API_VERSION, [$GSTPB_REQ], [yes])
 
 dnl check for uninstalled plugin directories for unit tests
-AG_GST_CHECK_GST_PLUGINS_GOOD($GST_MAJORMINOR, [0.11.0])
+AG_GST_CHECK_GST_PLUGINS_GOOD($GST_API_VERSION, [0.11.0])
 
 dnl There are paths for documentation xrefs
 GLIB_PREFIX="`$PKG_CONFIG --variable=prefix glib-2.0`"
-GST_PREFIX="`$PKG_CONFIG --variable=prefix gstreamer-$GST_MAJORMINOR`"
-GSTPB_PREFIX="`$PKG_CONFIG --variable=prefix gstreamer-plugins-base-$GST_MAJORMINOR`"
+GST_PREFIX="`$PKG_CONFIG --variable=prefix gstreamer-$GST_API_VERSION`"
+GSTPB_PREFIX="`$PKG_CONFIG --variable=prefix gstreamer-plugins-base-$GST_API_VERSION`"
 AC_SUBST(GLIB_PREFIX)
 AC_SUBST(GST_PREFIX)
 AC_SUBST(GSTPB_PREFIX)
 
-AG_GST_CHECK_GST_CHECK($GST_MAJORMINOR, [$GST_REQ], no)
+AG_GST_CHECK_GST_CHECK($GST_API_VERSION, [$GST_REQ], no)
 AM_CONDITIONAL(HAVE_CHECK, test "x$HAVE_GST_CHECK" = "xyes")
 
 dnl *** set variables based on configure arguments ***

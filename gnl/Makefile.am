@@ -42,5 +42,5 @@ Android.mk: Makefile.am $(BUILT_SOURCES)
 	           $(libgnl_la_LIBADD) \
 	           -ldl \
 	 -:PASSTHROUGH LOCAL_ARM_MODE:=arm \
-		       LOCAL_MODULE_PATH:='$$(TARGET_OUT)/lib/gstreamer-0.11' \
+		       LOCAL_MODULE_PATH:='$$(TARGET_OUT)/lib/gstreamer-@GST_API_VERSION@' \
 	> $@

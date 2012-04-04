@@ -10,7 +10,7 @@ Vendor:		GStreamer Backpackers Team <package@gstreamer.net>
 Source:		http://download.sf.net/gnonlin/%{name}-%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-%define		gst_majorminor @GST_MAJORMINOR@
+%define		gst_majorminor @GST_API_VERSION@
 %define		gst_req @GST_REQ@
 
 Requires: 	gstreamer >= %{gst_req}
