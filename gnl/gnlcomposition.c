@@ -1211,7 +1211,7 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target,
     priv->ghosteventprobe =
         gst_pad_add_probe (target, GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
         (GstPadProbeCallback) ghost_event_probe_handler, comp, NULL);
-    GST_DEBUG_OBJECT (comp, "added event probe %d", priv->ghosteventprobe);
+    GST_DEBUG_OBJECT (comp, "added event probe %lu", priv->ghosteventprobe);
   }
 
   if (!hadghost) {
