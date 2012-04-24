@@ -845,7 +845,7 @@ get_new_seek_event (GnlComposition * comp, gboolean initial,
   GST_DEBUG_OBJECT (comp, "initial:%d", initial);
   /* remove the seek flag */
   if (!(initial))
-    flags = priv->segment->flags;
+    flags = (GstSeekFlags) priv->segment->flags;
   else
     flags = GST_SEEK_FLAG_ACCURATE | GST_SEEK_FLAG_FLUSH;
 
