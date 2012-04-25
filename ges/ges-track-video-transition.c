@@ -38,6 +38,7 @@ struct _GESTrackVideoTransitionPrivate
   GstInterpolationControlSource *control_source;
 
   /* so we can support changing between wipes */
+  GstElement *topbin;
   GstElement *smpte;
   GstElement *mixer;
   GstPad *sinka;
@@ -47,6 +48,7 @@ struct _GESTrackVideoTransitionPrivate
    * is used */
   gdouble start_value;
   gdouble end_value;
+  guint64 dur;
 };
 
 enum
@@ -112,9 +114,11 @@ ges_track_video_transition_init (GESTrackVideoTransition * self)
   self->priv->mixer = NULL;
   self->priv->sinka = NULL;
   self->priv->sinkb = NULL;
+  self->priv->topbin = NULL;
   self->priv->type = GES_VIDEO_STANDARD_TRANSITION_TYPE_NONE;
   self->priv->start_value = 0.0;
   self->priv->end_value = 0.0;
+  self->priv->dur = 0;
 }
 
 static void
@@ -304,8 +308,68 @@ ges_track_video_transition_create_element (GESTrackObject * object)
 
   priv->controller = controller;
   priv->control_source = control_source;
+  priv->topbin = topbin;
 
   return topbin;
+}
+
+static void
+my_blocked_pad (GstPad * sink, gboolean blocked,
+    GESTrackVideoTransitionPrivate * priv)
+{
+  GstPad *peer;
+
+  if (blocked) {
+    GstPad *srcpad, *sinkpad;
+    GstElement *smptealpha = gst_element_factory_make ("smptealpha", NULL);
+
+    printf ("blocking\n");
+    g_object_set (smptealpha,
+        "type", (gint) priv->type, "invert", (gboolean) TRUE, NULL);
+    gst_bin_add (GST_BIN (priv->topbin), smptealpha);
+    peer = gst_pad_get_peer (sink);
+    gst_pad_unlink (peer, sink);
+
+    sinkpad = gst_element_get_static_pad (smptealpha, "sink");
+    gst_pad_link_full (peer, sinkpad, GST_PAD_LINK_CHECK_NOTHING);
+    gst_pad_set_active (sinkpad, TRUE);
+    gst_object_unref (sinkpad);
+
+    /* Link smpte src pad to our mixer sink */
+    srcpad = gst_element_get_static_pad (smptealpha, "src");
+    gst_pad_link_full (srcpad, sink, GST_PAD_LINK_CHECK_NOTHING);
+    gst_pad_set_active (srcpad, TRUE);
+    gst_object_unref (srcpad);
+
+    if (!priv->smpte) {
+      GValue start_value = { 0, };
+      GValue end_value = { 0, };
+
+      g_object_set (smptealpha, "position", (gfloat) 0.0, NULL);
+      priv->controller =
+          gst_object_control_properties (G_OBJECT (smptealpha), "position",
+          NULL);
+      gst_interpolation_control_source_unset_all (priv->control_source);
+      priv->control_source = gst_interpolation_control_source_new ();
+      gst_controller_set_control_source (priv->controller,
+          "position", GST_CONTROL_SOURCE (priv->control_source));
+      gst_interpolation_control_source_set_interpolation_mode
+          (priv->control_source, GST_INTERPOLATE_LINEAR);
+      g_value_init (&start_value, G_TYPE_DOUBLE);
+      g_value_init (&end_value, G_TYPE_DOUBLE);
+      g_value_set_double (&start_value, 1.0);
+      g_value_set_double (&end_value, 0.0);
+      gst_interpolation_control_source_set (priv->control_source, 0,
+          &start_value);
+      gst_interpolation_control_source_set (priv->control_source, priv->dur,
+          &end_value);
+    }
+    priv->smpte = smptealpha;
+
+    gst_pad_set_blocked_async (sink, FALSE,
+        (GstPadBlockCallback) my_blocked_pad, NULL);
+  } else
+    printf ("unblocking\n");
 }
 
 static GObject *
@@ -374,6 +438,7 @@ ges_track_video_transition_duration_changed (GESTrackObject * object,
   gst_interpolation_control_source_set (priv->control_source,
       duration, &end_value);
 
+  priv->dur = duration;
   GST_LOG ("done updating controller");
 }
 
@@ -392,16 +457,23 @@ ges_track_video_transition_set_transition_type (GESTrackVideoTransition * self,
 {
   GESTrackVideoTransitionPrivate *priv = self->priv;
 
-  GST_DEBUG ("%p %d => %d", self, priv->type, type);
+  GST_ERROR ("%p %d => %d", self, priv->type, type);
 
   if (priv->type && (priv->type != type) &&
       ((type == GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE) ||
           (priv->type == GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE))) {
-    GST_WARNING
-        ("Changing between 'crossfade' and other types is not supported");
-    return FALSE;
+    printf ("About to block pad\n");
+    priv->start_value = 1.0;
+    priv->start_value = 0.0;
+    priv->type = type;
+    priv->smpte = NULL;
+    gst_pad_set_blocked_async (priv->sinka, TRUE,
+        (GstPadBlockCallback) my_blocked_pad, priv);
+    gst_pad_set_blocked_async (priv->sinkb, TRUE,
+        (GstPadBlockCallback) my_blocked_pad, priv);
+    return TRUE;
   }
-
+  printf ("LOLOLOL\n");
   priv->type = type;
   if (priv->smpte && (type != GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE))
     g_object_set (priv->smpte, "type", (gint) type, NULL);
