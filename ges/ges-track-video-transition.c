@@ -199,8 +199,9 @@ on_caps_set (GstPad * srca_pad, GParamSpec * pspec, GstElement * capsfilt)
 
     /* Set capsfilter to the size of the first video */
     size_caps =
-        gst_caps_new_simple ("video/x-raw-yuv", "width", G_TYPE_INT, width,
-        "height", G_TYPE_INT, height, NULL);
+        gst_caps_new_simple ("video/x-raw-yuv",
+        "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('A', 'Y', 'U', 'V'),
+        "width", G_TYPE_INT, width, "height", G_TYPE_INT, height, NULL);
     g_object_set (capsfilt, "caps", size_caps, NULL);
   }
 }
@@ -208,7 +209,8 @@ on_caps_set (GstPad * srca_pad, GParamSpec * pspec, GstElement * capsfilt)
 static GstElement *
 ges_track_video_transition_create_element (GESTrackObject * object)
 {
-  GstElement *topbin, *iconva, *iconvb, *scalea, *scaleb, *capsfilt, *oconv;
+  GstElement *topbin, *iconva, *iconvb, *scalea, *scaleb, *capsfilt, *capsfiltb,
+      *oconv;
   GObject *target = NULL;
   const gchar *propname = NULL;
   GstElement *mixer = NULL;
@@ -218,6 +220,7 @@ ges_track_video_transition_create_element (GESTrackObject * object)
   GstInterpolationControlSource *control_source;
   GESTrackVideoTransition *self;
   GESTrackVideoTransitionPrivate *priv;
+  GstCaps *caps;
 
   self = GES_TRACK_VIDEO_TRANSITION (object);
   priv = self->priv;
@@ -230,11 +233,17 @@ ges_track_video_transition_create_element (GESTrackObject * object)
   scalea = gst_element_factory_make ("videoscale", "vs-a");
   scaleb = gst_element_factory_make ("videoscale", "vs-b");
   capsfilt = gst_element_factory_make ("capsfilter", "capsfilt");
+  capsfiltb = gst_element_factory_make ("capsfilter", "capsfilt-b");
   oconv = gst_element_factory_make ("ffmpegcolorspace", "tr-csp-output");
+  printf ("lolzob\n");
+  caps = gst_caps_new_simple ("video/x-raw-yuv",
+      "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('A', 'Y', 'U', 'V'), NULL);
 
+  g_object_set (capsfiltb, "caps", caps, NULL);
+  g_object_set (capsfilt, "caps", caps, NULL);
   gst_bin_add_many (GST_BIN (topbin), iconva, iconvb, scalea, scaleb, capsfilt,
-      oconv, NULL);
-
+      oconv, capsfiltb, NULL);
+  printf ("dafuq\n");
   /* Prefer videomixer2 to videomixer */
   mixer = gst_element_factory_make ("videomixer2", NULL);
   if (mixer == NULL)
@@ -256,12 +265,14 @@ ges_track_video_transition_create_element (GESTrackObject * object)
   } else {
     gst_element_link_pads_full (iconva, "src", scalea, "sink",
         GST_PAD_LINK_CHECK_NOTHING);
+    gst_element_link_pads_full (scalea, "src", capsfiltb, "sink",
+        GST_PAD_LINK_CHECK_NOTHING);
     gst_element_link_pads_full (iconvb, "src", scaleb, "sink",
         GST_PAD_LINK_CHECK_NOTHING);
     gst_element_link_pads_full (scaleb, "src", capsfilt, "sink",
         GST_PAD_LINK_CHECK_NOTHING);
 
-    priv->sinka = (GstPad *) link_element_to_mixer (scalea, mixer);
+    priv->sinka = (GstPad *) link_element_to_mixer (capsfiltb, mixer);
     priv->sinkb = (GstPad *) link_element_to_mixer (capsfilt, mixer);
     target = (GObject *) priv->sinkb;
     propname = "alpha";
@@ -328,6 +339,13 @@ my_blocked_pad (GstPad * sink, gboolean blocked,
         "type", (gint) priv->type, "invert", (gboolean) TRUE, NULL);
     gst_bin_add (GST_BIN (priv->topbin), smptealpha);
     peer = gst_pad_get_peer (sink);
+    srcpad = gst_element_get_static_pad (smptealpha, "src");
+    printf ("negotiated caps : %s\n",
+        gst_caps_to_string (gst_pad_get_negotiated_caps (sink)));
+    printf ("Can accept caps : %d\n", gst_pad_accept_caps (srcpad,
+            gst_pad_get_negotiated_caps (sink)));
+    printf ("Cause has caps : %s\n",
+        gst_caps_to_string (gst_pad_get_caps (srcpad)));
     gst_pad_unlink (peer, sink);
 
     sinkpad = gst_element_get_static_pad (smptealpha, "sink");
@@ -336,8 +354,7 @@ my_blocked_pad (GstPad * sink, gboolean blocked,
     gst_object_unref (sinkpad);
 
     /* Link smpte src pad to our mixer sink */
-    srcpad = gst_element_get_static_pad (smptealpha, "src");
-    gst_pad_link_full (srcpad, sink, GST_PAD_LINK_CHECK_NOTHING);
+    gst_pad_link (srcpad, sink);
     gst_pad_set_active (srcpad, TRUE);
     gst_object_unref (srcpad);
 
