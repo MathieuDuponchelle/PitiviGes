@@ -56,15 +56,6 @@ enum
   PROP_0,
 };
 
-#define fast_element_link(a,b) gst_element_link_pads_full((a),"src",(b),"sink",GST_PAD_LINK_CHECK_NOTHING)
-
-static GObject *link_element_to_mixer (GstElement * element,
-    GstElement * mixer);
-
-static GObject *link_element_to_mixer_with_smpte (GstBin * bin,
-    GstElement * element, GstElement * mixer, gint type,
-    GstElement ** smpteref);
-
 static void
 ges_track_video_transition_duration_changed (GESTrackObject * self,
     guint64 duration);
@@ -184,38 +175,11 @@ ges_track_video_transition_set_property (GObject * object,
   }
 }
 
-static void
-on_caps_set (GstPad * srca_pad, GParamSpec * pspec, GstElement * capsfilt)
-{
-  gint width, height;
-  const GstStructure *str;
-  GstCaps *size_caps = NULL;
-
-  if (GST_PAD_CAPS (srca_pad)) {
-    /* Get width and height of first video */
-    str = gst_caps_get_structure (GST_PAD_CAPS (srca_pad), 0);
-    gst_structure_get_int (str, "width", &width);
-    gst_structure_get_int (str, "height", &height);
-
-    /* Set capsfilter to the size of the first video */
-    size_caps =
-        gst_caps_new_simple ("video/x-raw-yuv", "width", G_TYPE_INT, width,
-        "height", G_TYPE_INT, height, NULL);
-    g_object_set (capsfilt, "caps", size_caps, NULL);
-  }
-}
-
 static GstElement *
 ges_track_video_transition_create_element (GESTrackObject * object)
 {
-  GstElement *topbin, *iconva, *iconvb, *scalea, *scaleb, *capsfilt, *oconv;
-  GObject *target = NULL;
-  const gchar *propname = NULL;
-  GstElement *mixer = NULL;
-  GstPad *sinka_target, *sinkb_target, *src_target, *sinka, *sinkb, *src,
-      *srca_pad;
-  GstController *controller;
-  GstInterpolationControlSource *control_source;
+  GstElement *topbin, *iconva, *iconvb, *oconv, *smpte;
+  GstPad *sinka_target, *sinkb_target, *src_target, *sinka, *sinkb, *src;
   GESTrackVideoTransition *self;
   GESTrackVideoTransitionPrivate *priv;
 
@@ -227,88 +191,43 @@ ges_track_video_transition_create_element (GESTrackObject * object)
   topbin = gst_bin_new ("transition-bin");
   iconva = gst_element_factory_make ("ffmpegcolorspace", "tr-csp-a");
   iconvb = gst_element_factory_make ("ffmpegcolorspace", "tr-csp-b");
-  scalea = gst_element_factory_make ("videoscale", "vs-a");
-  scaleb = gst_element_factory_make ("videoscale", "vs-b");
-  capsfilt = gst_element_factory_make ("capsfilter", "capsfilt");
+  smpte = gst_element_factory_make ("smpte", "smpte");
   oconv = gst_element_factory_make ("ffmpegcolorspace", "tr-csp-output");
 
-  gst_bin_add_many (GST_BIN (topbin), iconva, iconvb, scalea, scaleb, capsfilt,
-      oconv, NULL);
+  gst_bin_add_many (GST_BIN (topbin), iconva, iconvb, oconv, smpte, NULL);
 
-  /* Prefer videomixer2 to videomixer */
-  mixer = gst_element_factory_make ("videomixer2", NULL);
-  if (mixer == NULL)
-    mixer = gst_element_factory_make ("videomixer", NULL);
-  g_object_set (G_OBJECT (mixer), "background", 1, NULL);
-  gst_bin_add (GST_BIN (topbin), mixer);
+  g_object_set (smpte, "type", 3, NULL);
 
   if (priv->type != GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE) {
-    priv->sinka =
-        (GstPad *) link_element_to_mixer_with_smpte (GST_BIN (topbin), iconva,
-        mixer, priv->type, NULL);
-    priv->sinkb =
-        (GstPad *) link_element_to_mixer_with_smpte (GST_BIN (topbin), iconvb,
-        mixer, priv->type, &priv->smpte);
-    target = (GObject *) priv->smpte;
-    propname = "position";
-    priv->start_value = 1.0;
-    priv->end_value = 0.0;
+    printf ("not a crossfade\n");
+    gst_element_link_pads_full (iconva, "src", smpte, "sink1",
+        GST_PAD_LINK_CHECK_CAPS);
+    gst_element_link_pads_full (iconvb, "src", smpte, "sink2",
+        GST_PAD_LINK_CHECK_CAPS);
   } else {
-    gst_element_link_pads_full (iconva, "src", scalea, "sink",
-        GST_PAD_LINK_CHECK_NOTHING);
-    gst_element_link_pads_full (iconvb, "src", scaleb, "sink",
-        GST_PAD_LINK_CHECK_NOTHING);
-    gst_element_link_pads_full (scaleb, "src", capsfilt, "sink",
-        GST_PAD_LINK_CHECK_NOTHING);
 
-    priv->sinka = (GstPad *) link_element_to_mixer (scalea, mixer);
-    priv->sinkb = (GstPad *) link_element_to_mixer (capsfilt, mixer);
-    target = (GObject *) priv->sinkb;
-    propname = "alpha";
-    priv->start_value = 0.0;
-    priv->end_value = 1.0;
   }
-
-  priv->mixer = gst_object_ref (mixer);
-
-  fast_element_link (mixer, oconv);
 
   sinka_target = gst_element_get_static_pad (iconva, "sink");
   sinkb_target = gst_element_get_static_pad (iconvb, "sink");
   src_target = gst_element_get_static_pad (oconv, "src");
 
-  sinka = gst_ghost_pad_new ("sinka", sinka_target);
-  sinkb = gst_ghost_pad_new ("sinkb", sinkb_target);
+  sinkb = gst_ghost_pad_new ("sinka", sinkb_target);
+  sinka = gst_ghost_pad_new ("sinkb", sinka_target);
   src = gst_ghost_pad_new ("src", src_target);
 
   gst_element_add_pad (topbin, src);
-  gst_element_add_pad (topbin, sinka);
   gst_element_add_pad (topbin, sinkb);
+  gst_element_add_pad (topbin, sinka);
 
-  srca_pad = gst_element_get_static_pad (scalea, "src");
-  g_signal_connect (srca_pad, "notify::caps", G_CALLBACK (on_caps_set),
-      (GstElement *) capsfilt);
+  gst_element_link_pads_full (smpte, "src", oconv, "sink",
+      GST_PAD_LINK_CHECK_CAPS);
+
+  priv->smpte = gst_object_ref (smpte);
 
   gst_object_unref (sinka_target);
   gst_object_unref (sinkb_target);
   gst_object_unref (src_target);
-  gst_object_unref (srca_pad);
-
-  /* set up interpolation */
-
-  g_object_set (target, propname, (gfloat) 0.0, NULL);
-
-  controller = gst_object_control_properties (target, propname, NULL);
-
-  control_source = gst_interpolation_control_source_new ();
-  gst_controller_set_control_source (controller,
-      propname, GST_CONTROL_SOURCE (control_source));
-  gst_interpolation_control_source_set_interpolation_mode (control_source,
-      GST_INTERPOLATE_LINEAR);
-
-  priv->controller = controller;
-  priv->control_source = control_source;
-  priv->topbin = topbin;
 
   return topbin;
 }
@@ -317,129 +236,78 @@ static void
 my_blocked_pad (GstPad * sink, gboolean blocked,
     GESTrackVideoTransitionPrivate * priv)
 {
-  GstPad *peer;
-
+  printf ("ENTERING\n");
   if (blocked) {
-    GstPad *srcpad, *sinkpad;
-    GstElement *smptealpha = gst_element_factory_make ("smptealpha", NULL);
+    /* We are gonna surgically replace the mixer with a smpte */
+    GstPad *peer_src_pad;
+    GstPad *smpte_sink_pad;
 
-    printf ("blocking\n");
-    g_object_set (smptealpha,
-        "type", (gint) priv->type, "invert", (gboolean) TRUE, NULL);
-    gst_bin_add (GST_BIN (priv->topbin), smptealpha);
-    peer = gst_pad_get_peer (sink);
-    gst_pad_unlink (peer, sink);
-
-    sinkpad = gst_element_get_static_pad (smptealpha, "sink");
-    gst_pad_link_full (peer, sinkpad, GST_PAD_LINK_CHECK_NOTHING);
-    gst_pad_set_active (sinkpad, TRUE);
-    gst_object_unref (sinkpad);
-
-    /* Link smpte src pad to our mixer sink */
-    srcpad = gst_element_get_static_pad (smptealpha, "src");
-    gst_pad_link_full (srcpad, sink, GST_PAD_LINK_CHECK_NOTHING);
-    gst_pad_set_active (srcpad, TRUE);
-    gst_object_unref (srcpad);
-
+    peer_src_pad = gst_pad_get_peer (sink);
+    gst_pad_unlink (peer_src_pad, sink);
     if (!priv->smpte) {
-      GValue start_value = { 0, };
-      GValue end_value = { 0, };
+      GstPad *mixer_src_pad;
+      GstPad *oconv_sink_pad;
+      GstPad *smpte_src_pad;
 
-      g_object_set (smptealpha, "position", (gfloat) 0.0, NULL);
-      priv->controller =
-          gst_object_control_properties (G_OBJECT (smptealpha), "position",
-          NULL);
-      gst_interpolation_control_source_unset_all (priv->control_source);
-      priv->control_source = gst_interpolation_control_source_new ();
-      gst_controller_set_control_source (priv->controller,
-          "position", GST_CONTROL_SOURCE (priv->control_source));
-      gst_interpolation_control_source_set_interpolation_mode
-          (priv->control_source, GST_INTERPOLATE_LINEAR);
-      g_value_init (&start_value, G_TYPE_DOUBLE);
-      g_value_init (&end_value, G_TYPE_DOUBLE);
-      g_value_set_double (&start_value, 1.0);
-      g_value_set_double (&end_value, 0.0);
-      gst_interpolation_control_source_set (priv->control_source, 0,
-          &start_value);
-      gst_interpolation_control_source_set (priv->control_source, priv->dur,
-          &end_value);
+      priv->smpte = gst_element_factory_make ("smpte", "smpte");
+      g_object_set (G_OBJECT (priv->smpte), "duration", priv->dur, "type",
+          priv->type, NULL);
+      gst_bin_add (GST_BIN (priv->topbin), priv->smpte);
+      gst_element_sync_state_with_parent (priv->smpte);
+
+      mixer_src_pad = gst_element_get_static_pad (priv->mixer, "src");
+      oconv_sink_pad = gst_pad_get_peer (mixer_src_pad);
+      smpte_src_pad = gst_element_get_static_pad (priv->smpte, "src");
+
+      gst_pad_unlink (mixer_src_pad, oconv_sink_pad);
+
+      gst_pad_link_full (smpte_src_pad, oconv_sink_pad,
+          GST_PAD_LINK_CHECK_CAPS);
+      gst_pad_set_active (smpte_src_pad, TRUE);
+
+      gst_object_unref (mixer_src_pad);
+      gst_object_unref (oconv_sink_pad);
+      gst_object_unref (smpte_src_pad);
+    } else {
+      gst_element_set_state (priv->mixer, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (priv->topbin), priv->mixer);
     }
-    priv->smpte = smptealpha;
-
+    if (priv->sinka == sink) {
+      printf ("SINK A \n");
+      smpte_sink_pad = gst_element_get_static_pad (priv->smpte, "sink1");
+      priv->sinka = smpte_sink_pad;
+    } else {
+      printf ("SINK B\n");
+      smpte_sink_pad = gst_element_get_static_pad (priv->smpte, "sink2");
+      priv->sinkb = smpte_sink_pad;
+    }
+    if (smpte_sink_pad)
+      printf ("The new pad has these caps : %s\n",
+          gst_caps_to_string (gst_pad_get_caps (smpte_sink_pad)));
+    else
+      printf ("Couldn't get request_pad\n");
+    gst_pad_link_full (peer_src_pad, smpte_sink_pad, GST_PAD_LINK_CHECK_CAPS);
+    gst_pad_set_active (smpte_sink_pad, TRUE);
+    gst_object_unref (peer_src_pad);
+    gst_object_unref (sink);
     gst_pad_set_blocked_async (sink, FALSE,
         (GstPadBlockCallback) my_blocked_pad, NULL);
   } else
     printf ("unblocking\n");
 }
 
-static GObject *
-link_element_to_mixer (GstElement * element, GstElement * mixer)
-{
-  GstPad *sinkpad = gst_element_get_request_pad (mixer, "sink_%d");
-  GstPad *srcpad = gst_element_get_static_pad (element, "src");
-
-  gst_pad_link_full (srcpad, sinkpad, GST_PAD_LINK_CHECK_NOTHING);
-  gst_object_unref (srcpad);
-
-  return G_OBJECT (sinkpad);
-}
-
-static GObject *
-link_element_to_mixer_with_smpte (GstBin * bin, GstElement * element,
-    GstElement * mixer, gint type, GstElement ** smpteref)
-{
-  GstPad *srcpad, *sinkpad;
-  GstElement *smptealpha = gst_element_factory_make ("smptealpha", NULL);
-
-  g_object_set (G_OBJECT (smptealpha),
-      "type", (gint) type, "invert", (gboolean) TRUE, NULL);
-  gst_bin_add (bin, smptealpha);
-
-  fast_element_link (element, smptealpha);
-
-  /* crack */
-  if (smpteref) {
-    *smpteref = smptealpha;
-  }
-
-  srcpad = gst_element_get_static_pad (smptealpha, "src");
-  sinkpad = gst_element_get_request_pad (mixer, "sink_%d");
-  gst_pad_link_full (srcpad, sinkpad, GST_PAD_LINK_CHECK_NOTHING);
-  gst_object_unref (srcpad);
-
-  return G_OBJECT (sinkpad);
-}
-
 static void
 ges_track_video_transition_duration_changed (GESTrackObject * object,
     guint64 duration)
 {
-  GValue start_value = { 0, };
-  GValue end_value = { 0, };
-  GstElement *gnlobj = ges_track_object_get_gnlobject (object);
   GESTrackVideoTransition *self = GES_TRACK_VIDEO_TRANSITION (object);
   GESTrackVideoTransitionPrivate *priv = self->priv;
 
+  printf ("lol\n");
   GST_LOG ("updating controller");
-
-  if (G_UNLIKELY (!gnlobj || !priv->control_source))
-    return;
-
-  GST_INFO ("duration: %" G_GUINT64_FORMAT, duration);
-  g_value_init (&start_value, G_TYPE_DOUBLE);
-  g_value_init (&end_value, G_TYPE_DOUBLE);
-  g_value_set_double (&start_value, priv->start_value);
-  g_value_set_double (&end_value, priv->end_value);
-
-  GST_LOG ("setting values on controller");
-
-  gst_interpolation_control_source_unset_all (priv->control_source);
-  gst_interpolation_control_source_set (priv->control_source, 0, &start_value);
-  gst_interpolation_control_source_set (priv->control_source,
-      duration, &end_value);
-
-  priv->dur = duration;
-  GST_LOG ("done updating controller");
+  if (priv->smpte)
+    g_object_set (priv->smpte, "duration", duration, "type", 1, "border", 20000,
+        NULL);
 }
 
 /**
@@ -457,12 +325,13 @@ ges_track_video_transition_set_transition_type (GESTrackVideoTransition * self,
 {
   GESTrackVideoTransitionPrivate *priv = self->priv;
 
-  GST_ERROR ("%p %d => %d", self, priv->type, type);
+  GST_LOG ("%p %d => %d", self, priv->type, type);
 
+  printf ("WHAT \n");
+  return (TRUE);
   if (priv->type && (priv->type != type) &&
       ((type == GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE) ||
           (priv->type == GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE))) {
-    printf ("About to block pad\n");
     priv->start_value = 1.0;
     priv->start_value = 0.0;
     priv->type = type;
@@ -473,7 +342,6 @@ ges_track_video_transition_set_transition_type (GESTrackVideoTransition * self,
         (GstPadBlockCallback) my_blocked_pad, priv);
     return TRUE;
   }
-  printf ("LOLOLOL\n");
   priv->type = type;
   if (priv->smpte && (type != GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE))
     g_object_set (priv->smpte, "type", (gint) type, NULL);
