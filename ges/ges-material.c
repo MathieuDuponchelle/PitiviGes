@@ -39,6 +39,9 @@ ges_material_init (GESMaterial * self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialPrivate);
+
+  self->priv->metadatas = NULL;
+  self->priv->compatible_track_types = GES_TRACK_TYPE_UNKNOWN;
 }
 
 GstTagList *
