@@ -384,7 +384,9 @@ replace_mixer (GESTrackVideoTransitionPrivate * priv)
   gst_element_set_state (priv->mixer, GST_STATE_NULL);
   gst_bin_remove (GST_BIN (priv->topbin), priv->mixer);
 
-  priv->mixer = create_mixer (priv->topbin);
+  gst_object_unref (priv->mixer);
+
+  priv->mixer = gst_object_ref (create_mixer (priv->topbin));
 
   gst_element_sync_state_with_parent (priv->mixer);
 
