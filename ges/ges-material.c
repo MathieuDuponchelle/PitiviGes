@@ -22,16 +22,78 @@
 
 G_DEFINE_ABSTRACT_TYPE (GESMaterial, ges_material, GST_TYPE_OBJECT);
 
+enum
+{
+  PROP_0,
+  PROP_COMPATIBLE_TRACK_TYPES,
+  PROP_METADATAS,
+  PROP_LAST
+};
+
+static GParamSpec *properties[PROP_LAST];
+
 struct _GESMaterialPrivate
 {
   GstTagList *metadatas;
   GESTrackType compatible_track_types;
 };
 
+static void
+ges_material_get_property (GObject * object, guint property_id,
+    GValue * value, GParamSpec * pspec)
+{
+  GESMaterial *material = GES_MATERIAL (object);
+
+  switch (property_id) {
+    case PROP_METADATAS:
+      g_value_set_object (value, material->priv->metadatas);
+      break;
+    case PROP_COMPATIBLE_TRACK_TYPES:
+      g_value_set_flags (value, material->priv->compatible_track_types);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+  }
+}
+
+static void
+ges_material_set_property (GObject * object, guint property_id,
+    const GValue * value, GParamSpec * pspec)
+{
+  GESMaterial *material = GES_MATERIAL (object);
+
+  switch (property_id) {
+    case PROP_METADATAS:
+      material->priv->metadatas = g_value_get_object (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+  }
+}
+
+
 void
 ges_material_class_init (GESMaterialClass * klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
   g_type_class_add_private (klass, sizeof (GESMaterialPrivate));
+
+  object_class->get_property = ges_material_get_property;
+  object_class->set_property = ges_material_set_property;
+
+  properties[PROP_COMPATIBLE_TRACK_TYPES] =
+      g_param_spec_flags ("compatible-track-types",
+      "Compatible track types of material",
+      "Get compatible track types",
+      GES_TYPE_TRACK_TYPE,
+      GES_TRACK_TYPE_UNKNOWN, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
+
+  properties[PROP_METADATAS] =
+      g_param_spec_object ("metadatas",
+      "Metadatas of current material",
+      "Set/Get metadata", GST_TYPE_TAG_LIST, G_PARAM_READWRITE);
+
+  g_object_class_install_properties (object_class, PROP_LAST, properties);
 }
 
 void
