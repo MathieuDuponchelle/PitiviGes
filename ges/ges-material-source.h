@@ -24,7 +24,7 @@
 #include <ges/ges-material.h>
 
 G_BEGIN_DECLS
-#define GES_TYPE_MATERIAL_SOURCE ges_MATERIAL_SOURCE_get_type()
+#define GES_TYPE_MATERIAL_SOURCE ges_material_source_get_type()
 #define GES_MATERIAL_SOURCE_(obj) \
     (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_MATERIAL_SOURCE_, GESMaterial))
 #define GES_MATERIAL_SOURCE_CLASS(klass) \
