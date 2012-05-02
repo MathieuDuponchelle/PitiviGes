@@ -25,8 +25,8 @@
 
 G_BEGIN_DECLS
 #define GES_TYPE_MATERIAL ges_material_get_type()
-#define GES_MATERIAL_(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_MATERIAL_, GESMaterial))
+#define GES_MATERIAL(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_MATERIAL, GESMaterial))
 #define GES_MATERIAL_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST ((klass), GES_TYPE_MATERIAL, GESMaterialClass))
 #define GES_IS_MATERIAL(obj) \
