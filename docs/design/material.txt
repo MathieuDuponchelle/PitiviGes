@@ -1,0 +1,232 @@
+Materials
+---------
+
+Summary
+---------
+
+1. Basic ideas
+2. Problems
+3. Propositions to solve those problems
+4. Use-cases
+5. API draft
+   A. Material API draft
+   B. Source material API draft
+   C. Project material API draft
+   D. ExtractableObject/Material Interface API draft
+   E. Methods that should be added to other classes
+
+1. Basic ideas
+---------------
+
+Basically, material is a way of avoiding duplicating data in timeline objects and solution
+which will allow to have one common registry for timeline sources and timeline operations.
+
+    * There will be registry of materials
+    * Each type of material allow to create some particular TimelineObject
+    * Materials will hold metadata
+    * Materials can be registered at runtime
+
+Some ideas of material(especially for TimelineSource objects) can be found in docs/random/design.
+
+2. Problems
+--------------
+    1) We must be able to query list of materials that availeble for use in some specific project
+    2) We must be able to query materials by some criteria
+    3) Materials that are always available to all projects should be loaded once and then appended to the
+       list of materials that are available for some particular project
+    4) We must be able to get reference to origin material of any timeline object.
+
+3. Propositions to solve those problems
+----------------------------------------
+
+    1) To hold list of all available materials registry will be used. Registry will be material itself
+       and will hold all materials that are available in current project. Every material in registry
+       should be unique. Also we can have hashtable for source materials that will use URI as a key
+       and will help to avoid discovering same file multiple times.
+
+    2) To allow library user to implement some sort of media library we must be able to queyry materials by
+        using some criteria, e.g. URI or supported track types.
+
+    3) To allow loading materials once we can create list of them in ges_init() and append this list
+        each time we create project. In case of materials that need URI, we can have global hash table
+        which will hold already loaded URIs and references to corresponding materials. So if URI
+        is already loaded/discovered we won't do it for the second time. To free this data we can
+        use approach of GStreamer - they will be freed automatically by system after program termination.
+
+    4) To make it possible to get such data we could have some interface(GESMaterialInterface
+       or GESExtractableObject) that will be implement by each type that can be instantiated via
+       GESMaterial.
+
+4. Use cases
+-------------
+    UC-1. Define media files and discover them
+    UC-2. Define project - reference all materials
+    UC-3. Define titles
+    UC-4. Define operations
+        - Transitions - 1 material per transition
+        - Effects - 1 material per effects
+        - TextOverlay
+    UC-5. Handle metadata
+
+
+5. API Draft
+------------
+
+A. Material API draft
+----------------------
+/*
+ * ges_material_new_full:
+ * @type_name: Name of the material type to create
+ * @material_created: Callback for asynchronous material creation.
+ * Variable aguments will be used to pass params to constructor of particular
+ * material type(like URI for source materials)
+ *
+ * Returns: Created material or reference to existing one if it was created earlier
+*/
+GESMaterial *
+ges_material_new_full (const gchar * type_name, (GCallback) material_created,
+                       ... );
+
+/*
+ * ges_material_get_metadatas:
+ * @material: Target material
+ * Method to get metadatas of specified material
+ *
+ * Returns: material metadatas
+*/
+GstTagList *ges_material_get_metadatas(GESMaterial *material);
+
+/*
+ * ges_material_list_standard_materials:
+ * @type: Type of materials to list
+ * Method that returns list of standard materials(like effects and transitions)
+ * that are loaded in ges_init
+ *
+ * Returns: List with materials of specified type
+ */
+ges_material_list_standard_materials (GESMaterialType type);
+
+/*
+ * ges_material_get_track_types:
+ * @material: Target material
+ * Method that returns track types that are supported by given material
+ *
+ * Returns: Track types that are supported by material
+ */
+GESTrackType ges_material_get_track_types (GESMaterial *material);
+
+B. Source Material API draft
+------------
+/*
+ * ges_material_source_new:
+ * @uri: URI to create material
+ * @material_created: Callback for asynchronous material creation/file discovering
+ * @user_data: User data that will be passed to @material_created callback function
+ * If material_created == NULL discover syncronously and return the material
+ * If no need to discover @uri return the (refed) GESMaterialSource directly
+ * otherwize return %NULL and call material_created when discovered
+ *
+ * Returns: newly created material or reference to existing one if URI was already
+ * discovered
+ */
+GESMaterialSource * ges_material_source_new    (const gchar *uri,
+                                                      (GAsyncReadyCallback) material_created,
+                                                      gpointer user_data);
+/*
+ * ges_material_source_get_stream_info:
+ * @material: Target material
+ * Method that returns discoverer data of specified material so user could work with
+ * it directly
+ * Returns: discover info of material
+*/
+GstDiscovererStreamInfo *
+                        ges_material_source_get_stream_info (const GESMaterial *material);
+
+Also, to give user ability not to use Gstreamer functions and get all data using GES only, we might
+want next methods:
+
+GstClockTime ges_source_material_get_duration         (const GESMaterialSource* material);
+guint ges_material_source_get_audio_channels          (const GESMaterialSource* material);
+guint ges_material_source_get_audio_sample_rate       (const GESMaterialSource* material);
+guint ges_material_source_get_audio_depth             (const GESMaterialSource* material);
+guint ges_material_source_get_audio_bitrate           (const GESMaterialSource* material);
+guint ges_material_source_get_audio_max_bitrate       (const GESMaterialSource* material);
+const gchar * ges_material_source_get_audio_language  (const GESMaterialSource* material);
+
+guint ges_material_source_get_video_width             (const GESMaterialSource* material);
+guint ges_material_source_get_video_height            (const GESMaterialSource* material);
+guint ges_material_source_get_video_depth             (const GESMaterialSource* material);
+guint ges_material_source_get_video_framerate_num     (const GESMaterialSource* material);
+guint ges_material_source_get_video_framerate_denom   (const GESMaterialSource* material);
+guint ges_material_source_get_video_par_num           (const GESMaterialSource* material);
+guint ges_material_source_get_video_par_denom         (const GESMaterialSource* material);
+guint ges_material_source_get_video_bitrate           (const GESMaterialSource* material);
+guint ges_material_source_get_video_max_bitrate       (const GESMaterialSource* material);
+gboolean ges_material_source_video_is_interlaced      (const GESMaterialSource* material);
+gboolean ges_material_source_is_image                 (const GESMaterialSource* material);
+const gchar * ges_source_material_get_uri             (const GESMaterialSource* material);
+
+C. Extractableobject/MaterialInterface API
+-------------------------------------------
+
+/*
+* ges_extractable_object_get_material:
+* @object: Target object
+* Method to get material which was used to instaniate specified object
+* Returns: origin material
+*/
+GESMaterial *ges_extractable_object_get_material(GESExtractableObject *object);
+
+/*
+ * ges_extractable_object_get_metadatas:
+ * @object: Target object
+ * Helper method that will return metadata of material of specified object(to avoid extracting
+ * material first and then getting it's metadatas)
+ * Returns: Metadata of material that instantiated specified object.
+*/
+GstTagList *ges_extractable_object_get_metadatas (GESExtractableObject *object);
+
+D. Project material API draft
+-----------------------------
+/*
+ * ges_material_project_list_materials:
+ * @material: Project material
+ * @type: Type of material to list
+ * Method for listing materials of specified type that are available in
+ * particular project.
+ *
+ * Returns: list of available materials of given type in project
+*/
+ges_material_project_list_materials (GESMaterial *project,
+                                     GESMaterialType type)
+
+E. Methods that should be added to other classes
+------------------------------------------------
+
+/*
+* ges_timeline_layer_add_material:
+* Creates TimelineObject from material, adds it to layer and
+* returns reference to it.
+*
+* Returns: Created TimelineObject
+*/
+GESTimelineObject * ges_timeline_layer_add_material   (GESTimelineLayer *layer,
+                                                       GESMaterial *material,
+                                                       GstClockTime start,
+                                                       GstClockTime inpoint,
+                                                       GstClockTime duration,
+                                                       GESTrackType track_types);
+/*
+ * ges_timeline_object_add_material:
+ * @object: Target timeline object
+ * @material: Effect material
+ * @track_types: Types of tracks that user wants add effects to.
+ * Adds an effect (GESTrackObject(s)) to a GESTimelineObject
+ * method directly
+ *
+ * Returns: true if effect was successfully added
+ */
+gboolean
+ges_timeline_object_add_material (GESTimelineObject *object,
+                                  GESMaterial *material,
+                                  GESTrackType track_types);
