@@ -1,0 +1,211 @@
+Materials
+~~~~~~~~~
+
+This draft document describes a possible design for material objects.
+
+The materials should be used in order to instantiate objects of differents
+types.
+
+Terminology: A material is an object from which objects can be extracted.
+
+Summary
+~~~~~~~~~
+
+1. Basic ideas
+2. Problems
+3. Propositions to solve those problems
+4. Use-cases
+5. API draft
+   A. Material API draft
+   B. Source material API draft
+   C. Project material API draft
+   D. ExtractableObject/Material Interface API draft
+   E. Methods that should be added to other classes
+
+1. Basic ideas
+~~~~~~~~~~~~~~~
+
+Basically, material is a way of avoiding duplicating data in timeline objects and solution
+which will allow to have one common registry for timeline sources and timeline operations.
+
+    * There will be a listing of avalaible, ready to use materials
+    * Material allow to create some particular types of object that implment the GESExtractable
+      interface
+    * Materials will hold metadatas
+    * Materials can be either, created by the user, or will be created by GStreamer itself
+      when initializing, there should be a way to disable that feature on demand.
+
+Some ideas of material(especially for TimelineSource objects) can be found in docs/random/design.
+
+2. Problems (Not in any particular order)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    1) We have avoid to various times the same file on the system
+    2) We must be able to query materials by some criteria
+        a. By type of TimelineObject that it can produce
+        b. By type of supported tracks
+        c. Should we have filters by some specific properties of source material
+           - like duration, width, height, etc?
+    3) We must be able to get reference to origin material of any extracted object
+    4) We need a way to descibre projects
+    5) GESMaterials can be instanciated asyncronously
+    6) The instanciation of a material can fail
+    7) Users need to get informations about why the instanciation failed
+    8) User should be able to cancell the creation of a Material
+
+3. Propositions to solve those problems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    1) We should have an interface that needs to be implemented by classes that need to be extractable.
+       We can call it GESExtractable. It will let user get the Material from which an extracted object comes
+       from.
+
+    2) The interface should determine what GESMaterial class (or subclass) to instanciate to be able to instanciate
+       object of that type.
+       e.g: A GESTimelineFileSource implements a subclass of GESExtractable, and this subclass contains the information
+       to tell that to instanciate a GESTimelineFileSource you
+
+    2) A list of all avalaible, ready to be used materials should be cached
+
+    3) We should have subclasses
+
+    4) To allow library user to implement some sort of media library we must be able to query materials by
+        using some criteria, e.g. URI or supported track types.
+
+    5) To allow loading materials once we can create list of them in ges_init() and append this list
+        each time we create project. In case of materials that need URI, we can have global hash table
+        which will hold already loaded URIs and references to corresponding materials. So if URI
+        is already loaded/discovered we won't do it for the second time. To free this data we can
+        use approach of GStreamer - they will be freed automatically by system after program termination.
+
+
+4. Use cases
+~~~~~~~~~~~~~
+    UC-1. Define media files and discover them
+    UC-2. Define project - reference all materials
+    UC-3. Define titles
+    UC-4. Define operations
+        - Transitions - 1 material per transition
+        - Effects - 1 material per effects
+        - TextOverlay
+    UC-5. Handle metadata
+    UC-6. Add operations (only effects?) to a GESTimelineObject
+    UC-7. User want to 'invent' a new operation, we need to be able
+          to let him define it
+    UC-8. The user want to make an object from a GESMaterial
+
+
+5. API Draft
+~~~~~~~~~~~~
+
+B. GESExtractable API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The GESExtractable is responsable for telling what GESMaterial subclass need to
+be instanciated
+
+/**
+* ges_extractable_object_get_material:
+* @object: Target object
+* Method to get material which was used to instaniate specified object
+* Returns: origin material
+*/
+GESMaterial *
+ges_extractable_get_material(GESExtractable *extractable);
+
+/**
+ */
+GType
+ges_extractable_get_material_type (GESExtractableClass *class)
+
+/**
+ * ges_extractable_
+
+A. Material API draft
+~~~~~~~~~~~~~~~~~~~~~~
+GESMaterial implements GInitable, GAsyncInitable and in the future, GESMetdata
+
+/**
+ * ges_material_new_full:
+ * @extractable_type: The #GType of the object that can be extracted from the new material.
+ * The class must implement the #GESExtractable
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @error: (allow-none): a #GError location to store the error occurring, or %NULL to ignore.
+ * @...: the value if the first property, followed by and other property value pairs, and ended by NULL.
+ *
+ * Returns: Created material or reference to existing one if it was created earlier or %NULL on error
+ */
+GESMaterial *
+ges_material_new (GType extractable_type, GCancellable *cancellable, GError **error,
+  gchar *first_property, ...)
+
+/* Method usable when the material extractable_type is GES_TYPE_TIMELINE_OBJECT or subclass of it */
+/**
+ * ges_material_get_track_types:
+ * @material: a #GESMaterial of extractable_type GES_TIMELINE_OBJECT
+ * Method that returns track types that are supported by given material
+ *
+ * Returns: Track types that are supported by material
+ */
+GESTrackType
+ges_material_timeline_objetct_get_track_types (GESMaterial *material);
+
+a Method usable when the material extractable_type is GES_TYPE_TIMELINE_OBJECT or subclass of it
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/**
+ * ges_material_file_source_get_stream_info:
+ * @material: a #GESMaterial of extractable_type GES_TIMELINE_FILE_SOURCE
+ * Method that returns discoverer data of specified material so user could work with
+ * it directly
+ * Returns: discover info of material
+*/
+GstDiscovererStreamInfo *
+ges_material_file_source_get_stream_info (const GESMaterial *material);
+
+B. Project material API, a project is a GESMaterial that has GES_TYPE_TIMELINE or subclasses as extractable_type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FIXME: This special case should be thought thoroughly. It should most probably be a subclass of GESMaterial
+as it needs to contain a lot more informations
+
+/**
+ * ges_material_project_list_materials:
+ * @material: Project material
+ * @type: Type of material to list
+ * Method for listing materials of specified type that are available in
+ * particular project.
+ *
+ * Returns: list of available materials of given type in project
+*/
+ges_material_project_list_materials (GESMaterial *project,
+                                     GType type)
+
+E. Methods that should be added to other classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+/**
+* ges_timeline_layer_add_material:
+* Creates TimelineObject from material, adds it to layer and
+* returns reference to it.
+*
+* Returns: Created TimelineObject
+*/
+GESTimelineObject * ges_timeline_layer_add_material   (GESTimelineLayer *layer,
+                                                       GESMaterial *material,
+                                                       GstClockTime start,
+                                                       GstClockTime inpoint,
+                                                       GstClockTime duration,
+                                                       GESTrackType track_types);
+/**
+ * ges_timeline_object_add_material:
+ * @object: Target timeline object
+ * @material: Effect material
+ * @track_types: Types of tracks that user wants add effects to.
+ * Adds an effect (GESTrackObject(s)) to a GESTimelineObject
+ * method directly
+ *
+ * Returns: true if effect was successfully added
+ */
+gboolean
+ges_timeline_object_add_material (GESTimelineObject *object,
+                                  GESMaterial *material,
+                                  GESTrackType track_types);
