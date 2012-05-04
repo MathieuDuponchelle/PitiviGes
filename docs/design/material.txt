@@ -30,10 +30,17 @@ Some ideas of material(especially for TimelineSource objects) can be found in do
 
 2. Problems
 --------------
-    1) We must be able to query list of materials that availeble for use in some specific project
+    1) We must be able to query list of materials that are available for use in some specific project
     2) We must be able to query materials by some criteria
+
+        TS 05-04: Type of TimelineObject that can be made from it, what else? Should be defined
+
     3) Materials that are always available to all projects should be loaded once and then appended to the
        list of materials that are available for some particular project
+
+        TS 05-04: This sound like an implementation detail, not a problem as you are expected to describe
+        here ie: problems that GES should solve for the end user.
+
     4) We must be able to get reference to origin material of any timeline object.
 
 3. Propositions to solve those problems
