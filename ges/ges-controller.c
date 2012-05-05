@@ -5,7 +5,7 @@ G_DEFINE_TYPE (GESController, ges_controller, G_TYPE_OBJECT);
 
 struct _GESControllerPrivate
 {
-  void *data;
+  GESTrackObject *controlled;
 };
 
 static void
@@ -15,17 +15,21 @@ ges_controller_class_init (GESControllerClass * klass)
 
   object_class = object_class;
   g_type_class_add_private (klass, sizeof (GESControllerPrivate));
-
 }
 
 static void
-ges_controller_init (GESController * object)
+ges_controller_init (GESController * self)
 {
-  object = object;
+  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+      GES_TYPE_CONTROLLER, GESControllerPrivate);
 }
 
 GESController *
 ges_controller_new (GESTrackObject * track_object)
 {
-  return g_object_new (GES_TYPE_KEYFILE_FORMATTER, NULL);
+  GESController *ret = NULL;
+
+  ret = g_object_new (GES_TYPE_CONTROLLER, NULL);
+  ret->priv->controlled = track_object;
+  return (ret);
 }
