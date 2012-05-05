@@ -1,0 +1,304 @@
++------------+
+| Controller |
++------------+
+
++---------+
+| Summary |
++---------+
+
+1. First thoughts
+2. Problems
+3. Solutions
+4. Use-cases
+5. API draft
+
+The purpose of this proposal is to design a high level interface
+to GstController and GstInterpolationControlSource, suited for
+video-editing and keeping all the necessary flexibility and power
+of these elements.
+
++-------------------+
+| 1. First thoughts |
++-------------------+
+
+ * GESController is the only public interface we'll propose, all
+   the Interpolation sources management will be done "under
+   the hood"
+
+ * We want to be able to propose either keyframe or LFO
+   controlling, without troubling the user about the inner
+   workings of these elements.
+    /*ts: We want to be able to expose *any* type of contole avalaible in Gst */
+
+ * We want to propose to set and get multiple timed values at
+   the same time, for the purpose of saving/loading projects.
+    /*ts: And it to be easily bindable either statically or through GI */
+
+ * We want to expose any controllable property of the control sources.
+
+ * No two keyframes can exist for the same timestamp and the
+   same property in the same object. We can therefore use a
+   (timestamp / property) combination to uniquely identify a
+   keyframe.
+
++-------------+
+| 2. Problems |
++-------------+
+
+ * The user wants to add keyframes in any of the TrackObject type
+   he create
+
+ * The user doesn't want to bother about looking for a special TrackObject
+   but rather just do everything from the TimelineObject it is contained in
+
+ * How can we let the user move, remove and change the values
+   of specific keyframes ?
+
+ * How can we, with the sole controller object, let the user
+   specify which property he wants to set a keyframe on ?
+
+ * Do we want to give an API to send back a duplicate of the
+   keyframe list to the user, and let him apply it to another
+   effect ?
+
++--------------+
+| 3. Solutions |
++--------------+
+
+ * Abstract GstController so that the user only says :
+   Set this value to this timestamp of this property,
+   remove it, move it, change its value.
+
+ * Abstract GstControlSources so that the user only says :
+   I want an this type of interpollation now instead of that
+   that current type of interpolation, and vice-versa.
+
+ * Add helper functions to quickly set a set of keyframes of
+   an effect to another one, *even if they're not the same duration*
+
++--------------+
+| 4. Use-cases |
++--------------+
+
+ UC-1 The user wants to start controlling an object (typically
+      an effect).
+
+ UC-2 The user wants to add a keyframe for a given property.
+
+ UC-3 The user wants to move it, remove it or change its value.
+
+ UC-4 The user wants to switch to an LFO interpolation.
+
+ UC-5 The user wants to set some properties on an LFO
+      interpolation (amplitude, offset ...)
+
+ UC-5 The user wants to let another object follow the same waveform.
+
+ UC-6 The user wants to reset all interpolation for a given property.
+
+ UC-7 The user wants to stop controlling the object altogether.
+
++--------------+
+| 5. API draft |
++--------------+
+
+enum GESKeyframeDuplicatingMode
+{
+  GES_KEYFRAME_DUPLICATING_PROPORTIONAL,
+  GES_KEYFRAME_DUPLICATING_SHRINK_LEFT,
+  GES_KEYFRAME_DUPLICATING_SHRINK_RIGHT
+};
+      /**
+      * ges_controller_new:
+      *
+      * @object: The #GESTrackObject to control
+      *
+      *
+      * Returns: a newly created #GESController or %NULL if
+      * something went wrong.
+      */
+      GESController *
+      ges_controller_new (GESTrackObject *object);
+
+      /**
+      * ges_controller_add_keyframe_for_property:
+      *
+      * @self : the #GESController to which the user wants to add a keyframe.
+      * @param : the property to set the keyframe on.
+      * @timestamp : the timestamp in nanoseconds in the controlled #GESTrackObject.
+      * @value : the numeric value for this keyframe.
+      *
+      * Returns: %TRUE if a keyframe was added, %FALSE otherwise.
+      */
+      gboolean
+      ges_controller_add_keyframe_for_property (GESController *self, gchar *param, guint64 timestamp, gint64 value);
+
+      /**
+      * ges_controller_move_keyframe_for_property:
+      *
+      * @self : the #GESController to which the user wants to move a keyframe.
+      * @param : the property to move the keyframe on.
+      * @timestamp_src : the source timestamp in nanoseconds in the controlled
+      * #GESTrackObject.
+      * @timestamp_dest : the destination timestamp in nanoseconds in the controlled
+      * #GESTrackObject.
+      * Returns: %TRUE if the keyframe was moved, %FALSE otherwise.
+      */
+      gboolean
+      ges_controller_move_keyframe_for_property (GESController *self, gchar *param, guint64 timestamp_src,
+      guint64 timestamp_dest);
+
+      /**
+      * ges_controller_remove_keyframe_for_property:
+      *
+      * @self : the #GESController from which the user wants to remove a keyframe.
+      * @param : the property to remove the keyframe from.
+      * @timestamp : the timestamp in nanoseconds in the controlled
+      * #GESTrackObject.
+      * Returns: %TRUE if the keyframe was removed, %FALSE otherwise.
+      */
+      gboolean
+      ges_controller_move_keyframe_for_property (GESController *self, gchar *param, guint64 timestamp);
+
+      /**
+      * ges_controller_add_keyframes_for_property:
+      *
+      * @self : the #GESController to set the keyframes on.
+      * @param : the property to set.
+      * @timestamp : the timestamp at which to set the following value.
+      * @value : the value to set for the previous timestamp.
+      *
+      * Returns: %TRUE if the keyframes were all set, %FALSE otherwise.
+      */
+      gboolean
+      ges_controller_add_keyframes_for_property (GESController *self, gchar *param, guint64 timestamp,
+      gint64 value, .., ..);
+
+      /**
+      * ges_controller_get_keyframes_for_property:
+      *
+      * @self : the #GESController to get the keyframes from.
+      * @param : the property to get.
+      *
+      * Returns: A #GList consisting of alternated timestamp and values, or %NULL
+      * if something went wrong.
+      */
+      GList *
+      ges_controller_get_keyframes_for_property (GESController *self, gchar *param);
+
+
+      /**
+      * ges_controller_get_keyframe_for_property:
+      *
+      * @self : the #GESController to get the keyframe from.
+      * @param : the property to get.
+      * @timestamp : the timestamp in nanoseconds in the keyframe.
+      *
+      * Returns: a #gint64 representing the value.
+      */
+      gint64
+      ges_controller_get_keyframes_for_property (GESController *self, gchar *param, guint64 timestamp);
+
+      /**
+      * ges_controller_remove_keyframes_for_property:
+      *
+      * @self : the #GESController from which the user wants to remove keyframes.
+      * @param : the property to remove the keyframes from.
+      * @timestamp_from : the timestamp in nanoseconds in the controlled
+      * #GESTrackObject from where the user wants to remove keyframes. If 0, from the
+      * beginning.
+      * @timestamp_to : the timestamp in nanoseconds in the controlled
+      * #GESTrackObject up to where the user wants to remove keyframes. If 0, to the
+      * end.
+      * Returns: %TRUE if the keyframes were removed, %FALSE otherwise.
+      */
+      gboolean
+      ges_controller_move_keyframe_for_property (GESController *self, gchar *param, guint64 timestamp_from,
+      guint64 timestamp_to);
+
+      /**
+      * ges_controller_set_interpolation_mode_for_property:
+      *
+      * @self : the #GESController on which to change the mode.
+      * @param : the property to change the mode for.
+      * @mode :  the #GstInterpolateMode of interpolation (ex: quadratic, linear).
+      * Returns: %TRUE if the keyframes were removed, %FALSE otherwise.
+      */
+      gboolean
+      ges_controller_set_interpolation_mode_for_property (GESController *self, gchar *param,
+      GstInterpolateMode mode);
+
+      /**
+      * ges_controller_set_lfo_on_property:
+      *
+      * @self : the #GESController on which to set lfo.
+      * @param : the property to set lfo on.
+      *
+      * LFO will let the user define waveforms for the controlling, instead of manually
+      * positioning keyframes
+      * Returns: %TRUE if the lfo was set, %FALSE otherwise
+      */
+      gboolean
+      ges_controller_set_lfo_on_property (GESController *self, gchar *param);
+
+      /**
+      * ges_controller_set_lfo_waveform_for_property:
+      *
+      * @self : the #GESController on which to set the lfo waveform.
+      * @param : the property to set the lfo waveform
+      *
+      * This is how one can control the waveform of the LFO interpolation
+      * Returns: %TRUE if the property was set, %FALSE otherwise
+      */
+      gboolean
+      ges_controller_set_lfo_on_property (GESController *self, gchar *param, gchar *waveform);
+
+      <--- Here we will also expose other properties (amplitude, offset) --->
+
+      /**
+      * ges_controller_remove_lfo_for_property:
+      *
+      * @self : the #GESController on which to remove the lfo.
+      * @param : the property to remove the lfo from
+      *
+      * This is how one can remove the lfo.
+      * Returns: %TRUE if the lfo was removed, %FALSE otherwise.
+      */
+      gboolean
+      ges_controller_set_lfo_on_property (GESController *self, gchar *param);
+
+      /**
+      * ges_controller_apply_interpolation_to_controller:
+      *
+      * @self : the #GESController from which to copy the interpolation.
+      * @param_src : the property to take the interpolation from.
+      * @target : the #GESController to copy the interpolation on.
+      * @param_dest : the property to set the interpolation on
+      * @mode : the #GESKeyframeDuplicatingMode
+      *
+      * This is how one can set the controlling of an object to another object.
+      * This applying will be either proportionnal or linear, which means if
+      * the second object is shorter, the keyframes will be "shrinked" to fit the size,
+      * or applied as is and possibly dropped if their timestamp is superior to the
+      * duration of the second one.
+      * Returns: %TRUE if the keyframes were applied, %FALSE otherwise.
+      */
+
+      gboolean
+      ges_controller_apply_keyframes_to_controller (GESController *self, gchar *param_src,
+      GESController *target, gchar *param_dest, GESKeyframeDuplicatingMode mode);
+
+      /**
+      * ges_controller_stop_controlling:
+      *
+      * @self : the #GESController on which to remove the lfo.
+      *
+      * This is how one can unset all controlling on an object, removing all
+      * keyframes and lfos.
+      * Returns: %TRUE if the uncontrolling succeeded %FALSE otherwise.
+      */
+      gboolean
+      ges_controller_stop_controlling (GESController *self);
+
+
+Voila.
