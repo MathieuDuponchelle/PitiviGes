@@ -28,7 +28,6 @@ object_added_cb (GESTrack * track, GESTrackObject * tckobj,
   GESController *controller;
   GValue g_value = { 0, };
   GValue g_value_bool = { 0, };
-  const GESKeyframe *ret;
 
   if (!GES_IS_TRACK_PARSE_LAUNCH_EFFECT (tckobj)) {
     ges_track_add_object (track, GES_TRACK_OBJECT (effect));
@@ -42,9 +41,19 @@ object_added_cb (GESTrack * track, GESTrackObject * tckobj,
   g_value_set_uint (&g_value, 0);
   ges_controller_add_keyframe (controller, "scratch-lines", 0, g_value);
 
-  g_value_set_uint (&g_value, 20);
-  ges_controller_add_keyframe (controller, "scratch-lines", 50 * GST_SECOND,
+  g_value_set_uint (&g_value, 0);
+  ges_controller_add_keyframe (controller, "scratch-lines", 10 * GST_SECOND,
       g_value);
+
+  g_value_set_uint (&g_value, 20);
+  ges_controller_add_keyframe (controller, "scratch-lines", 20 * GST_SECOND,
+      g_value);
+
+  g_value_set_uint (&g_value, 0);
+  ges_controller_add_keyframe (controller, "scratch-lines", 30 * GST_SECOND,
+      g_value);
+
+  ges_controller_remove_keyframe (controller, "scratch-lines", 10 * GST_SECOND);
 
   g_value_init (&g_value_bool, G_TYPE_BOOLEAN);
   g_value_set_boolean (&g_value_bool, FALSE);

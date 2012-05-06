@@ -98,6 +98,9 @@ ges_controller_get_keyframes(GESController *self, const gchar *param);
 const GESKeyframe *
 ges_controller_get_keyframe(GESController *self, const gchar *param, guint64 timestamp);
 
+gboolean
+ges_controller_remove_keyframe(GESController *self, const gchar *param, guint64 timestamp);
+
 G_END_DECLS
 
 #endif /* _GES_CONTROLLER */

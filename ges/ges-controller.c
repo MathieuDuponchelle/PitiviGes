@@ -138,6 +138,27 @@ ges_controller_add_keyframe (GESController * self, const gchar * param,
   return TRUE;
 }
 
+gboolean
+ges_controller_remove_keyframe (GESController * self, const gchar * param,
+    guint64 timestamp)
+{
+  source_keyframes *source_map;
+  GESControllerPrivate *priv = self->priv;
+  GList *tmp;
+
+  printf ("we are gonna look for : %llu\n", (unsigned long long) timestamp);
+  source_map = g_hash_table_lookup (priv->sources_table, param);
+  if (source_map == NULL)
+    return FALSE;
+  for (tmp = source_map->keyframes; tmp; tmp = tmp->next)
+    if (((GESKeyframe *) tmp->data)->timestamp == timestamp) {
+      gst_interpolation_control_source_unset (source_map->source,
+          ((GESKeyframe *) tmp->data)->timestamp);
+      return TRUE;
+    }
+  return FALSE;
+}
+
 GESController *
 ges_controller_new (GESTrackObject * track_object)
 {
