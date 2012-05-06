@@ -26,8 +26,6 @@
 #include <ges/ges-types.h>
 #include <ges/ges-enums.h>
 
-G_BEGIN_DECLS
-
 #define GES_TYPE_CONTROLLER ges_controller_get_type()
 
 #define GES_CONTROLLER(obj) \
@@ -47,14 +45,29 @@ G_BEGIN_DECLS
 
 typedef struct _GESControllerPrivate GESControllerPrivate;
 
+/**
+ * GESController:
+ *
+ * Controls a #GESTrackObject
+ */
+
 struct _GESController {
   GObject parent;
 
-  /*< public >*/
-  /* READ-ONLY */
-
   /*< private >*/
   GESControllerPrivate * priv;
+
+  /* Padding for API extension */
+  gpointer _ges_reserved[GES_PADDING];
+};
+
+/**
+ * GESControllerClass:
+ */
+
+struct _GESControllerClass {
+  /*< private >*/
+  GstBinClass parent_class;
 
   /* Padding for API extension */
   gpointer _ges_reserved[GES_PADDING];
@@ -72,17 +85,7 @@ typedef struct
   GstInterpolationControlSource *source;
 } source_keyframes;
 
-/**
- * GESControllerClass:
- */
-
-struct _GESControllerClass {
-  /*< private >*/
-  GstBinClass parent_class;
-
-  /* Padding for API extension */
-  gpointer _ges_reserved[GES_PADDING];
-};
+G_BEGIN_DECLS
 
 GType ges_controller_get_type (void);
 
@@ -100,6 +103,12 @@ ges_controller_get_keyframe(GESController *self, const gchar *param, guint64 tim
 
 gboolean
 ges_controller_remove_keyframe(GESController *self, const gchar *param, guint64 timestamp);
+
+GESTrackObject *ges_controller_get_controlled(GESController *self);
+
+void
+ges_controller_set_controlled(GESController *self, GESTrackObject *controlled);
+
 
 G_END_DECLS
 

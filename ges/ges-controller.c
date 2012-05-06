@@ -159,6 +159,19 @@ ges_controller_remove_keyframe (GESController * self, const gchar * param,
   return FALSE;
 }
 
+GESTrackObject *
+ges_controller_get_controlled (GESController * self)
+{
+  return (self->priv->controlled);
+}
+
+void
+ges_controller_set_controlled (GESController * self,
+    GESTrackObject * controlled)
+{
+  self->priv->controlled = controlled;
+}
+
 GESController *
 ges_controller_new (GESTrackObject * track_object)
 {
