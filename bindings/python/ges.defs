@@ -147,6 +147,13 @@
   (gtype-id "GES_TYPE_TRACK")
 )
 
+(define-object Controller
+  (in-module "GES")
+  (parent "GObject")
+  (c-name "GESController")
+  (gtype-id "GES_TYPE_CONTROLLER")
+)
+
 (define-object TrackObject
   (in-module "GES")
   (parent "GInitiallyUnowned")
@@ -2354,6 +2361,73 @@
   (c-name "ges_track_video_transition_new")
   (is-constructor-of "GESTrackVideoTransition")
   (return-type "GESTrackVideoTransition*")
+)
+
+
+
+;; From ges-controller.h
+
+(define-function controller_get_type
+  (c-name "ges_controller_get_type")
+  (return-type "GType")
+)
+
+(define-function controller_new
+  (c-name "ges_controller_new")
+  (is-constructor-of "GesController")
+  (return-type "GESController*")
+  (parameters
+    '("GESTrackObject*" "track_object")
+  )
+)
+
+(define-method add_keyframe
+  (of-object "GESController")
+  (c-name "ges_controller_add_keyframe")
+  (return-type "gboolean")
+  (parameters
+    '("const-gchar*" "param")
+    '("guint64" "timestamp")
+    '("GValue" "value")
+  )
+)
+
+(define-method get_keyframes
+  (of-object "GESController")
+  (c-name "ges_controller_get_keyframes")
+  (return-type "const-GList*")
+  (parameters
+    '("const-gchar*" "param")
+  )
+)
+
+(define-method get_keyframe
+  (of-object "GESController")
+  (c-name "ges_controller_get_keyframe")
+  (return-type "const-GESKeyframe*")
+  (parameters
+    '("const-gchar*" "param")
+    '("guint64" "timestamp")
+  )
+)
+
+(define-method remove_keyframe
+  (of-object "GESController")
+  (c-name "ges_controller_remove_keyframe")
+  (return-type "gboolean")
+  (parameters
+    '("const-gchar*" "param")
+    '("guint64" "timestamp")
+  )
+)
+
+(define-method set_controlled
+  (of-object "GESController")
+  (c-name "ges_controller_set_controlled")
+  (return-type "none")
+  (parameters
+    '("GESTrackObject*" "controlled")
+  )
 )
 
 

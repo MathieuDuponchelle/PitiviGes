@@ -444,6 +444,49 @@ _wrap_ges_track_object_set_child_property (PyGObject *self, PyObject *args, PyOb
 }
 
 %%
+override ges_controller_add_keyframe kwargs
+static PyObject *
+_wrap_ges_controller_add_keyframe (PyGObject *self, PyObject *args, PyObject *kwargs)
+{
+    gchar *property_name;
+    GESController *obj = GES_CONTROLLER (self->obj);
+
+    GParamSpec *pspec = NULL;
+    PyGObject *pyvalue;
+    GValue value = { 0, } ;
+    PyObject *py_timestamp = NULL;
+    int ret;
+    guint64 timestamp;
+
+    if (!PyArg_ParseTuple(args, "sO!O:GESController.add_keyframe",
+                          &property_name, &PyLong_Type, &py_timestamp, &pyvalue)) {
+        return NULL;
+    }
+
+    ges_track_object_lookup_child(ges_controller_get_controlled(obj), property_name, NULL, &pspec);
+    if (!pspec) {
+        gchar buf[512];
+        g_snprintf(buf, sizeof(buf),
+                   "container does not support property `%s'",
+                   property_name);
+
+        PyErr_SetString(PyExc_TypeError, buf);
+        return NULL;
+    }
+
+    g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
+    pyg_value_from_pyobject(&value, (PyObject*)pyvalue);
+
+    timestamp = PyLong_AsUnsignedLongLong(py_timestamp);
+
+    ret = ges_controller_add_keyframe(obj, property_name, timestamp, value);
+
+    g_value_unset(&value);
+
+    return PyBool_FromLong(ret);
+}
+
+%%
 override ges_track_object_list_children_properties noargs
 static PyObject *
 _wrap_ges_track_object_list_children_properties (PyGObject *self)

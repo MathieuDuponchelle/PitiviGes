@@ -7,6 +7,13 @@
   (gtype-id "GES_TYPE_FORMATTER")
 )
 
+(define-object Controller
+  (in-module "GES")
+  (parent "GObject")
+  (c-name "GESController")
+  (gtype-id "GES_TYPE_CONTROLLER")
+)
+
 (define-object KeyfileFormatter
   (in-module "GES")
   (parent "GESFormatter")
