@@ -75,6 +75,7 @@ struct _GESControllerClass {
 GType ges_controller_get_type (void);
 
 GESController* ges_controller_new (GESTrackObject *track_object);
+gboolean ges_controller_add_keyframe(GESController *self, const gchar *param, guint64 timestamp, GValue value);
 
 G_END_DECLS
 

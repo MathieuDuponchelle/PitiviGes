@@ -22,19 +22,33 @@
 #include <stdlib.h>
 
 static void
-object_added_cb (GESTimelineObject * tlobj, GESTrackObject * tckobj)
+object_added_cb (GESTrack * track, GESTrackObject * tckobj,
+    GESTrackParseLaunchEffect * effect)
 {
-  GESTrack *track;
   GESController *controller;
+  GValue g_value = { 0, };
+  GValue g_value_bool = { 0, };
 
-  track = ges_track_object_get_track (tckobj);
-  if (ges_track_get_type (track) != GES_TRACK_TYPE_VIDEO)
+  if (!GES_IS_TRACK_PARSE_LAUNCH_EFFECT (tckobj)) {
+    ges_track_add_object (track, GES_TRACK_OBJECT (effect));
     return;
+  }
 
-  printf ("Starting control\n");
+  printf ("Starting control on effect %p\n", effect);
+  g_value_init (&g_value, G_TYPE_UINT);
+  controller = ges_controller_new (GES_TRACK_OBJECT (effect));
+  g_value_set_uint (&g_value, 0);
+  ges_controller_add_keyframe (controller, "scratch-lines", 0, g_value);
+  g_value_set_uint (&g_value, 20);
+  ges_controller_add_keyframe (controller, "scratch-lines", 50 * GST_SECOND,
+      g_value);
 
-  controller = ges_controller_new (tckobj);
-  controller = controller;
+  g_value_init (&g_value_bool, G_TYPE_BOOLEAN);
+  g_value_set_boolean (&g_value_bool, FALSE);
+  ges_controller_add_keyframe (controller, "color-aging", 0, g_value_bool);
+  g_value_set_boolean (&g_value_bool, TRUE);
+  ges_controller_add_keyframe (controller, "color-aging", 5 * GST_SECOND,
+      g_value_bool);
 }
 
 int
@@ -48,6 +62,7 @@ main (int argc, gchar ** argv)
   GESTimelineLayer *layer1;
   GESTimelineObject *src;
   GMainLoop *mainloop;
+  GESTrackParseLaunchEffect *effect;
   gchar *uri;
 
   gint inpoint = 0, duration = 10;
@@ -110,20 +125,26 @@ main (int argc, gchar ** argv)
   uri = g_strdup_printf ("file://%s", argv[1]);
 
   /* Add the main audio/video file */
+
+  effect = ges_track_parse_launch_effect_new ("agingtv");
+
   src = GES_TIMELINE_OBJECT (ges_timeline_filesource_new (uri));
-  g_signal_connect (src, "track-object-added", G_CALLBACK (object_added_cb),
-      NULL);
+
+  g_signal_connect (trackv, "track-object-added", G_CALLBACK (object_added_cb),
+      effect);
 
   g_free (uri);
 
+
   g_object_set (src, "start", (guint64) 0, "in-point", (guint64) 0,
-      "duration", (guint64) 20 * GST_SECOND, NULL);
+      "duration", (guint64) 200 * GST_SECOND, NULL);
   ges_timeline_layer_add_object (layer1, src);
+
+  ges_timeline_object_add_track_object (src, GES_TRACK_OBJECT (effect));
 
   /* Play the pipeline */
   mainloop = g_main_loop_new (NULL, FALSE);
-  g_timeout_add_seconds (duration + 1, (GSourceFunc) g_main_loop_quit,
-      mainloop);
+  g_timeout_add_seconds (200 + 1, (GSourceFunc) g_main_loop_quit, mainloop);
   gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
   g_main_loop_run (mainloop);
 
