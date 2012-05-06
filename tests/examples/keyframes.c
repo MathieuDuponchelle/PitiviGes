@@ -28,6 +28,7 @@ object_added_cb (GESTrack * track, GESTrackObject * tckobj,
   GESController *controller;
   GValue g_value = { 0, };
   GValue g_value_bool = { 0, };
+  const GESKeyframe *ret;
 
   if (!GES_IS_TRACK_PARSE_LAUNCH_EFFECT (tckobj)) {
     ges_track_add_object (track, GES_TRACK_OBJECT (effect));
@@ -37,8 +38,10 @@ object_added_cb (GESTrack * track, GESTrackObject * tckobj,
   printf ("Starting control on effect %p\n", effect);
   g_value_init (&g_value, G_TYPE_UINT);
   controller = ges_controller_new (GES_TRACK_OBJECT (effect));
+
   g_value_set_uint (&g_value, 0);
   ges_controller_add_keyframe (controller, "scratch-lines", 0, g_value);
+
   g_value_set_uint (&g_value, 20);
   ges_controller_add_keyframe (controller, "scratch-lines", 50 * GST_SECOND,
       g_value);
@@ -134,7 +137,6 @@ main (int argc, gchar ** argv)
       effect);
 
   g_free (uri);
-
 
   g_object_set (src, "start", (guint64) 0, "in-point", (guint64) 0,
       "duration", (guint64) 200 * GST_SECOND, NULL);

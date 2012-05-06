@@ -60,6 +60,18 @@ struct _GESController {
   gpointer _ges_reserved[GES_PADDING];
 };
 
+typedef struct
+{
+  GstClockTime timestamp;
+  GValue value;
+} GESKeyframe;
+
+typedef struct
+{
+  GList *keyframes;
+  GstInterpolationControlSource *source;
+} source_keyframes;
+
 /**
  * GESControllerClass:
  */
@@ -74,8 +86,17 @@ struct _GESControllerClass {
 
 GType ges_controller_get_type (void);
 
-GESController* ges_controller_new (GESTrackObject *track_object);
-gboolean ges_controller_add_keyframe(GESController *self, const gchar *param, guint64 timestamp, GValue value);
+GESController*
+ges_controller_new (GESTrackObject *track_object);
+
+gboolean
+ges_controller_add_keyframe(GESController *self, const gchar *param, guint64 timestamp, GValue value);
+
+const GList *
+ges_controller_get_keyframes(GESController *self, const gchar *param);
+
+const GESKeyframe *
+ges_controller_get_keyframe(GESController *self, const gchar *param, guint64 timestamp);
 
 G_END_DECLS
 

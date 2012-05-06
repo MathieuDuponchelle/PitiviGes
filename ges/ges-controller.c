@@ -3,17 +3,6 @@
 
 G_DEFINE_TYPE (GESController, ges_controller, G_TYPE_OBJECT);
 
-static gpointer
-copy_keyframe (gpointer boxed)
-{
-  return (boxed);
-}
-
-static void
-free_keyframe (gpointer boxed)
-{
-}
-
 struct _GESControllerPrivate
 {
   GESTrackObject *controlled;
@@ -21,13 +10,13 @@ struct _GESControllerPrivate
   GHashTable *sources_table;
 };
 
+
 static void
 ges_controller_class_init (GESControllerClass * klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class = object_class;
-  g_boxed_type_register_static ("keyframe", copy_keyframe, free_keyframe);
   g_type_class_add_private (klass, sizeof (GESControllerPrivate));
 }
 
@@ -42,10 +31,17 @@ ges_controller_init (GESController * self)
 }
 
 static void
-add_keyframe (GstInterpolationControlSource * source, guint64 timestamp,
-    GValue value)
+add_keyframe (source_keyframes * source_map, guint64 timestamp, GValue value)
 {
-  gst_interpolation_control_source_set (source, timestamp, &value);
+  GESKeyframe *keyframe;
+
+  keyframe = g_malloc (sizeof (GESKeyframe));
+  keyframe->timestamp = timestamp;
+  memset (&(keyframe->value), 0, sizeof (keyframe->value));
+  g_value_init (&(keyframe->value), G_VALUE_TYPE (&value));
+  g_value_copy (&value, &(keyframe->value));
+  source_map->keyframes = g_list_append (source_map->keyframes, keyframe);
+  gst_interpolation_control_source_set (source_map->source, timestamp, &value);
 }
 
 static gboolean
@@ -76,11 +72,12 @@ add_controller (GESControllerPrivate * priv, const gchar * param)
   return (TRUE);
 }
 
-static GstInterpolationControlSource *
+static source_keyframes *
 add_control_source (GESControllerPrivate * priv, const gchar * param,
     GValue value)
 {
   GstInterpolationControlSource *source;
+  source_keyframes *source_map;
 
   printf ("creating new control source for prop %s\n", param);
 
@@ -90,9 +87,33 @@ add_control_source (GESControllerPrivate * priv, const gchar * param,
   if (G_VALUE_TYPE (&value) != G_TYPE_BOOLEAN)
     gst_interpolation_control_source_set_interpolation_mode (source,
         GST_INTERPOLATE_LINEAR);
-  g_hash_table_insert (priv->sources_table, (gchar *) param, source);
 
-  return source;
+  source_map = malloc (sizeof (source_keyframes));
+
+  source_map->source = source;
+  source_map->keyframes = NULL;
+
+  g_hash_table_insert (priv->sources_table, (gchar *) param, source_map);
+
+  return source_map;
+}
+
+const GESKeyframe *
+ges_controller_get_keyframe (GESController * self, const gchar * param,
+    guint64 timestamp)
+{
+  source_keyframes *source_map;
+  GESControllerPrivate *priv = self->priv;
+  GList *tmp;
+
+  printf ("we are gonna look for : %llu\n", (unsigned long long) timestamp);
+  source_map = g_hash_table_lookup (priv->sources_table, param);
+  if (source_map == NULL)
+    return (NULL);
+  for (tmp = source_map->keyframes; tmp; tmp = tmp->next)
+    if (((GESKeyframe *) tmp->data)->timestamp == timestamp)
+      return (tmp->data);
+  return NULL;
 }
 
 gboolean
@@ -100,18 +121,19 @@ ges_controller_add_keyframe (GESController * self, const gchar * param,
     guint64 timestamp, GValue value)
 {
   GESControllerPrivate *priv = self->priv;
-  GstInterpolationControlSource *source;
+  source_keyframes *source_map;
 
+  printf ("added keyframe\n");
   if (!priv->controller)
     if (!add_controller (priv, param))
       return (FALSE);
 
-  source = g_hash_table_lookup (priv->sources_table, param);
+  source_map = g_hash_table_lookup (priv->sources_table, param);
 
-  if (source == NULL)
-    source = add_control_source (priv, param, value);
+  if (source_map == NULL)
+    source_map = add_control_source (priv, param, value);
 
-  add_keyframe (source, timestamp, value);
+  add_keyframe (source_map, timestamp, value);
 
   return TRUE;
 }
