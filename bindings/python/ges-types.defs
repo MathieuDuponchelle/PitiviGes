@@ -14,6 +14,13 @@
   (gtype-id "GES_TYPE_CONTROLLER")
 )
 
+(define-object Keyframe
+  (in-module "GES")
+  (parent "GObject")
+  (c-name "GESKeyframe")
+  (gtype-id "GES_TYPE_KEYFRAME")
+)
+
 (define-object KeyfileFormatter
   (in-module "GES")
   (parent "GESFormatter")

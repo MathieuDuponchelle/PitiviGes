@@ -44,7 +44,7 @@ class Effect:
         self.src = ges.TimelineTestSource()
         self.src.set_start(long(0))
 
-        self.src.set_duration(long(3000000000))
+        self.src.set_duration(long(30000000000))
         self.src.set_vpattern("smpte75")
         layer.add_object(self.src)
         self.timeline.add_layer(layer)
@@ -88,7 +88,10 @@ class Effect:
         self.controller = ges.Controller();
         self.controller.set_controlled(trackobject)
         self.controller.add_keyframe("scratch-lines", long (0), 0)
-        print trackobject
+        self.controller.add_keyframe("scratch-lines", long (10 * gst.SECOND), 10)
+        self.keyframes = self.controller.get_keyframes("scratch-lines")
+        for kf in self.keyframes:
+            print kf.get_value(), kf.get_timestamp()
 
 def main(args):
     usage = "usage: %s effect_name-1 .. effect_name-n\n" % args[0]

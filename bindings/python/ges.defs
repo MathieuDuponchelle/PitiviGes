@@ -154,6 +154,13 @@
   (gtype-id "GES_TYPE_CONTROLLER")
 )
 
+(define-object Keyframe
+  (in-module "GES")
+  (parent "GObject")
+  (c-name "GESKeyframe")
+  (gtype-id "GES_TYPE_KEYFRAME")
+)
+
 (define-object TrackObject
   (in-module "GES")
   (parent "GInitiallyUnowned")
@@ -2431,6 +2438,49 @@
 )
 
 
+
+;; from ges.keyframe.h
+
+(define-function keyframe_get_type
+  (c-name "ges_keyframe_get_type")
+  (return-type "GType")
+)
+
+(define-function keyframe_new
+  (c-name "ges_keyframe_new")
+  (is-constructor-of "GESKeyframe")
+  (return-type "GESKeyframe*")
+)
+
+(define-method set_timestamp
+  (of-object "GESKeyframe")
+  (c-name "ges_keyframe_set_timestamp")
+  (return-type "none")
+  (parameters
+    '("GstClockTime" "timestamp")
+  )
+)
+
+(define-method get_timestamp
+  (of-object "GESKeyframe")
+  (c-name "ges_keyframe_get_timestamp")
+  (return-type "GstClockTime")
+)
+
+(define-method set_value
+  (of-object "GESKeyframe")
+  (c-name "ges_keyframe_set_value")
+  (return-type "none")
+  (parameters
+    '("GValue" "value")
+  )
+)
+
+(define-method get_value
+  (of-object "GESKeyframe")
+  (c-name "ges_keyframe_get_value")
+  (return-type "const-GValue*")
+)
 
 ;; From ges-types.h
 
