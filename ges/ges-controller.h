@@ -75,12 +75,6 @@ struct _GESControllerClass {
 
 typedef struct
 {
-  GstClockTime timestamp;
-  GValue value;
-} GESKeyframe;
-
-typedef struct
-{
   GList *keyframes;
   GstInterpolationControlSource *source;
 } source_keyframes;
@@ -98,7 +92,7 @@ ges_controller_add_keyframe(GESController *self, const gchar *param, guint64 tim
 const GList *
 ges_controller_get_keyframes(GESController *self, const gchar *param);
 
-const GESKeyframe *
+GESKeyframe *
 ges_controller_get_keyframe(GESController *self, const gchar *param, guint64 timestamp);
 
 gboolean

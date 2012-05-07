@@ -35,11 +35,11 @@ add_keyframe (source_keyframes * source_map, guint64 timestamp, GValue value)
 {
   GESKeyframe *keyframe;
 
-  keyframe = g_malloc (sizeof (GESKeyframe));
-  keyframe->timestamp = timestamp;
-  memset (&(keyframe->value), 0, sizeof (keyframe->value));
-  g_value_init (&(keyframe->value), G_VALUE_TYPE (&value));
-  g_value_copy (&value, &(keyframe->value));
+  keyframe = ges_keyframe_new ();
+  ges_keyframe_set_timestamp (keyframe, timestamp);
+  ges_keyframe_set_value (keyframe, value);
+
+
   source_map->keyframes = g_list_append (source_map->keyframes, keyframe);
   gst_interpolation_control_source_set (source_map->source, timestamp, &value);
 }
@@ -98,7 +98,7 @@ add_control_source (GESControllerPrivate * priv, const gchar * param,
   return source_map;
 }
 
-const GESKeyframe *
+GESKeyframe *
 ges_controller_get_keyframe (GESController * self, const gchar * param,
     guint64 timestamp)
 {
@@ -111,9 +111,21 @@ ges_controller_get_keyframe (GESController * self, const gchar * param,
   if (source_map == NULL)
     return (NULL);
   for (tmp = source_map->keyframes; tmp; tmp = tmp->next)
-    if (((GESKeyframe *) tmp->data)->timestamp == timestamp)
+    if (ges_keyframe_get_timestamp ((GESKeyframe *) tmp->data) == timestamp)
       return (tmp->data);
   return NULL;
+}
+
+const GList *
+ges_controller_get_keyframes (GESController * self, const gchar * param)
+{
+  source_keyframes *source_map;
+  GESControllerPrivate *priv = self->priv;
+
+  source_map = g_hash_table_lookup (priv->sources_table, param);
+  if (source_map == NULL)
+    return (NULL);
+  return (source_map->keyframes);
 }
 
 gboolean
@@ -151,9 +163,9 @@ ges_controller_remove_keyframe (GESController * self, const gchar * param,
   if (source_map == NULL)
     return FALSE;
   for (tmp = source_map->keyframes; tmp; tmp = tmp->next)
-    if (((GESKeyframe *) tmp->data)->timestamp == timestamp) {
+    if (ges_keyframe_get_timestamp ((GESKeyframe *) tmp->data) == timestamp) {
       gst_interpolation_control_source_unset (source_map->source,
-          ((GESKeyframe *) tmp->data)->timestamp);
+          ges_keyframe_get_timestamp ((GESKeyframe *) tmp->data));
       return TRUE;
     }
   return FALSE;
