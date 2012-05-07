@@ -140,4 +140,7 @@ typedef struct _GESPitiviFormatterClass GESPitiviFormatterClass;
 typedef struct _GESController GESController;
 typedef struct _GESControllerClass GESControllerClass;
 
+typedef struct _GESKeyframe GESKeyframe;
+typedef struct _GESKeyframeClass GESKeyframeClass;
+
 #endif /* __GES_TYPES_H__ */
