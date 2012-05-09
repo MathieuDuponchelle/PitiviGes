@@ -30,21 +30,22 @@ Some ideas of material(especially for TimelineSource objects) can be found in do
 
 2. Problems
 --------------
-    1) We must be able to query list of materials that availeble for use in some specific project
+    1) We must be able to query list of materials that are available for use in some specific project
     2) We must be able to query materials by some criteria
-    3) Materials that are always available to all projects should be loaded once and then appended to the
-       list of materials that are available for some particular project
+        a. By type of TimelineObject that it can produce
+        b. By type of supported tracks
+        c. Should we have filters by some specific properties of source material
+           - like duration, width, height, etc?
+
     4) We must be able to get reference to origin material of any timeline object.
 
 3. Propositions to solve those problems
 ----------------------------------------
 
-    1) To hold list of all available materials registry will be used. Registry will be material itself
-       and will hold all materials that are available in current project. Every material in registry
-       should be unique. Also we can have hashtable for source materials that will use URI as a key
-       and will help to avoid discovering same file multiple times.
+    1) To hold list of all available materials registry will be used. Every material
+       should have unique identifier that might be exposed later via API.
 
-    2) To allow library user to implement some sort of media library we must be able to queyry materials by
+    2) To allow library user to implement some sort of media library we must be able to query materials by
         using some criteria, e.g. URI or supported track types.
 
     3) To allow loading materials once we can create list of them in ges_init() and append this list
@@ -54,7 +55,7 @@ Some ideas of material(especially for TimelineSource objects) can be found in do
         use approach of GStreamer - they will be freed automatically by system after program termination.
 
     4) To make it possible to get such data we could have some interface(GESMaterialInterface
-       or GESExtractableObject) that will be implement by each type that can be instantiated via
+       or GESExtractableObject, name to be defined) that will be implement by each type that can be instantiated via
        GESMaterial.
 
 4. Use cases
@@ -67,6 +68,10 @@ Some ideas of material(especially for TimelineSource objects) can be found in do
         - Effects - 1 material per effects
         - TextOverlay
     UC-5. Handle metadata
+    UC-6. Add operations (only effects?) to a GESTimelineObject
+    UC-7. User want to 'invent' a new operation, we need to be able
+          to let him define it
+    UC-8. The user want to make an object from a GESMaterial
 
 
 5. API Draft
@@ -74,7 +79,7 @@ Some ideas of material(especially for TimelineSource objects) can be found in do
 
 A. Material API draft
 ----------------------
-/*
+/**
  * ges_material_new_full:
  * @type_name: Name of the material type to create
  * @material_created: Callback for asynchronous material creation.
@@ -87,16 +92,21 @@ GESMaterial *
 ges_material_new_full (const gchar * type_name, (GCallback) material_created,
                        ... );
 
-/*
+/* I think this function should be tought further and probably not be implemented in the first
+ * iteration */
+
+ts: note that the 2 '*' are needed by gtk-doc
+/**
  * ges_material_get_metadatas:
- * @material: Target material
+ * @material: The #GESMaterial to get metadatas from
+ *
  * Method to get metadatas of specified material
  *
  * Returns: material metadatas
 */
 GstTagList *ges_material_get_metadatas(GESMaterial *material);
 
-/*
+/**
  * ges_material_list_standard_materials:
  * @type: Type of materials to list
  * Method that returns list of standard materials(like effects and transitions)
@@ -106,7 +116,7 @@ GstTagList *ges_material_get_metadatas(GESMaterial *material);
  */
 ges_material_list_standard_materials (GESMaterialType type);
 
-/*
+/**
  * ges_material_get_track_types:
  * @material: Target material
  * Method that returns track types that are supported by given material
@@ -117,7 +127,7 @@ GESTrackType ges_material_get_track_types (GESMaterial *material);
 
 B. Source Material API draft
 ------------
-/*
+/**
  * ges_material_source_new:
  * @uri: URI to create material
  * @material_created: Callback for asynchronous material creation/file discovering
@@ -132,7 +142,7 @@ B. Source Material API draft
 GESMaterialSource * ges_material_source_new    (const gchar *uri,
                                                       (GAsyncReadyCallback) material_created,
                                                       gpointer user_data);
-/*
+/**
  * ges_material_source_get_stream_info:
  * @material: Target material
  * Method that returns discoverer data of specified material so user could work with
@@ -142,34 +152,10 @@ GESMaterialSource * ges_material_source_new    (const gchar *uri,
 GstDiscovererStreamInfo *
                         ges_material_source_get_stream_info (const GESMaterial *material);
 
-Also, to give user ability not to use Gstreamer functions and get all data using GES only, we might
-want next methods:
-
-GstClockTime ges_source_material_get_duration         (const GESMaterialSource* material);
-guint ges_material_source_get_audio_channels          (const GESMaterialSource* material);
-guint ges_material_source_get_audio_sample_rate       (const GESMaterialSource* material);
-guint ges_material_source_get_audio_depth             (const GESMaterialSource* material);
-guint ges_material_source_get_audio_bitrate           (const GESMaterialSource* material);
-guint ges_material_source_get_audio_max_bitrate       (const GESMaterialSource* material);
-const gchar * ges_material_source_get_audio_language  (const GESMaterialSource* material);
-
-guint ges_material_source_get_video_width             (const GESMaterialSource* material);
-guint ges_material_source_get_video_height            (const GESMaterialSource* material);
-guint ges_material_source_get_video_depth             (const GESMaterialSource* material);
-guint ges_material_source_get_video_framerate_num     (const GESMaterialSource* material);
-guint ges_material_source_get_video_framerate_denom   (const GESMaterialSource* material);
-guint ges_material_source_get_video_par_num           (const GESMaterialSource* material);
-guint ges_material_source_get_video_par_denom         (const GESMaterialSource* material);
-guint ges_material_source_get_video_bitrate           (const GESMaterialSource* material);
-guint ges_material_source_get_video_max_bitrate       (const GESMaterialSource* material);
-gboolean ges_material_source_video_is_interlaced      (const GESMaterialSource* material);
-gboolean ges_material_source_is_image                 (const GESMaterialSource* material);
-const gchar * ges_source_material_get_uri             (const GESMaterialSource* material);
-
 C. Extractableobject/MaterialInterface API
 -------------------------------------------
 
-/*
+/**
 * ges_extractable_object_get_material:
 * @object: Target object
 * Method to get material which was used to instaniate specified object
@@ -177,7 +163,7 @@ C. Extractableobject/MaterialInterface API
 */
 GESMaterial *ges_extractable_object_get_material(GESExtractableObject *object);
 
-/*
+/**
  * ges_extractable_object_get_metadatas:
  * @object: Target object
  * Helper method that will return metadata of material of specified object(to avoid extracting
@@ -188,7 +174,8 @@ GstTagList *ges_extractable_object_get_metadatas (GESExtractableObject *object);
 
 D. Project material API draft
 -----------------------------
-/*
+
+/**
  * ges_material_project_list_materials:
  * @material: Project material
  * @type: Type of material to list
@@ -198,12 +185,12 @@ D. Project material API draft
  * Returns: list of available materials of given type in project
 */
 ges_material_project_list_materials (GESMaterial *project,
-                                     GESMaterialType type)
+                                     GType type)
 
 E. Methods that should be added to other classes
 ------------------------------------------------
 
-/*
+/**
 * ges_timeline_layer_add_material:
 * Creates TimelineObject from material, adds it to layer and
 * returns reference to it.
@@ -216,7 +203,7 @@ GESTimelineObject * ges_timeline_layer_add_material   (GESTimelineLayer *layer,
                                                        GstClockTime inpoint,
                                                        GstClockTime duration,
                                                        GESTrackType track_types);
-/*
+/**
  * ges_timeline_object_add_material:
  * @object: Target timeline object
  * @material: Effect material
