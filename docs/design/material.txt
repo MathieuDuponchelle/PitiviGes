@@ -80,23 +80,6 @@ Some ideas of material(especially for TimelineSource objects) can be found in do
 A. Material API draft
 ----------------------
 /**
- * ges_material_new_full:
- * @type_name: Name of the material type to create
- * @material_created: Callback for asynchronous material creation.
- * Variable aguments will be used to pass params to constructor of particular
- * material type(like URI for source materials)
- *
- * Returns: Created material or reference to existing one if it was created earlier
-*/
-GESMaterial *
-ges_material_new_full (const gchar * type_name, (GCallback) material_created,
-                       ... );
-
-/* I think this function should be tought further and probably not be implemented in the first
- * iteration */
-
-ts: note that the 2 '*' are needed by gtk-doc
-/**
  * ges_material_get_metadatas:
  * @material: The #GESMaterial to get metadatas from
  *
@@ -124,6 +107,18 @@ ges_material_list_standard_materials (GESMaterialType type);
  * Returns: Track types that are supported by material
  */
 GESTrackType ges_material_get_track_types (GESMaterial *material);
+
+/**
+ * ges_material_new_full:
+ * @type_name: Name of the material type to create
+ * @material_created: Callback for asynchronous material creation.
+ * Variable aguments will be used to pass params to constructor of particular
+ * material type(like URI for source materials)
+ *
+ * Returns: Created material or reference to existing one if it was created earlier
+*/
+GESMaterial *
+ges_material_new_full (const gchar * type_name, (GCallback) material_created,
 
 B. Source Material API draft
 ------------
