@@ -59,7 +59,6 @@ struct _GESMaterialClass
 
 
 GESTrackType ges_material_get_compatible_track_types (GESMaterial * material);
-GstTagList *ges_material_get_metadatas (GESMaterial * material);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */

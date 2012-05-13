@@ -26,7 +26,6 @@ enum
 {
   PROP_0,
   PROP_COMPATIBLE_TRACK_TYPES,
-  PROP_METADATAS,
   PROP_LAST
 };
 
@@ -34,7 +33,6 @@ static GParamSpec *properties[PROP_LAST];
 
 struct _GESMaterialPrivate
 {
-  GstTagList *metadatas;
   GESTrackType compatible_track_types;
 };
 
@@ -45,9 +43,6 @@ ges_material_get_property (GObject * object, guint property_id,
   GESMaterial *material = GES_MATERIAL (object);
 
   switch (property_id) {
-    case PROP_METADATAS:
-      g_value_set_object (value, material->priv->metadatas);
-      break;
     case PROP_COMPATIBLE_TRACK_TYPES:
       g_value_set_flags (value, material->priv->compatible_track_types);
       break;
@@ -60,12 +55,9 @@ static void
 ges_material_set_property (GObject * object, guint property_id,
     const GValue * value, GParamSpec * pspec)
 {
-  GESMaterial *material = GES_MATERIAL (object);
+  /* GESMaterial *material = GES_MATERIAL (object); */
 
   switch (property_id) {
-    case PROP_METADATAS:
-      material->priv->metadatas = g_value_get_object (value);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -88,11 +80,6 @@ ges_material_class_init (GESMaterialClass * klass)
       GES_TYPE_TRACK_TYPE,
       GES_TRACK_TYPE_UNKNOWN, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
 
-  properties[PROP_METADATAS] =
-      g_param_spec_object ("metadatas",
-      "Metadatas of current material",
-      "Set/Get metadata", GST_TYPE_TAG_LIST, G_PARAM_READWRITE);
-
   g_object_class_install_properties (object_class, PROP_LAST, properties);
 }
 
@@ -102,14 +89,7 @@ ges_material_init (GESMaterial * self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialPrivate);
 
-  self->priv->metadatas = NULL;
   self->priv->compatible_track_types = GES_TRACK_TYPE_UNKNOWN;
-}
-
-GstTagList *
-ges_material_get_metadatas (GESMaterial * self)
-{
-  return self->priv->metadatas;
 }
 
 GESTrackType
