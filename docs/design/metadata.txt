@@ -1,0 +1,176 @@
+Metadata
+--------
+
+Summary
+--------
+
+1. Basic ideas
+2. Problems
+3. Ways of solving problems
+4. Use-cases
+5. API draft
+
+1. Basic ideas
+--------------
+
+If we look at entities that are present in GES we can see that almost all of
+them need some sort of metadata: projects can contain metadata, materials need
+metadata, layers need metadata and so on. To be able to extract metadata from
+different objects I propose to have  abstract class 
+that all classes that can hold metadata will implement/inherit. Let's call it 
+MetadataContainer for now(name to be defined).
+
+2. Problems
+--------------
+	
+    1) We must be able to discover all metadata items that are 
+	   attached to object
+    2) We must be able to hold metadata of any type user wants
+
+3. Ways of solving problems
+---------------------------
+    1) To implement metadata GstTagList will be used. It allows to get list of
+       all available tags in specified list by calling "gst_tag_list_foreach".
+       
+    2) This problem can be solved by means of GstTagList.
+    
+4. Use-cases
+-------------
+    UC-1. Hold tag information about file source material. 
+    UC-2. Hold descriptions of operations
+    UC-3. Hold information about projects
+    UC-4. Hold user comments to timeline objects
+    
+5. API Draft
+------------
+
+/**
+ * ges_metadata_container_set_value
+ * @containter: Target container
+ * @metadata_item: Name of the metadata item to set
+ * @value: Value to set
+ * Sets value of given metadata item
+ *
+ */
+void
+ges_metadata_container_set_value(GESMetadataContainer *container, 
+    const gchar* metadata_item,  const GValue *value);
+    
+void
+ges_metadata_container_set_char(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gchar value);
+    
+void
+ges_metadata_container_set_uchar(GESMetadataContainer *container, 
+    const gchar* metadata_item,  guchar value);
+    
+void
+ges_metadata_container_set_int(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gint value);
+    
+void
+ges_metadata_container_set_uint(GESMetadataContainer *container, 
+    const gchar* metadata_item,  guint value);
+    
+void
+ges_metadata_container_set_int64(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gint64 value);
+    
+void
+ges_metadata_container_set_uint64(GESMetadataContainer *container, 
+    const gchar* metadata_item,  guint64 value);
+    
+void
+ges_metadata_container_set_long(GESMetadataContainer *container, 
+    const gchar* metadata_item,  glong value);
+    
+void
+ges_metadata_container_set_ulong(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gulong value);
+    
+void
+ges_metadata_container_set_float(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gfloat value);
+    
+void
+ges_metadata_container_set_double(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gdouble value);
+    
+void
+ges_metadata_container_set_date(GESMetadataContainer *container, 
+    const gchar* metadata_item,  const GDate* value);
+    
+void
+ges_metadata_container_set_date_time(GESMetadataContainer *container, 
+    const gchar* metadata_item,  const GstDateTime* value);
+    
+void
+ges_metadata_container_set_string(GESMetadataContainer *container, 
+    const gchar* metadata_item,  const gchar* value);
+
+/**
+ * ges_metadata_container_get_value
+ * @containter: Target container
+ * @metadata_item: Name of the metadata item to get
+ * @dest: Destination to which value of metadata item will be copied
+ * Sets value of given metadata item
+ *
+ * Returns: TRUE if value was present in object metadata, FALSE if there is no
+ * such metadata item
+ */    
+gboolean
+ges_metadata_container_get_value(GESMetadataContainer *container, 
+    const gchar* metadata_item, GValue** dest);
+    
+gboolean
+ges_metadata_container_get_char(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gchar* dest);
+    
+gboolean
+ges_metadata_container_get_uchar(GESMetadataContainer *container, 
+    const gchar* metadata_item,  guchar* dest);
+    
+gboolean
+ges_metadata_container_get_int(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gint* dest);
+    
+gboolean
+ges_metadata_container_get_uint(GESMetadataContainer *container, 
+    const gchar* metadata_item,  guint* dest);
+    
+gboolean
+ges_metadata_container_get_int64(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gint64* dest);
+    
+gboolean
+ges_metadata_container_get_uint64(GESMetadataContainer *container, 
+    const gchar* metadata_item,  guint64* dest);
+    
+gboolean
+ges_metadata_container_get_long(GESMetadataContainer *container, 
+    const gchar* metadata_item,  glong* dest);
+    
+gboolean
+ges_metadata_container_get_ulong(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gulong* dest);
+    
+gboolean
+ges_metadata_container_get_float(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gfloat* dest);
+    
+gboolean
+ges_metadata_container_get_double(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gdouble* dest);
+    
+gboolean
+ges_metadata_container_get_date(GESMetadataContainer *container, 
+    const gchar* metadata_item,  GDate** dest);
+    
+gboolean
+ges_metadata_container_get_date_time(GESMetadataContainer *container, 
+    const gchar* metadata_item,  GstDateTime** dest);
+    
+gboolean
+ges_metadata_container_set_string(GESMetadataContainer *container, 
+    const gchar* metadata_item,  gchar** dest);
+    
