@@ -29,13 +29,13 @@ struct _GESMaterialSourcePrivate
   GstClockTime duration;
 };
 
-void
+static void
 ges_material_source_class_init (GESMaterialSourceClass * klass)
 {
   g_type_class_add_private (klass, sizeof (GESMaterialSourcePrivate));
 }
 
-void
+static void
 ges_material_source_init (GESMaterialSource * self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
