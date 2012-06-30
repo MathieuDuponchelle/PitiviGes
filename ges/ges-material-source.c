@@ -100,11 +100,10 @@ ges_material_source_init (GESMaterialSource * self)
   self->priv->duration = 0;
 }
 
-GESMaterialSource *
-ges_material_source_new (const gchar * uri,
+void
+ges_material_source_new_async (const gchar * uri,
     GAsyncReadyCallback * material_created, gpointer user_data)
 {
-  return NULL;
 }
 
 GstClockTime

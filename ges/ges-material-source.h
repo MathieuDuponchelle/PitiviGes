@@ -55,6 +55,8 @@ struct _GESMaterialSource
 struct _GESMaterialSourceClass
 {
   GESMaterialClass parent_class;
+  
+  GstDiscoverer *discoverer;
 
   gpointer _ges_reserved[GES_PADDING];
 };
@@ -63,7 +65,7 @@ struct _GESMaterialSourceClass
  * If no need to discover @uri return the (refed) GESMaterialSource directly
  * otherwize return %NULL and call material_created when discovered
  */
-GESMaterialSource *ges_material_source_new (const gchar * uri,
+void ges_material_source_new_async (const gchar * uri,
     GAsyncReadyCallback * material_created, gpointer user_data);
 
 GstClockTime ges_material_source_get_duration (const GESMaterialSource *
