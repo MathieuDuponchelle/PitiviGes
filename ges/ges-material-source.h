@@ -66,7 +66,7 @@ struct _GESMaterialSourceClass
  * otherwize return %NULL and call material_created when discovered
  */
 void ges_material_source_new_async (const gchar * uri,
-    GAsyncReadyCallback * material_created, gpointer user_data);
+    GAsyncReadyCallback material_created, gpointer user_data);
 
 GstClockTime ges_material_source_get_duration (const GESMaterialSource *
     material);

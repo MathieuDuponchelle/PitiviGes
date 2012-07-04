@@ -40,6 +40,28 @@ struct _GESMaterialSourcePrivate
   GstClockTime duration;
 };
 
+static GHashTable *
+ges_material_source_cache_get (void)
+{
+  if (material_cache == NULL) {
+    material_cache = g_hash_table_new (g_str_hash, g_str_equal);
+  }
+
+  return material_cache;
+}
+
+static GESMaterialSource *
+ges_material_source_cache_lookup (const gchar * uri)
+{
+  GHashTable *cache = ges_material_source_cache_get ();
+
+  GESMaterialSource *material =
+      g_object_ref (GES_MATERIAL_SOURCE (g_hash_table_lookup (cache,
+              (gpointer) uri)));
+
+  return material;
+}
+
 static void
 ges_material_source_get_property (GObject * object, guint property_id,
     GValue * value, GParamSpec * pspec)
@@ -103,8 +125,26 @@ ges_material_source_init (GESMaterialSource * self)
 
 void
 ges_material_source_new_async (const gchar * uri,
-    GAsyncReadyCallback * material_created, gpointer user_data)
+    GAsyncReadyCallback material_created, gpointer user_data)
 {
+  GSimpleAsyncResult *simple;
+  GESMaterialSource *material;
+
+  simple = g_simple_async_result_new (NULL, material_created, user_data,
+      (gpointer) ges_material_source_new_async);
+
+  material = ges_material_source_cache_lookup (uri);
+
+  if (material != NULL) {
+    g_simple_async_result_set_op_res_gpointer (simple,
+        g_object_ref (material), g_object_unref);
+
+    g_simple_async_result_complete_in_idle (simple);
+    g_object_unref (simple);
+    g_object_unref (material);
+  } else {
+    // TODO: Actual implementation of material loading
+  }
 }
 
 GstClockTime
