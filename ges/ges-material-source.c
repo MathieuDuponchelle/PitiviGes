@@ -30,6 +30,7 @@ enum
 };
 
 static GParamSpec *properties[PROP_LAST];
+static GHashTable *material_cache = NULL;
 
 
 struct _GESMaterialSourcePrivate
