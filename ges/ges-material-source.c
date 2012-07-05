@@ -31,6 +31,10 @@ enum
 
 static GParamSpec *properties[PROP_LAST];
 static GHashTable *material_cache = NULL;
+static GstDiscoverer *discoverer;
+//static GList *pendingobjects;
+/* lock to avoid discovery of objects that will be removed */
+static GMutex *pendingobjects_lock;
 
 
 struct _GESMaterialSourcePrivate
@@ -39,6 +43,15 @@ struct _GESMaterialSourcePrivate
   GstDiscovererStreamInfo *stream_info;
   GstClockTime duration;
 };
+
+static void do_async_done (GESTimeline * timeline);
+
+static void
+discoverer_finished_cb (GstDiscoverer * discoverer, GESTimeline * timeline);
+
+static void
+discoverer_discovered_cb (GstDiscoverer * discoverer,
+    GstDiscovererInfo * info, GError * err, GESTimeline * timeline);
 
 static GHashTable *
 ges_material_source_cache_get (void)
@@ -111,6 +124,16 @@ ges_material_source_class_init (GESMaterialSourceClass * klass)
       NULL, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
 
   g_object_class_install_properties (object_class, PROP_LAST, properties);
+
+  // Initializing of discoverer
+  pendingobjects_lock = g_mutex_new ();
+  /* New discoverer with a 15s timeout */
+  discoverer = gst_discoverer_new (15 * GST_SECOND, NULL);
+  g_signal_connect (discoverer, "finished",
+      G_CALLBACK (discoverer_finished_cb), NULL);
+  g_signal_connect (discoverer, "discovered",
+      G_CALLBACK (discoverer_discovered_cb), NULL);
+  gst_discoverer_start (discoverer);
 }
 
 static void
@@ -164,4 +187,22 @@ GstDiscovererStreamInfo *
 ges_material_source_get_stream_info (const GESMaterialSource * self)
 {
   return self->priv->stream_info;
+}
+
+static void
+do_async_done (GESTimeline * timeline)
+{
+}
+
+/* Callbacks  */
+static void
+discoverer_finished_cb (GstDiscoverer * discoverer, GESTimeline * timeline)
+{
+  do_async_done (timeline);
+}
+
+static void
+discoverer_discovered_cb (GstDiscoverer * discoverer,
+    GstDiscovererInfo * info, GError * err, GESTimeline * timeline)
+{
 }
