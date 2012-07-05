@@ -649,6 +649,8 @@ eos_main_thread (GnlComposition * comp)
       gst_element_post_message (GST_ELEMENT_CAST (comp),
           gst_message_new_segment_done (GST_OBJECT (comp),
               priv->segment->format, epos));
+      gst_pad_push_event (priv->ghostpad,
+          gst_event_new_segment_done (priv->segment->format, epos));
     }
   }
   return FALSE;
