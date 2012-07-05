@@ -132,12 +132,12 @@ ges_material_source_load (const gchar * uri,
 
 void
 ges_material_source_new_async (const gchar * uri,
-    GAsyncReadyCallback material_created, gpointer user_data)
+    GAsyncReadyCallback material_created_cb, gpointer user_data)
 {
   GSimpleAsyncResult *simple;
   GESMaterialSource *material;
 
-  simple = g_simple_async_result_new (NULL, material_created, user_data,
+  simple = g_simple_async_result_new (NULL, material_created_cb, user_data,
       (gpointer) ges_material_source_new_async);
 
   material = ges_material_source_cache_lookup (uri);
@@ -150,7 +150,7 @@ ges_material_source_new_async (const gchar * uri,
     g_object_unref (simple);
     g_object_unref (material);
   } else {
-    ges_material_source_load (uri, material_created, simple);
+    ges_material_source_load (uri, material_created_cb, simple);
   }
 }
 
