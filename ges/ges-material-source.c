@@ -123,6 +123,13 @@ ges_material_source_init (GESMaterialSource * self)
   self->priv->duration = 0;
 }
 
+static void
+ges_material_source_load (const gchar * uri,
+    GAsyncReadyCallback material_created_cb, GSimpleAsyncResult * result)
+{
+
+}
+
 void
 ges_material_source_new_async (const gchar * uri,
     GAsyncReadyCallback material_created, gpointer user_data)
@@ -143,7 +150,7 @@ ges_material_source_new_async (const gchar * uri,
     g_object_unref (simple);
     g_object_unref (material);
   } else {
-    // TODO: Actual implementation of material loading
+    ges_material_source_load (uri, material_created, simple);
   }
 }
 
