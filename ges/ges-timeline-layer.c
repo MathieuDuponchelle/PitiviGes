@@ -949,6 +949,23 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
 }
 
 /**
+* ges_timeline_layer_add_material:
+* Creates TimelineObject from material, adds it to layer and
+* returns reference to it.
+*
+* Returns: Created TimelineObject
+*/
+GESTimelineObject *
+ges_timeline_layer_add_material (GESTimelineLayer * layer,
+    GESMaterial * material,
+    GstClockTime start,
+    GstClockTime inpoint, GstClockTime duration, GESTrackType track_types)
+{
+  // TODO: Add actual implementation here
+  return NULL;
+}
+
+/**
  * ges_timeline_layer_new:
  *
  * Creates a new #GESTimelineLayer.

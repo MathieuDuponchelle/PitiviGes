@@ -102,6 +102,12 @@ ges_timeline_layer_get_timeline           (GESTimelineLayer * layer);
 gboolean ges_timeline_layer_add_object    (GESTimelineLayer * layer,
 
 					   GESTimelineObject * object);
+					 
+GESTimelineObject * ges_timeline_layer_add_material   (GESTimelineLayer *layer,
+             GESMaterial *material, GstClockTime start,
+             GstClockTime inpoint, GstClockTime duration,
+             GESTrackType track_types);
+                                  
 gboolean ges_timeline_layer_remove_object (GESTimelineLayer * layer,
 					   GESTimelineObject * object);
 
