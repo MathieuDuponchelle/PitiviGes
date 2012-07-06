@@ -36,6 +36,14 @@ static GstDiscoverer *discoverer;
 /* lock to avoid discovery of objects that will be removed */
 static GMutex *pendingobjects_lock;
 
+/* Internal structure to help avoid full loading
+   of one material several times */
+typedef struct
+{
+  gboolean loaded;
+  GESMaterialSource *material;
+  void (*material_loaded) (GESMaterialSource * material);
+} GESMaterialSourceCacheEntry;
 
 struct _GESMaterialSourcePrivate
 {
