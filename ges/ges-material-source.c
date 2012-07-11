@@ -71,6 +71,21 @@ ges_material_source_cache_get (void)
   return material_cache;
 }
 
+static GESMaterialSourceCacheEntry *
+ges_material_source_cache_get_entry (const gchar * uri)
+{
+  GHashTable *cache = ges_material_source_cache_get ();
+  GESMaterialSourceCacheEntry *entry = NULL;
+
+  g_static_mutex_lock (&material_cache_lock);
+  entry =
+      (GESMaterialSourceCacheEntry *) (g_hash_table_lookup (cache,
+          (gpointer) uri));
+  g_static_mutex_unlock (&material_cache_lock);
+
+  return entry;
+}
+
 /**
 * Looks for material with specified uri in cache and it's completely loaded.
 * In other case returns NULL
@@ -255,4 +270,12 @@ static void
 discoverer_discovered_cb (GstDiscoverer * discoverer,
     GstDiscovererInfo * info, GError * err)
 {
+  const gchar *uri = gst_discoverer_info_get_uri (info);
+  GESMaterialSourceCacheEntry *entry =
+      ges_material_source_cache_get_entry (uri);
+
+
+  g_static_mutex_lock (&material_cache_lock);
+  entry->loaded = TRUE;
+  g_static_mutex_unlock (&material_cache_lock);
 }
