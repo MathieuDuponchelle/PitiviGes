@@ -31,14 +31,25 @@ enum
 
 static GParamSpec *properties[PROP_LAST];
 static GHashTable *material_cache = NULL;
+static GstDiscoverer *discoverer;
 
-/* Internal structure to help avoid full loading
+static GStaticMutex material_cache_lock = G_STATIC_MUTEX_INIT;
+static GStaticMutex discoverer_lock = G_STATIC_MUTEX_INIT;
+
+static void discoverer_finished_cb (GstDiscoverer * discoverer);
+static void
+discoverer_discovered_cb (GstDiscoverer * discoverer,
+    GstDiscovererInfo * info, GError * err);
+
+/** 
+   Internal structure to help avoid full loading
    of one material several times */
 typedef struct
 {
   gboolean loaded;
   GESMaterialSource *material;
-  void (*material_loaded) (GESMaterialSource * material);
+  guint64 ref_counter;
+  GAsyncReadyCallback material_loaded;
 } GESMaterialSourceCacheEntry;
 
 struct _GESMaterialSourcePrivate
@@ -51,23 +62,68 @@ struct _GESMaterialSourcePrivate
 static GHashTable *
 ges_material_source_cache_get (void)
 {
+  g_static_mutex_lock (&material_cache_lock);
   if (material_cache == NULL) {
     material_cache = g_hash_table_new (g_str_hash, g_str_equal);
   }
+  g_static_mutex_unlock (&material_cache_lock);
 
   return material_cache;
 }
 
+/**
+* Looks for material with specified uri in cache and it's completely loaded.
+* In other case returns NULL
+*/
 static GESMaterialSource *
 ges_material_source_cache_lookup (const gchar * uri)
 {
   GHashTable *cache = ges_material_source_cache_get ();
+  GESMaterialSourceCacheEntry *entry = NULL;
 
-  GESMaterialSource *material =
-      g_object_ref (GES_MATERIAL_SOURCE (g_hash_table_lookup (cache,
-              (gpointer) uri)));
+  g_static_mutex_lock (&material_cache_lock);
+  entry =
+      (GESMaterialSourceCacheEntry *) (g_hash_table_lookup (cache,
+          (gpointer) uri));
+  g_static_mutex_unlock (&material_cache_lock);
 
-  return material;
+  if (entry->loaded) {
+    return entry->material;
+  } else {
+    return NULL;
+  }
+
+}
+
+static void
+ges_material_source_cache_put (const gchar * uri,
+    GESMaterialSourceCacheEntry * entry)
+{
+  GHashTable *cache = ges_material_source_cache_get ();
+
+  g_static_mutex_lock (&material_cache_lock);
+  if (!g_hash_table_contains (cache, uri)) {
+    g_hash_table_insert (cache, (gpointer) uri, (gpointer) entry);
+  }
+  g_static_mutex_unlock (&material_cache_lock);
+}
+
+static void
+ges_material_source_discoverer_discover_uri (const gchar * uri)
+{
+  g_static_mutex_lock (&discoverer_lock);
+  if (discoverer == NULL) {
+    discoverer = gst_discoverer_new (15 * GST_SECOND, NULL);
+    g_signal_connect (discoverer, "finished",
+        G_CALLBACK (discoverer_finished_cb), NULL);
+    g_signal_connect (discoverer, "discovered",
+        G_CALLBACK (discoverer_discovered_cb), NULL);
+
+    gst_discoverer_start (discoverer);
+  }
+  g_static_mutex_unlock (&discoverer_lock);
+
+  gst_discoverer_discover_uri_async (discoverer, uri);
 }
 
 static void
@@ -131,11 +187,27 @@ ges_material_source_init (GESMaterialSource * self)
   self->priv->duration = 0;
 }
 
+/**
+* Full loading of material. Low-level function without caching.
+*/
 static void
 ges_material_source_load (const gchar * uri,
-    GAsyncReadyCallback material_created_cb, GSimpleAsyncResult * result)
+    GAsyncReadyCallback material_loaded_cb, GSimpleAsyncResult * result)
 {
 
+  GESMaterialSource *material = g_object_new (GES_TYPE_MATERIAL_SOURCE, "uri",
+      uri, NULL);
+
+  GESMaterialSourceCacheEntry *cache_entry = g_new (GESMaterialSourceCacheEntry,
+      1);
+
+  cache_entry->material = material;
+  cache_entry->material_loaded = material_loaded_cb;
+  cache_entry->ref_counter = 0;
+  cache_entry->loaded = FALSE;
+
+  ges_material_source_cache_put (uri, cache_entry);
+  ges_material_source_discoverer_discover_uri (uri);
 }
 
 void
@@ -172,4 +244,15 @@ GstDiscovererStreamInfo *
 ges_material_source_get_stream_info (const GESMaterialSource * self)
 {
   return self->priv->stream_info;
+}
+
+static void
+discoverer_finished_cb (GstDiscoverer * discoverer)
+{
+}
+
+static void
+discoverer_discovered_cb (GstDiscoverer * discoverer,
+    GstDiscovererInfo * info, GError * err)
+{
 }
