@@ -93,16 +93,10 @@ ges_material_source_cache_get_entry (const gchar * uri)
 static GESMaterialSource *
 ges_material_source_cache_lookup (const gchar * uri)
 {
-  GHashTable *cache = ges_material_source_cache_get ();
-  GESMaterialSourceCacheEntry *entry = NULL;
+  GESMaterialSourceCacheEntry *entry =
+      ges_material_source_cache_get_entry (uri);
 
-  g_static_mutex_lock (&material_cache_lock);
-  entry =
-      (GESMaterialSourceCacheEntry *) (g_hash_table_lookup (cache,
-          (gpointer) uri));
-  g_static_mutex_unlock (&material_cache_lock);
-
-  if (entry->loaded) {
+  if (entry && entry->loaded) {
     return entry->material;
   } else {
     return NULL;
@@ -198,6 +192,7 @@ ges_material_source_init (GESMaterialSource * self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialSourcePrivate);
 
+  self->priv->uri = NULL;
   self->priv->stream_info = NULL;
   self->priv->duration = 0;
 }
