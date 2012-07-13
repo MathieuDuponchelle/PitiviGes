@@ -55,9 +55,12 @@ static void
 ges_material_set_property (GObject * object, guint property_id,
     const GValue * value, GParamSpec * pspec)
 {
-  /* GESMaterial *material = GES_MATERIAL (object); */
+  GESMaterial *material = GES_MATERIAL (object);
 
   switch (property_id) {
+    case PROP_COMPATIBLE_TRACK_TYPES:
+      material->priv->compatible_track_types = g_value_get_flags (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
