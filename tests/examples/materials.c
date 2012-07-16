@@ -42,12 +42,11 @@ main (int argc, gchar ** argv)
   /* Initialize the GStreamer Editing Services */
   ges_init ();
 
-
   /* ... and we start a GMainLoop. GES **REQUIRES** a GMainLoop to be running in
    * order to function properly ! */
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  ges_material_source_new_async (argv[1], material_loaded, NULL);
+  ges_material_source_new (argv[1], material_loaded, NULL);
 
   g_main_loop_run (mainloop);
 

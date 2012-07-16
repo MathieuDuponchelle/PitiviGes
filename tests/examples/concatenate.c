@@ -23,30 +23,8 @@
 
 GstDiscovererInfo *get_info_for_file (GstDiscoverer * disco, gchar * filename);
 
-GstDiscovererInfo *
-get_info_for_file (GstDiscoverer * disco, gchar * filename)
-{
-  GError *err;
-  gchar *path, *uri;
-
-  /* Convert to a URI */
-  if (!g_path_is_absolute (filename)) {
-    gchar *cur_dir;
-
-    cur_dir = g_get_current_dir ();
-    path = g_build_filename (cur_dir, filename, NULL);
-    g_free (cur_dir);
-  } else {
-    path = g_strdup (filename);
-  }
-
-  uri = g_filename_to_uri (path, NULL, &err);
-  g_free (path);
-  path = NULL;
-
-  /* Get information */
-  return gst_discoverer_discover_uri (disco, uri, &err);
-}
+gboolean gotprofile = FALSE;
+GESTimelinePipeline *pipeline = NULL;
 
 static GstEncodingProfile *
 make_profile_from_info (GstDiscovererInfo * info)
@@ -94,7 +72,7 @@ make_profile_from_info (GstDiscovererInfo * info)
   if (sinfo)
     gst_discoverer_stream_info_unref (sinfo);
 
-  return (GstEncodingProfile *) profile;
+  return GST_ENCODING_PROFILE (profile);
 }
 
 static void
@@ -114,19 +92,41 @@ bus_message_cb (GstBus * bus, GstMessage * message, GMainLoop * mainloop)
   }
 }
 
+static void
+material_loaded_cb (GESFileSourceMaterial * material, GAsyncResult * res,
+    const char *render_uri)
+{
+  if (!gotprofile) {
+    GstDiscovererInfo *info = ges_file_source_material_get_info (material);
+
+    profile = make_profile_from_info (info);
+    gotprofile = TRUE;
+  }
+
+  /* Since we're using a GESSimpleTimelineLayer, objects will be automatically
+   * appended to the end of the layer */
+  ges_timeline_layer_add_object (layer, (GESTimelineObject *) src);
+
+  /* Last GESTimelineObject to be created, ready to render */
+  if (render_uri) {
+    /* RENDER SETTINGS ! */
+    /* We set our output URI and rendering setting on the pipeline */
+    ges_timeline_pipeline_set_render_settings (pipeline, render_uri, profile)
+
+        /* And now, actually render the timeline */
+        gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
+  }
+}
+
 int
 main (int argc, gchar ** argv)
 {
-  GESTimelinePipeline *pipeline;
   GESTimeline *timeline;
   GESTimelineLayer *layer;
-  GList *sources = NULL;
   GMainLoop *mainloop;
   GstEncodingProfile *profile = NULL;
   gchar *output_uri;
   guint i;
-  gboolean gotprofile = FALSE;
-  GstDiscoverer *disco;
   GstBus *bus;
 
   if (argc < 3) {
@@ -143,29 +143,15 @@ main (int argc, gchar ** argv)
   if (!ges_timeline_add_layer (timeline, layer))
     return -1;
 
-  disco = gst_discoverer_new (10 * GST_SECOND, NULL);
-
   for (i = 2; i < argc; i++) {
-    GstDiscovererInfo *info;
-    GESTimelineFileSource *src;
+    const gchar *uri = NULL;
 
-    info = get_info_for_file (disco, argv[i]);
+    /* For the last source, we pass the render URI as a parameter */
+    if (i == argc - 1)
+      uri = argv[1]
 
-    if (!gotprofile) {
-      profile = make_profile_from_info (info);
-      gotprofile = TRUE;
-    }
-
-    src = ges_timeline_filesource_new ((gchar *)
-        gst_discoverer_info_get_uri (info));
-    g_object_set (src, (gchar *) "duration",
-        gst_discoverer_info_get_duration (info), NULL);
-    /* Since we're using a GESSimpleTimelineLayer, objects will be automatically
-     * appended to the end of the layer */
-    ges_timeline_layer_add_object (layer, (GESTimelineObject *) src);
-
-    gst_discoverer_info_unref (info);
-    sources = g_list_append (sources, src);
+          src = ges_timeline_material_filesource_new (argv[i],
+          (GAsyncReadyCallback) material_loaded_cb, uri);
   }
 
   /* In order to view our timeline, let's grab a convenience pipeline to put
@@ -174,14 +160,6 @@ main (int argc, gchar ** argv)
 
   /* Add the timeline to that pipeline */
   if (!ges_timeline_pipeline_add_timeline (pipeline, timeline))
-    return -1;
-
-
-  /* RENDER SETTINGS ! */
-  /* We set our output URI and rendering setting on the pipeline */
-  output_uri = argv[1];
-  if (!ges_timeline_pipeline_set_render_settings (pipeline, output_uri,
-          profile))
     return -1;
 
   /* We want the pipeline to render (without any preview) */
@@ -194,8 +172,6 @@ main (int argc, gchar ** argv)
   bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
   gst_bus_add_signal_watch (bus);
   g_signal_connect (bus, "message", G_CALLBACK (bus_message_cb), mainloop);
-
-  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
 
   g_main_loop_run (mainloop);
 

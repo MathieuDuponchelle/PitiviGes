@@ -15,8 +15,8 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#include <gst/gst.h>
 #include <gst/pbutils/pbutils.h>
+#include "ges.h"
 #include "ges-types.h"
 #include "ges-material-source.h"
 
@@ -41,15 +41,20 @@ static void
 discoverer_discovered_cb (GstDiscoverer * discoverer,
     GstDiscovererInfo * info, GError * err);
 
-/** 
-   Internal structure to help avoid full loading
-   of one material several times */
+/**
+ * Internal structure to help avoid full loading
+ * of one material several times
+ */
 typedef struct
 {
   gboolean loaded;
   GESMaterialSource *material;
   guint64 ref_counter;
-  GAsyncReadyCallback material_loaded;
+
+  /* List off callbacks to call when  the material is finally ready */
+  GList *callbacks;
+
+  GStaticMutex lock;
 } GESMaterialSourceCacheEntry;
 
 struct _GESMaterialSourcePrivate
@@ -63,7 +68,7 @@ static GHashTable *
 ges_material_source_cache_get (void)
 {
   g_static_mutex_lock (&material_cache_lock);
-  if (material_cache == NULL) {
+  if (G_UNLIKELY (material_cache == NULL)) {
     material_cache = g_hash_table_new (g_str_hash, g_str_equal);
   }
   g_static_mutex_unlock (&material_cache_lock);
@@ -71,16 +76,14 @@ ges_material_source_cache_get (void)
   return material_cache;
 }
 
-static GESMaterialSourceCacheEntry *
+static inline GESMaterialSourceCacheEntry *
 ges_material_source_cache_get_entry (const gchar * uri)
 {
   GHashTable *cache = ges_material_source_cache_get ();
   GESMaterialSourceCacheEntry *entry = NULL;
 
   g_static_mutex_lock (&material_cache_lock);
-  entry =
-      (GESMaterialSourceCacheEntry *) (g_hash_table_lookup (cache,
-          (gpointer) uri));
+  entry = g_hash_table_lookup (cache, uri);
   g_static_mutex_unlock (&material_cache_lock);
 
   return entry;
@@ -93,22 +96,22 @@ ges_material_source_cache_get_entry (const gchar * uri)
 static GESMaterialSource *
 ges_material_source_cache_lookup (const gchar * uri)
 {
-  GESMaterialSourceCacheEntry *entry =
-      ges_material_source_cache_get_entry (uri);
+  GESMaterialSourceCacheEntry *entry = NULL;
 
-  if (entry && entry->loaded) {
+  entry = ges_material_source_cache_get_entry (uri);
+  if (entry && entry->loaded)
     return entry->material;
-  } else {
-    return NULL;
-  }
 
+  return NULL;
 }
 
-static void
+static inline void
 ges_material_source_cache_put (const gchar * uri,
     GESMaterialSourceCacheEntry * entry)
 {
   GHashTable *cache = ges_material_source_cache_get ();
+
+  GST_DEBUG_OBJECT (entry, "Adding to the cached list of materials");
 
   g_static_mutex_lock (&material_cache_lock);
   if (!g_hash_table_contains (cache, uri)) {
@@ -192,7 +195,6 @@ ges_material_source_init (GESMaterialSource * self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialSourcePrivate);
 
-  self->priv->uri = NULL;
   self->priv->stream_info = NULL;
   self->priv->duration = 0;
 }
@@ -206,48 +208,53 @@ ges_material_source_load (const gchar * uri,
 {
 
   GESMaterialSource *material = g_object_new (GES_TYPE_MATERIAL_SOURCE, "uri",
-      uri, NULL);
+      uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
 
-  GESMaterialSourceCacheEntry *cache_entry = g_new (GESMaterialSourceCacheEntry,
-      1);
+  GESMaterialSourceCacheEntry *cache_entry =
+      g_slice_new (GESMaterialSourceCacheEntry);
 
   cache_entry->material = material;
-  cache_entry->material_loaded = material_loaded_cb;
-  cache_entry->ref_counter = 0;
-  cache_entry->loaded = FALSE;
+  cache_entry->callbacks = g_list_append (material_loaded_cb);
+  g_static_mutex_init (&cache_entry->lock);
 
   ges_material_source_cache_put (uri, cache_entry);
   ges_material_source_discoverer_discover_uri (uri);
 }
 
-void
-ges_material_source_new_async (const gchar * uri,
+GESMaterialSource *
+ges_material_source_new (const gchar * uri,
     GAsyncReadyCallback material_created_cb, gpointer user_data)
 {
   GSimpleAsyncResult *simple;
   GESMaterialSource *material;
 
-  simple = g_simple_async_result_new (NULL, material_created_cb, user_data,
-      (gpointer) ges_material_source_new_async);
-
   material = ges_material_source_cache_lookup (uri);
+  if (material) {
+    /* FIXME check if loaded, if not lock and you need a list of pointer to
+     * function in your struct, you can remove the ref_count prop, and just
+     * have that list */
 
-  if (material != NULL) {
+    simple = g_simple_async_result_new (NULL, material_created_cb, user_data,
+        (gpointer) ges_material_source_new_async);
+
     g_simple_async_result_set_op_res_gpointer (simple,
         g_object_ref (material), g_object_unref);
 
     g_simple_async_result_complete_in_idle (simple);
     g_object_unref (simple);
-    g_object_unref (material);
-  } else {
-    ges_material_source_load (uri, material_created_cb, simple);
-  }
-}
 
-GstClockTime
-ges_material_source_get_duration (const GESMaterialSource * self)
-{
-  return self->priv->duration;
+    /* return a ref to the material */
+    return material;
+
+  } else if (material_created_cb == NULL) {
+    /* FIXME Implement a syncronous version here */
+    GST_WARNING ("No syncronous version yet, NOT DOING ANYTHING");
+    return NULL;
+  }
+
+  ges_material_source_load (uri, material_created_cb, simple);
+
+  return NULL;
 }
 
 GstDiscovererStreamInfo *
@@ -270,7 +277,7 @@ discoverer_discovered_cb (GstDiscoverer * discoverer,
       ges_material_source_cache_get_entry (uri);
 
 
-  g_static_mutex_lock (&material_cache_lock);
+  g_static_mutex_lock (&entry->lock);
   entry->loaded = TRUE;
-  g_static_mutex_unlock (&material_cache_lock);
+  g_static_mutex_unlock (&entry->lock);
 }

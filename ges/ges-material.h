@@ -41,7 +41,7 @@ GType ges_material_get_type (void);
 /* Abstract type (for now) */
 struct _GESMaterial
 {
-  GstObject parent;
+  GObject parent;
 
   /* <private> */
   GESMaterialPrivate *priv;
@@ -52,13 +52,15 @@ struct _GESMaterial
 
 struct _GESMaterialClass
 {
-  GstObjectClass parent;
+  GObjectClass parent;
 
   gpointer _ges_reserved[GES_PADDING];
 };
 
 
-GESTrackType ges_material_get_compatible_track_types (GESMaterial * material);
+GType ges_material_get_extractable_type (GESMaterial * self);
+GESMaterial *ges_material_new(GType *extractable_type,
+    const gchar *first_property_name, ...);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */

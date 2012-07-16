@@ -20,12 +20,12 @@
 #include "ges-types.h"
 #include "ges-material.h"
 
-G_DEFINE_ABSTRACT_TYPE (GESMaterial, ges_material, GST_TYPE_OBJECT);
+G_DEFINE_TYPE (GESMaterial, ges_material, G_TYPE_OBJECT);
 
 enum
 {
   PROP_0,
-  PROP_COMPATIBLE_TRACK_TYPES,
+  PROP_TYPE,
   PROP_LAST
 };
 
@@ -33,19 +33,16 @@ static GParamSpec *properties[PROP_LAST];
 
 struct _GESMaterialPrivate
 {
-  GESTrackType compatible_track_types;
+  GType extractable_type;
 };
 
 static void
 ges_material_get_property (GObject * object, guint property_id,
     GValue * value, GParamSpec * pspec)
 {
-  GESMaterial *material = GES_MATERIAL (object);
+  /*GESMaterial *material = GES_MATERIAL (object); */
 
   switch (property_id) {
-    case PROP_COMPATIBLE_TRACK_TYPES:
-      g_value_set_flags (value, material->priv->compatible_track_types);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -58,14 +55,13 @@ ges_material_set_property (GObject * object, guint property_id,
   GESMaterial *material = GES_MATERIAL (object);
 
   switch (property_id) {
-    case PROP_COMPATIBLE_TRACK_TYPES:
-      material->priv->compatible_track_types = g_value_get_flags (value);
+    case PROP_TYPE:
+      material->priv->extractable_type = g_value_get_gtype (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
 }
-
 
 void
 ges_material_class_init (GESMaterialClass * klass)
@@ -76,12 +72,10 @@ ges_material_class_init (GESMaterialClass * klass)
   object_class->get_property = ges_material_get_property;
   object_class->set_property = ges_material_set_property;
 
-  properties[PROP_COMPATIBLE_TRACK_TYPES] =
-      g_param_spec_flags ("compatible-track-types",
-      "Compatible track types of material",
-      "Get compatible track types",
-      GES_TYPE_TRACK_TYPE,
-      GES_TRACK_TYPE_UNKNOWN, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
+  properties[PROP_TYPE] =
+      g_param_spec_gtype ("extractable-type", "Extractable type",
+      "The type of the Object that can be extracted out of the material",
+      G_TYPE_OBJECT, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
 
   g_object_class_install_properties (object_class, PROP_LAST, properties);
 }
@@ -91,12 +85,25 @@ ges_material_init (GESMaterial * self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialPrivate);
-
-  self->priv->compatible_track_types = GES_TRACK_TYPE_UNKNOWN;
 }
 
-GESTrackType
-ges_material_get_compatible_track_types (GESMaterial * self)
+GType
+ges_material_get_extractable_type (GESMaterial * self)
 {
-  return self->priv->compatible_track_types;
+  return self->priv->extractable_type;
+}
+
+GESMaterial *
+ges_material_new (GType * extractable_type,
+    const gchar * first_property_name, ...)
+{
+  const gchar *mandatory_parameters;
+  GESExtractableObjectClass *class = g_type_class_ref (extractable_type);
+
+  g_return_if_fail (GES_IS_EXTRACTABLE_OBJECT_CLASS (class), NULL);
+
+  needed_parameters = ges_extractable_object_class_get_mandatory_params (class);
+
+  /* FIXME Check what parameters are actually needed and if they are present
+   * here */
 }
