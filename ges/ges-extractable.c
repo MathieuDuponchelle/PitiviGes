@@ -29,7 +29,7 @@ ges_extractable_get_material (GESExtractableInterface * self)
 {
   g_return_val_if_fail (GES_IS_EXTRACTABLE (self), NULL);
 
-  return self->get_material (self);
+  return (*self->get_material) (self);
 }
 
 GType
@@ -37,7 +37,7 @@ ges_extractable_get_material_type (GESExtractableInterface * self)
 {
   g_return_val_if_fail (GES_IS_EXTRACTABLE (self), G_TYPE_INVALID);
 
-  return self->get_material_type (self);
+  return (*self->get_material_type) (self);
 }
 
 static void
