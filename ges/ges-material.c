@@ -19,6 +19,7 @@
 #include <gst/gst.h>
 #include "ges-types.h"
 #include "ges-material.h"
+#include "ges-extractable.h"
 
 G_DEFINE_TYPE (GESMaterial, ges_material, G_TYPE_OBJECT);
 
@@ -94,16 +95,19 @@ ges_material_get_extractable_type (GESMaterial * self)
 }
 
 GESMaterial *
-ges_material_new (GType * extractable_type,
+ges_material_new (GType extractable_type,
     const gchar * first_property_name, ...)
 {
-  const gchar *mandatory_parameters;
+  //GParamSpec **mandatory_parameters;
+  // guint n_params;
   GESExtractableObjectClass *class = g_type_class_ref (extractable_type);
 
-  g_return_if_fail (GES_IS_EXTRACTABLE_OBJECT_CLASS (class), NULL);
+  g_return_val_if_fail (GES_IS_EXTRACTABLE_OBJECT_CLASS (class), NULL);
 
-  needed_parameters = ges_extractable_object_class_get_mandatory_params (class);
+  //mandatory_parameters = ges_extractable_object_class_get_mandatory_parameters (class,
+  //        &n_params);
 
   /* FIXME Check what parameters are actually needed and if they are present
    * here */
+  return NULL;
 }

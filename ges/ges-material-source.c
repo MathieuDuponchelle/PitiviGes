@@ -214,7 +214,8 @@ ges_material_source_load (const gchar * uri,
       g_slice_new (GESMaterialSourceCacheEntry);
 
   cache_entry->material = material;
-  cache_entry->callbacks = g_list_append (material_loaded_cb);
+  cache_entry->callbacks =
+      g_list_append (cache_entry->callbacks, material_loaded_cb);
   g_static_mutex_init (&cache_entry->lock);
 
   ges_material_source_cache_put (uri, cache_entry);
@@ -235,7 +236,7 @@ ges_material_source_new (const gchar * uri,
      * have that list */
 
     simple = g_simple_async_result_new (NULL, material_created_cb, user_data,
-        (gpointer) ges_material_source_new_async);
+        (gpointer) ges_material_source_new);
 
     g_simple_async_result_set_op_res_gpointer (simple,
         g_object_ref (material), g_object_unref);

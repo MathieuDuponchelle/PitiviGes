@@ -143,4 +143,9 @@ typedef struct _GESMaterialClass GESMaterialClass;
 typedef struct _GESMaterialSource GESMaterialSource;
 typedef struct _GESMaterialSourceClass GESMaterialSourceClass;
 
+typedef struct _GESExtractableInterface GESExtractableInterface;
+
+typedef struct _GESExtractableObject GESExtractableObject;
+typedef struct _GESExtractableObjectClass GESExtractableObjectClass;
+
 #endif /* __GES_TYPES_H__ */

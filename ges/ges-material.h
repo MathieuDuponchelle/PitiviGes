@@ -59,7 +59,7 @@ struct _GESMaterialClass
 
 
 GType ges_material_get_extractable_type (GESMaterial * self);
-GESMaterial *ges_material_new(GType *extractable_type,
+GESMaterial *ges_material_new(GType extractable_type,
     const gchar *first_property_name, ...);
 
 G_END_DECLS
