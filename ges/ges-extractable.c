@@ -21,8 +21,14 @@
 #include "ges-material.h"
 #include "ges-extractable.h"
 
+static void
+ges_extractable_object_interface_init (GESExtractableInterface * iface);
+
 G_DEFINE_INTERFACE (GESExtractable, ges_extractable, G_TYPE_OBJECT);
-G_DEFINE_TYPE (GESExtractableObject, ges_extractable_object, G_TYPE_OBJECT);
+G_DEFINE_TYPE_WITH_CODE (GESExtractableObject, ges_extractable_object,
+    G_TYPE_OBJECT, G_IMPLEMENT_INTERFACE (GES_TYPE_EXTRACTABLE,
+        ges_extractable_object_interface_init));
+
 
 GESMaterial *
 ges_extractable_get_material (GESExtractableInterface * self)
@@ -55,6 +61,12 @@ struct _GESExtractableObjectPrivate
   GType material_type;
 };
 
+
+static void
+ges_extractable_object_interface_init (GESExtractableInterface * iface)
+{
+
+}
 
 GParamSpec **
 ges_extractable_object_class_get_mandatory_parameters (GESExtractableObjectClass
