@@ -50,7 +50,7 @@ GType ges_extractable_object_get_type (void);
 /* GESExtractable structures */
 struct _GESExtractableInterface {
   GTypeInterface parent;
-  GESMaterial (*get_material) (GESExtractableInterface *self);
+  GESMaterial* (*get_material) (GESExtractableInterface *self);
   GType (*get_material_type) (GESExtractableInterface *self);
 };
 

@@ -27,13 +27,17 @@ G_DEFINE_TYPE (GESExtractableObject, ges_extractable_object, G_TYPE_OBJECT);
 GESMaterial *
 ges_extractable_get_material (GESExtractableInterface * self)
 {
-  return NULL;
+  g_return_val_if_fail (GES_IS_EXTRACTABLE (self), NULL);
+
+  return self->get_material (self);
 }
 
 GType
 ges_extractable_get_material_type (GESExtractableInterface * self)
 {
-  return G_TYPE_OBJECT;
+  g_return_val_if_fail (GES_IS_EXTRACTABLE (self), G_TYPE_INVALID);
+
+  return self->get_material_type (self);
 }
 
 static void
@@ -44,6 +48,13 @@ ges_extractable_default_init (GESExtractableInterface * self)
 
 
 /* Default implementation of extractable */
+
+struct _GESExtractableObjectPrivate
+{
+  GESMaterial *material;
+  GType material_type;
+};
+
 
 GParamSpec **
 ges_extractable_object_class_get_mandatory_parameters (GESExtractableObjectClass
