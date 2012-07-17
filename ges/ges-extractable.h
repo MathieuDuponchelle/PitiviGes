@@ -81,5 +81,8 @@ GType ges_extractable_get_material_type(GESExtractableInterface *self);
 GParamSpec** ges_extractable_object_class_get_mandatory_parameters(GESExtractableObjectClass* klass,
 		guint *n_pspecs_p);
 
+GESMaterial* ges_extractable_object_get_material(GESExtractableInterface *self);
+GType ges_extractable_object_get_material_type(GESExtractableInterface *self);
+
 G_END_DECLS
 #endif /* _GES_EXTRACTABLE_ */
