@@ -18,6 +18,8 @@
  */
 
 #include <ges/ges.h>
+#include <ges/ges-material-source.h>
+#include <gio/gio.h>
 #include <gst/pbutils/gstdiscoverer.h>
 #include <gst/pbutils/encoding-profile.h>
 
@@ -25,6 +27,7 @@ GstDiscovererInfo *get_info_for_file (GstDiscoverer * disco, gchar * filename);
 
 gboolean gotprofile = FALSE;
 GESTimelinePipeline *pipeline = NULL;
+GESTimelineLayer *layer = NULL;
 
 static GstEncodingProfile *
 make_profile_from_info (GstDiscovererInfo * info)
@@ -93,11 +96,12 @@ bus_message_cb (GstBus * bus, GstMessage * message, GMainLoop * mainloop)
 }
 
 static void
-material_loaded_cb (GESFileSourceMaterial * material, GAsyncResult * res,
+material_loaded_cb (GESMaterialFileSource * material, GAsyncResult * res,
     const char *render_uri)
 {
+  GstEncodingProfile *profile = NULL;
   if (!gotprofile) {
-    GstDiscovererInfo *info = ges_file_source_material_get_info (material);
+    GstDiscovererInfo *info = ges_material_filesource_get_info (material);
 
     profile = make_profile_from_info (info);
     gotprofile = TRUE;
@@ -122,7 +126,6 @@ int
 main (int argc, gchar ** argv)
 {
   GESTimeline *timeline;
-  GESTimelineLayer *layer;
   GMainLoop *mainloop;
   GstEncodingProfile *profile = NULL;
   gchar *output_uri;
