@@ -15,8 +15,8 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef _GES_MATERIAL_SOURCE_
-#define _GES_MATERIAL_SOURCE_
+#ifndef _GES_MATERIAL_FILESOURCE_
+#define _GES_MATERIAL_FILESOURCE_
 
 #include <glib-object.h>
 #include <gio/gio.h>
@@ -24,35 +24,35 @@
 #include <ges/ges-material.h>
 
 G_BEGIN_DECLS
-#define GES_TYPE_MATERIAL_SOURCE ges_material_source_get_type()
-#define GES_MATERIAL_SOURCE(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_MATERIAL_SOURCE, GESMaterialSource))
-#define GES_MATERIAL_SOURCE_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_CAST ((klass), GES_TYPE_MATERIAL_SOURCE, GESMaterialSourceClass))
+#define GES_TYPE_MATERIAL_FILESOURCE ges_material_filesource_get_type()
+#define GES_MATERIAL_FILESOURCE(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSource))
+#define GES_MATERIAL_FILESOURCE_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST ((klass), GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSourceClass))
 #define GES_IS_MATERIAL_SOURCE(obj) \
-    (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GES_TYPE_MATERIAL_SOURCE))
+    (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GES_TYPE_MATERIAL_FILESOURCE))
 #define GES_IS_MATERIAL_SOURCE_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_TYPE ((klass), GES_TYPE_MATERIAL_SOURCE))
-#define GES_MATERIAL_SOURCE_GET_CLASS(obj) \
-    (G_TYPE_INSTANCE_GET_CLASS ((obj), GES_TYPE_MATERIAL_SOURCE, GESMaterialSourceClass))
+    (G_TYPE_CHECK_CLASS_TYPE ((klass), GES_TYPE_MATERIAL_FILESOURCE))
+#define GES_MATERIAL_FILESOURCE_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS ((obj), GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSourceClass))
 
-typedef struct _GESMaterialSourcePrivate GESMaterialSourcePrivate;
+typedef struct _GESMaterialFileSourcePrivate GESMaterialFileSourcePrivate;
 
-GType ges_material_source_get_type (void);
+GType ges_material_filesource_get_type (void);
 
-struct _GESMaterialSource
+struct _GESMaterialFileSource
 {
   /* FIXME or GstObject? Does it have a parent? It has a name... */
   GESMaterial parent;
 
   /* <private> */
-  GESMaterialSourcePrivate *priv;
+  GESMaterialFileSourcePrivate *priv;
 
   /* Padding for API extension */
   gpointer __ges_reserved[GES_PADDING];
 };
 
-struct _GESMaterialSourceClass
+struct _GESMaterialFileSourceClass
 {
   GESMaterialClass parent_class;
 
@@ -60,15 +60,15 @@ struct _GESMaterialSourceClass
 };
 
 /* If material_created == NULL discover syncronously and return the material
- * If no need to discover @uri return the (refed) GESMaterialSource directly
+ * If no need to discover @uri return the (refed) GESMaterialFileSource directly
  * otherwize return %NULL and call material_created when discovered
  */
-GESMaterialSource *
-ges_material_source_new (const gchar * uri,
+GESMaterialFileSource *
+ges_material_filesource_new (const gchar * uri,
     GAsyncReadyCallback material_created_cb, gpointer user_data);
 
-GstDiscovererStreamInfo *ges_material_source_get_stream_info (const GESMaterialSource
+GstDiscovererStreamInfo *ges_material_filesource_get_stream_info (const GESMaterialFileSource
     * material);
 
 G_END_DECLS
-#endif /* _GES_MATERIAL_SOURCE */
+#endif /* _GES_MATERIAL_FILESOURCE */
