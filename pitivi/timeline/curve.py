@@ -133,7 +133,7 @@ class Curve(goocanvas.ItemSimple, goocanvas.Item, View, Zoomable):
     def __init__(self, instance, element, interpolator, height=LAYER_HEIGHT_EXPANDED,
         **kwargs):
         super(Curve, self).__init__(**kwargs)
-        View.__init__(self)
+        View.__init__(self, instance)
         Zoomable.__init__(self)
         self.app = instance
         self.keyframes = {}

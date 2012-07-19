@@ -43,7 +43,7 @@ from pitivi.utils.ui import LAYER_HEIGHT_EXPANDED,\
         LAYER_HEIGHT_COLLAPSED, LAYER_SPACING, \
         unpack_cairo_pattern, unpack_cairo_gradient
 from thumbnailer import Preview
-
+from pitivi.timeline.curve import Curve
 
 #--------------------------------------------------------------#
 #                       Private stuff                          #
@@ -398,6 +398,7 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
 
         self.settings = instance.settings
         self.unfocus()
+        self.addCurve(instance, None, None)
 
 ## Properties
 
@@ -408,6 +409,9 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
         self.start_handle.props.height = height
         self.end_handle.props.height = height
         self._update()
+
+    def addCurve(self, instance, element, interpolator):
+        self.add_child(Curve(instance, element, interpolator))
 
     def getHeight(self):
         return self._height
