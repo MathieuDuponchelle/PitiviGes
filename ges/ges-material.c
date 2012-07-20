@@ -21,7 +21,14 @@
 #include "ges-material.h"
 #include "ges-extractable.h"
 
-G_DEFINE_TYPE (GESMaterial, ges_material, G_TYPE_OBJECT);
+static void ges_material_initable_interface_init (GInitable * iface);
+static void ges_material_async_initable_interface_init (GAsyncInitable * iface);
+
+G_DEFINE_TYPE_WITH_CODE (GESMaterial, ges_material, G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+        ges_material_initable_interface_init);
+    G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
+        ges_material_async_initable_interface_init));
 
 enum
 {
@@ -110,4 +117,15 @@ ges_material_new (GType extractable_type,
   /* FIXME Check what parameters are actually needed and if they are present
    * here */
   return NULL;
+}
+
+static void
+ges_material_initable_interface_init (GInitable * iface)
+{
+
+}
+
+static void
+ges_material_async_initable_interface_init (GAsyncInitable * iface)
+{
 }
