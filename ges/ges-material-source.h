@@ -67,7 +67,7 @@ GESMaterialFileSource *
 ges_material_filesource_new (const gchar * uri,
     GAsyncReadyCallback material_created_cb, gpointer user_data);
 
-GstDiscovererStreamInfo *ges_material_filesource_get_stream_info (const GESMaterialFileSource
+GstDiscovererInfo *ges_material_filesource_get_info (const GESMaterialFileSource
     * material);
 
 G_END_DECLS

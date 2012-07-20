@@ -61,7 +61,7 @@ typedef struct
 struct _GESMaterialFileSourcePrivate
 {
   gchar *uri;
-  GstDiscovererStreamInfo *stream_info;
+  GstDiscovererInfo *info;
   GstClockTime duration;
 };
 
@@ -196,7 +196,7 @@ ges_material_filesource_init (GESMaterialFileSource * self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialFileSourcePrivate);
 
-  self->priv->stream_info = NULL;
+  self->priv->info = NULL;
   self->priv->duration = 0;
 }
 
@@ -260,10 +260,10 @@ ges_material_filesource_new (const gchar * uri,
   return NULL;
 }
 
-GstDiscovererStreamInfo *
-ges_material_filesource_get_stream_info (const GESMaterialFileSource * self)
+GstDiscovererInfo *
+ges_material_filesource_get_info (const GESMaterialFileSource * self)
 {
-  return self->priv->stream_info;
+  return self->priv->info;
 }
 
 static void
