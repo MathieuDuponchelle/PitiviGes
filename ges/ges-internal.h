@@ -28,6 +28,10 @@
 GST_DEBUG_CATEGORY_EXTERN (_ges_debug);
 #define GST_CAT_DEFAULT _ges_debug
 
+/* GParamFlags used to set an property as mandatory for building an
+ * object, keep it private from now */
+#define GES_PARAM_CONSTRUCT_MANDATORY (1 << 10)
+
 gboolean
 timeline_ripple_object         (GESTimeline *timeline, GESTrackObject *obj,
                                     GList * layers, GESEdge edge,

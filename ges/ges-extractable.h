@@ -30,59 +30,71 @@ G_BEGIN_DECLS
 #define GES_EXTRACTABLE(obj)                (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_EXTRACTABLE, GESExtractable))
 #define GES_IS_EXTRACTABLE(obj)             (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GES_TYPE_EXTRACTABLE))
 #define GES_EXTRACTABLE_GET_INTERFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE ((inst), GES_TYPE_EXTRACTABLE, GESExtractableInterface))
+
 GType ges_extractable_get_type (void);
 
-/* Default GESExtractable implementation */
-#define GES_TYPE_EXTRACTABLE_OBJECT ges_extractable_object_get_type()
-#define GES_EXTRACTABLE_OBJECT(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_EXTRACTABLE_OBJECT, GESExtractableObject))
-#define GES_EXTRACTABLE_OBJECT_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_CAST ((klass), GES_TYPE_EXTRACTABLE_OBJECT, GESExtractableObjectClass))
-#define GES_IS_EXTRACTABLE_OBJECT(obj) \
-    (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GES_TYPE_EXTRACTABLE_OBJECT))
-#define GES_IS_EXTRACTABLE_OBJECT_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_TYPE ((klass), GES_TYPE_EXTRACTABLE_OBJECT))
-#define GES_EXTRACTABLE_OBJECT_GET_CLASS(obj) \
-    (G_TYPE_INSTANCE_GET_CLASS ((obj), GES_TYPE_EXTRACTABLE_OBJECT, GESExtractableObjectClass))
-typedef struct _GESExtractableObjectPrivate GESExtractableObjectPrivate;
-GType ges_extractable_object_get_type (void);
+/**
+ * GESExtractableGetMaterial:
+ * @self: The #GESExtractable
+ *
+ * A function that return the #GESMaterial that instanciated the object that
+ * implements that interface
+ *
+ * Returns: (transfer none): The #GESMaterial from which @self has been
+ * extracted
+ */
 
-/* GESExtractable structures */
-struct _GESExtractableInterface {
+typedef GESMaterial* (*GESExtractableGetMaterial) (GESExtractable *self);
+
+/**
+ * GESExtractableSetMaterial:
+ * @self: The #GESExtractable
+ * @material: The #GESMaterial to set as creator
+ *
+ * Sets the #GESMaterial responsible for object creation
+ */
+
+typedef void (*GESExtractableSetMaterial) (GESExtractable *self,
+                                           GESMaterial *material);
+
+/**
+ * GESExtractableGetId:
+ * @self: The #GESExtractable
+ *
+ * Returns: The #id of the associated #GESMaterial
+ */
+
+typedef const gchar * (*GESExtractableGetId) (GESExtractable *self);
+
+/**
+ * GESExtractable:
+ * @get_material: A #GESExtractableGetMaterial function
+ */
+struct _GESExtractableInterface
+{
   GTypeInterface parent;
-  GESMaterial* (*get_material) (GESExtractableInterface *self);
-  GType (*get_material_type) (GESExtractableInterface *self);
-};
 
-/* Default GESExtrable implementation structures */
-struct _GESExtractableObject
-{
-  GObject parent;
-  /* <private> */
-  GESExtractableObjectPrivate *priv;
-  /* Padding for API extension */
+  GType material_type;
+
+  GESExtractableGetId get_id;
+  GESExtractableGetMaterial get_material;
+  GESExtractableSetMaterial set_material;
+
   gpointer _ges_reserved[GES_PADDING];
 };
 
-struct _GESExtractableObjectClass
-{
-  GObjectClass parent;
-  GParamSpecPool *mandatory_parameters;
-  gpointer _ges_reserved[GES_PADDING];
-};
+GType ges_extractable_get_material_type        (GESExtractable *self);
+GType ges_extractable_type_material_type       (GType extractable_type);
 
-/* GESExtractable helper functions */
+GESMaterial* ges_extractable_get_material      (GESExtractable *self);
 
-GESMaterial* ges_extractable_get_material(GESExtractableInterface *self);
-GType ges_extractable_get_material_type(GESExtractableInterface *self);
+void ges_extractable_set_material              (GESExtractable *self,
+                                                GESMaterial *material);
 
+const gchar * ges_extractable_get_id           (GESExtractable *self);
 
-/* Default GESExtractable implementation functions */
-GParamSpec** ges_extractable_object_class_get_mandatory_parameters(GESExtractableObjectClass* klass,
-		guint *n_pspecs_p);
-
-GESMaterial* ges_extractable_object_get_material(GESExtractableInterface *self);
-GType ges_extractable_object_get_material_type(GESExtractableInterface *self);
+GSList *
+ges_extractable_type_mandatory_parameters      (GType type);
 
 G_END_DECLS
 #endif /* _GES_EXTRACTABLE_ */
