@@ -105,17 +105,18 @@ GESMaterial *
 ges_material_new (GType extractable_type,
     const gchar * first_property_name, ...)
 {
-  //GParamSpec **mandatory_parameters;
-  // guint n_params;
-  GESExtractableObjectClass *class = g_type_class_ref (extractable_type);
+  GSList *params;
 
-  g_return_val_if_fail (GES_IS_EXTRACTABLE_OBJECT_CLASS (class), NULL);
+  g_return_val_if_fail (g_type_is_a (extractable_type, G_TYPE_OBJECT), NULL);
+  g_return_val_if_fail (g_type_is_a (extractable_type, GES_TYPE_EXTRACTABLE),
+      NULL);
 
-  //mandatory_parameters = ges_extractable_object_class_get_mandatory_parameters (class,
-  //        &n_params);
+  params = ges_extractable_type_mandatory_parameters (extractable_type);
 
-  /* FIXME Check what parameters are actually needed and if they are present
-   * here */
+  if (params) {
+    /* FIXME Check what parameters are actually needed and if they are present
+     * here */
+  }
   return NULL;
 }
 
