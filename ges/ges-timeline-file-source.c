@@ -30,11 +30,19 @@
 #include "ges-timeline-file-source.h"
 #include "ges-timeline-source.h"
 #include "ges-track-filesource.h"
+#include "ges-material-source.h"
+#include "ges-extractable.h"
 #include "ges-track-image-source.h"
 #include "ges-track-audio-test-source.h"
 
-G_DEFINE_TYPE (GESTimelineFileSource, ges_timeline_filesource,
-    GES_TYPE_TIMELINE_SOURCE);
+static void ges_extractable_interface_init (GESExtractableInterface * iface);
+
+G_DEFINE_TYPE_WITH_CODE (GESTimelineFileSource, ges_timeline_filesource,
+    GES_TYPE_TIMELINE_SOURCE,
+    G_IMPLEMENT_INTERFACE (GES_TYPE_EXTRACTABLE,
+        ges_extractable_interface_init));
+
+GESExtractableInterface *parent_extractable_iface;
 
 struct _GESTimelineFileSourcePrivate
 {
@@ -160,6 +168,20 @@ ges_timeline_filesource_class_init (GESTimelineFileSourceClass * klass)
       ges_timeline_filesource_create_track_object;
   timobj_class->set_max_duration = filesource_set_max_duration;
   timobj_class->need_fill_track = FALSE;
+
+}
+
+static const gchar *
+extractable_get_id (GESTimelineFileSource * object)
+{
+  return object->priv->uri;
+}
+
+static void
+ges_extractable_interface_init (GESExtractableInterface * iface)
+{
+  iface->material_type = GES_TYPE_MATERIAL_FILESOURCE;
+  iface->get_id = (GESExtractableGetId) extractable_get_id;
 }
 
 static void

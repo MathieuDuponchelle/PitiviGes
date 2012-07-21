@@ -26,6 +26,7 @@
 GST_START_TEST (test_filesource_basic)
 {
   GESTrack *track;
+  GSList *mandatory_params;
   GESTrackObject *trackobject;
   GESTimelineFileSource *source;
   gchar *uri;
@@ -65,6 +66,12 @@ GST_START_TEST (test_filesource_basic)
 
   fail_unless (ges_timeline_object_release_track_object (GES_TIMELINE_OBJECT
           (source), trackobject) == TRUE);
+
+  assert_equals_int (ges_extractable_get_material_type (GES_EXTRACTABLE
+          (source)), GES_TYPE_MATERIAL_FILESOURCE);
+  assert_equals_string (ges_extractable_get_id (GES_EXTRACTABLE (source)),
+      TEST_URI);
+
 
   g_object_unref (source);
   g_object_unref (track);
