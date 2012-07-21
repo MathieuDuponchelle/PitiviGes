@@ -73,6 +73,14 @@ GST_START_TEST (test_filesource_basic)
       TEST_URI);
 
 
+  mandatory_params =
+      ges_extractable_type_mandatory_parameters (GES_TYPE_TIMELINE_FILE_SOURCE);
+  assert_equals_int (g_slist_length (mandatory_params), 1);
+  fail_unless (G_IS_PARAM_SPEC (mandatory_params->data));
+  assert_equals_string (G_PARAM_SPEC (mandatory_params->data)->name, "uri");
+  g_slist_free (mandatory_params);
+
+
   g_object_unref (source);
   g_object_unref (track);
 }
