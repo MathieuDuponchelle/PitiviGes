@@ -17,6 +17,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <gio/gio.h>
 #include <ges/ges.h>
 #include <gst/pbutils/gstdiscoverer.h>
 #include <gst/pbutils/encoding-profile.h>

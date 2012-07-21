@@ -46,7 +46,7 @@ main (int argc, gchar ** argv)
    * order to function properly ! */
   mainloop = g_main_loop_new (NULL, FALSE);
 
-  ges_material_source_new (argv[1], material_loaded, NULL);
+  ges_material_filesource_new (argv[1], material_loaded, NULL);
 
   g_main_loop_run (mainloop);
 
