@@ -19,7 +19,7 @@ Summary
    A. Material API draft
    B. Source material API draft
    C. Project material API draft
-   D. ExtractableObject/Material Interface API draft
+   D. Extractable/Material Interface API draft
    E. Methods that should be added to other classes
 
 1. Basic ideas
@@ -133,6 +133,15 @@ GESMaterial *
 ges_extractable_get_material(GESExtractable *extractable);
 
 /**
+ * ges_extractable_object_set_material:
+ * @object: Target object
+ * @material: The #GESMaterial to set
+ *
+ * Method to set material which was used to instaniate specified object
+ */
+void ges_extractable_set_material              (GESExtractableInterface *self,
+
+/**
  * ges_extractable_get_material_type:
  * @class: Get the #GType of the GESMaterial that should be used to extract
  * the object that implements that #GESExtractable interface
@@ -144,19 +153,18 @@ GType
 ges_extractable_get_material_type (GESExtractableClass *class)
 
 /**
- * ges_extractable_class_list_mandatory_properties:
- * @class: The #GObject subclass that implement #GESExtractable
- * @n_properties: (out): return location for the length of the returned array.
+ * ges_extractable_type_mandatory_parameters:
+ * @type: The #GType implementing #GESExtractable
  *
  * Lists all the properties that needs to be passed to #ges_material_new to
  * be able to instanciate a #GESMaterial for the #GType pass to that same
  * function
  *
- * Returns: (array length=n_properties)(transfer container): an array of
+ * Returns: (transfert full) (element-type GParamSpec): an #GSlist of
  * GParamSpec* which should be freed after use.
  */
-GParamSpec **
-ges_extractable_class_list_mandatory_properties (GESExtractable *extractable);
+GSList*
+ges_extractable_type_mandatory_parameters (GType type);
 
 
 A. Material And subclasses API draft
