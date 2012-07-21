@@ -15,6 +15,12 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+/**
+ * SECTION: ges-extractable
+ * @short_description: An interface letting an object be extracted from a #GESMaterial
+ *
+ * FIXME: Long description needed
+ */
 #include "ges-material.h"
 #include "ges-internal.h"
 #include "ges-extractable.h"

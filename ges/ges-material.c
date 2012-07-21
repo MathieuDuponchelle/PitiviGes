@@ -15,6 +15,12 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+/**
+ * SECTION: ges-material
+ * @short_description: A GESMaterial is an object from which objects can be extracted
+ *
+ * FIXME: Long description to be written
+ */
 
 #include <gst/gst.h>
 #include "ges-types.h"

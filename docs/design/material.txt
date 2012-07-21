@@ -176,7 +176,7 @@ a) GESMaterial
 |  implements GInitable, GAsyncInitable and in the future, GESMetdata
 |
 |  /**
-|   * ges_material_new_full:
+|   * ges_material_new:
 |   * @extractable_type: The #GType of the object that can be extracted from the new material.
 |   * The class must implement the #GESExtractable
 |   * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.

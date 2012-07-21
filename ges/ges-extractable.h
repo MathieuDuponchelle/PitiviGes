@@ -84,7 +84,7 @@ struct _GESExtractableInterface
 };
 
 GType ges_extractable_get_material_type        (GESExtractable *self);
-GType ges_extractable_type_material_type       (GType extractable_type);
+GType ges_extractable_type_material_type       (GType type);
 
 GESMaterial* ges_extractable_get_material      (GESExtractable *self);
 
