@@ -20,15 +20,28 @@
 #include <ges/ges.h>
 #include <gst/check/gstcheck.h>
 
-GST_START_TEST (test_list_standard_materials)
+GST_START_TEST (test_basic)
 {
+  GESMaterial *material;
 
-}
+  material = ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
+      NULL, "uri", "file:///this/is/not/for/real", NULL);
 
-GST_END_TEST;
+  fail_unless (GES_IS_MATERIAL_SOURCE (material));
+  gst_object_unref (material);
 
-GST_START_TEST (test_get_track_types)
-{
+  material = ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
+      NULL, "uri", "file:///this/is/not/for/real", NULL);
+
+  fail_unless (GES_IS_MATERIAL_SOURCE (material));
+  gst_object_unref (material);
+
+  material = ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL, NULL, NULL);
+  fail_unless (material == NULL);
+
+  material = ges_material_new (GES_TYPE_TIMELINE_TRANSITION, NULL, NULL, NULL);
+  fail_unless (GES_IS_MATERIAL (material));
+  gst_object_unref (material);
 }
 
 GST_END_TEST;
@@ -41,8 +54,7 @@ ges_suite (void)
 
   suite_add_tcase (s, tc_chain);
 
-  tcase_add_test (tc_chain, test_list_standard_materials);
-  tcase_add_test (tc_chain, test_get_track_types);
+  tcase_add_test (tc_chain, test_basic);
 
   return s;
 }
@@ -56,6 +68,7 @@ main (int argc, char **argv)
   SRunner *sr = srunner_create (s);
 
   gst_check_init (&argc, &argv);
+  ges_init ();
 
   srunner_run_all (sr, CK_NORMAL);
   nf = srunner_ntests_failed (sr);

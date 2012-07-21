@@ -22,6 +22,7 @@
 #include <glib-object.h>
 #include <ges/ges-types.h>
 #include <ges/ges-enums.h>
+#include <gio/gio.h>
 
 G_BEGIN_DECLS
 #define GES_TYPE_MATERIAL ges_material_get_type()
@@ -58,9 +59,15 @@ struct _GESMaterialClass
 };
 
 
-GType ges_material_get_extractable_type (GESMaterial * self);
-GESMaterial *ges_material_new(GType extractable_type,
-    const gchar *first_property_name, ...);
+GType
+ges_material_get_extractable_type (GESMaterial * self);
+
+GESMaterial *
+ges_material_new                  (GType extractable_type,
+                                   GCancellable *cancellable,
+                                   GError **error,
+                                   const gchar * first_property_name,
+                                   ...);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */

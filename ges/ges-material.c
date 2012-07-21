@@ -21,7 +21,7 @@
 #include "ges-material.h"
 #include "ges-extractable.h"
 
-static void ges_material_initable_interface_init (GInitable * iface);
+static void ges_material_initable_interface_init (GInitableIface * iface);
 static void ges_material_async_initable_interface_init (GAsyncInitable * iface);
 
 G_DEFINE_TYPE_WITH_CODE (GESMaterial, ges_material, G_TYPE_OBJECT,
@@ -44,6 +44,26 @@ struct _GESMaterialPrivate
   GType extractable_type;
 };
 
+/* GInitable implementation */
+static gboolean
+initable_iface_init (GInitable * initable, GCancellable * cancellable,
+    GError ** error)
+{
+  return TRUE;
+}
+
+static void
+ges_material_initable_interface_init (GInitableIface * iface)
+{
+  iface->init = initable_iface_init;
+}
+
+static void
+ges_material_async_initable_interface_init (GAsyncInitable * iface)
+{
+}
+
+/* GObject virtual methods implementation */
 static void
 ges_material_get_property (GObject * object, guint property_id,
     GValue * value, GParamSpec * pspec)
@@ -95,38 +115,115 @@ ges_material_init (GESMaterial * self)
       GES_TYPE_MATERIAL, GESMaterialPrivate);
 }
 
+/* Some helper functions */
+static gint
+compare_gparamspec_str (GParamSpec * spec, const gchar * str)
+{
+  return g_strcmp0 (spec->name, str);
+}
+
+/* API implementation */
+/**
+ * ges_material_get_extractable_type:
+ * @self: The #GESMaterial
+ *
+ * Gets the type of object that can be extracted from @self
+ *
+ * Returns: the type of object that can be extracted from @self
+ */
 GType
 ges_material_get_extractable_type (GESMaterial * self)
 {
   return self->priv->extractable_type;
 }
 
+/**
+ * ges_material_new:
+ * @extractable_type: The #GType of the object that can be extracted from the new material.
+ * The class must implement the #GESExtractable
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @error: (allow-none): a #GError location to store the error occurring, or %NULL to ignore.
+ * @...: the value if the first property, followed by and other property value pairs, and ended by NULL.
+ *
+ * Creates a new #GESMaterial syncroniously, @error will be set if something went
+ * wrong and the constructor will return %NULL in this case
+ *
+ * Returns: Created #GESMaterial or reference to existing one if it was created earlier
+ * or %NULL on error
+ */
 GESMaterial *
-ges_material_new (GType extractable_type,
-    const gchar * first_property_name, ...)
+ges_material_new (GType extractable_type, GCancellable * cancellable,
+    GError ** error, const gchar * first_property_name, ...)
 {
-  GSList *params;
+  GESMaterial *object;
+  va_list var_args;
+  GType object_type;
+  GSList *tmp, *params = NULL;
 
   g_return_val_if_fail (g_type_is_a (extractable_type, G_TYPE_OBJECT), NULL);
   g_return_val_if_fail (g_type_is_a (extractable_type, GES_TYPE_EXTRACTABLE),
       NULL);
 
+  object_type = ges_extractable_type_material_type (extractable_type);
+  g_return_val_if_fail (g_type_is_a (object_type, GES_TYPE_MATERIAL), NULL);
+
   params = ges_extractable_type_mandatory_parameters (extractable_type);
 
   if (params) {
-    /* FIXME Check what parameters are actually needed and if they are present
-     * here */
+    const gchar *name;
+    GSList *found;
+
+    if (first_property_name == NULL)
+      goto error;
+
+    /* Go over all params and remove the parameter that we found from
+     * the list of mandatory params */
+    va_start (var_args, first_property_name);
+    {
+      name = first_property_name;
+      while (name) {
+        found = g_slist_find_custom (params, name,
+            (GCompareFunc) compare_gparamspec_str);
+
+        if (found) {
+          params = g_slist_delete_link (params, found);
+        }
+
+        name = va_arg (var_args, gchar *);
+      }
+    }
+    va_end (var_args);
+
+    if (params) {
+      for (tmp = params; tmp; tmp = tmp->next) {
+        GST_WARNING ("Parameter %s missing to create material",
+            G_PARAM_SPEC (tmp->data)->name);
+        params = g_slist_delete_link (params, found);
+      }
+
+      va_end (var_args);
+      goto error;
+    }
   }
+
+
+  if (first_property_name == NULL)
+    return g_initable_newv (object_type, 0, NULL, cancellable, error);
+
+  va_start (var_args, first_property_name);
+  object =
+      GES_MATERIAL (g_initable_new_valist (object_type, first_property_name,
+          var_args, cancellable, error));
+  va_end (var_args);
+
+  return object;
+
+error:
+  if (params)
+    g_slist_free (params);
+
+  GST_WARNING ("Could create material with %s as extractable_type",
+      g_type_name (extractable_type));
+
   return NULL;
-}
-
-static void
-ges_material_initable_interface_init (GInitable * iface)
-{
-
-}
-
-static void
-ges_material_async_initable_interface_init (GAsyncInitable * iface)
-{
 }
