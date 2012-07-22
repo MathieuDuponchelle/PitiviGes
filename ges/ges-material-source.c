@@ -17,11 +17,19 @@
  */
 #include <gst/pbutils/pbutils.h>
 #include "ges.h"
-#include "ges-types.h"
-#include "ges-material-source.h"
 
-G_DEFINE_TYPE (GESMaterialFileSource, ges_material_filesource,
-    GES_TYPE_MATERIAL);
+static void ges_material_filesource_initable_interface_init (GInitableIface *
+    iface);
+static void
+ges_material_filesource_async_initable_interface_init (GAsyncInitableIface *
+    iface);
+
+G_DEFINE_TYPE_WITH_CODE (GESMaterialFileSource, ges_material_filesource,
+    GES_TYPE_MATERIAL,
+    G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+        ges_material_filesource_initable_interface_init);
+    G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
+        ges_material_filesource_async_initable_interface_init));
 
 enum
 {
@@ -171,6 +179,42 @@ ges_material_filesource_set_property (GObject * object, guint property_id,
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
+}
+
+static gboolean
+initable_interface_init (GInitable * iface,
+    GCancellable * cancellable, GError ** error)
+{
+  return FALSE;
+}
+
+static void
+async_initable_init_async (GAsyncInitable * initable,
+    int io_priority,
+    GCancellable * cancellable,
+    GAsyncReadyCallback callback, gpointer user_data)
+{
+}
+
+static gboolean
+async_initable_init_finish (GAsyncInitable * initable,
+    GAsyncResult * res, GError ** error)
+{
+  return FALSE;
+}
+
+static void
+ges_material_filesource_initable_interface_init (GInitableIface * iface)
+{
+  iface->init = initable_interface_init;
+}
+
+static void
+ges_material_filesource_async_initable_interface_init (GAsyncInitableIface *
+    iface)
+{
+  iface->init_async = async_initable_init_async;
+  iface->init_finish = async_initable_init_finish;
 }
 
 static void
