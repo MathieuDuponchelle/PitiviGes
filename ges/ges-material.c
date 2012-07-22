@@ -26,7 +26,8 @@
 #include "ges.h"
 
 static void ges_material_initable_interface_init (GInitableIface * iface);
-static void ges_material_async_initable_interface_init (GAsyncInitable * iface);
+static void ges_material_async_initable_interface_init (GAsyncInitableIface *
+    iface);
 
 G_DEFINE_TYPE_WITH_CODE (GESMaterial, ges_material, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
@@ -57,14 +58,32 @@ initable_iface_init (GInitable * initable, GCancellable * cancellable,
 }
 
 static void
+async_initable_init_async (GAsyncInitable * initable,
+    int io_priority,
+    GCancellable * cancellable,
+    GAsyncReadyCallback callback, gpointer user_data)
+{
+}
+
+static gboolean
+async_initable_init_finish (GAsyncInitable * initable,
+    GAsyncResult * res, GError ** error)
+{
+  return TRUE;
+}
+
+
+static void
 ges_material_initable_interface_init (GInitableIface * iface)
 {
   iface->init = initable_iface_init;
 }
 
 static void
-ges_material_async_initable_interface_init (GAsyncInitable * iface)
+ges_material_async_initable_interface_init (GAsyncInitableIface * iface)
 {
+  iface->init_async = async_initable_init_async;
+  iface->init_finish = async_initable_init_finish;
 }
 
 /* GObject virtual methods implementation */

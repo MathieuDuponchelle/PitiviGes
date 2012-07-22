@@ -185,7 +185,7 @@ static gboolean
 initable_interface_init (GInitable * iface,
     GCancellable * cancellable, GError ** error)
 {
-  return FALSE;
+  return TRUE;
 }
 
 static void
@@ -200,7 +200,7 @@ static gboolean
 async_initable_init_finish (GAsyncInitable * initable,
     GAsyncResult * res, GError ** error)
 {
-  return FALSE;
+  return TRUE;
 }
 
 static void
