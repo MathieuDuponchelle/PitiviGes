@@ -38,12 +38,19 @@ G_BEGIN_DECLS
     (G_TYPE_INSTANCE_GET_CLASS ((obj), GES_TYPE_MATERIAL, GESMaterialClass))
 typedef struct _GESMaterialPrivate GESMaterialPrivate;
 
+typedef enum {
+   MATERIAL_NOT_INITIALIZED,
+   MATERIAL_INITIALIZING,
+   MATERIAL_INITIALIZED
+} GESMaterialState;
+
 GType ges_material_get_type (void);
 /* Abstract type (for now) */
 struct _GESMaterial
 {
   GObject parent;
-
+  GESMaterialState state;
+  
   /* <private> */
   GESMaterialPrivate *priv;
 

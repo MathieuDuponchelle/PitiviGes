@@ -136,6 +136,7 @@ ges_material_init (GESMaterial * self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialPrivate);
+  self->state = MATERIAL_NOT_INITIALIZED;
 }
 
 /* Some helper functions */

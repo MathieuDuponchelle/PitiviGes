@@ -20,9 +20,28 @@
 
 static void ges_material_filesource_initable_interface_init (GInitableIface *
     iface);
+
 static void
 ges_material_filesource_async_initable_interface_init (GAsyncInitableIface *
     iface);
+
+static void
+async_initable_init_async (GAsyncInitable * initable,
+    int io_priority,
+    GCancellable * cancellable,
+    GAsyncReadyCallback callback, gpointer user_data);
+
+static gboolean
+async_initable_init_finish (GAsyncInitable * initable,
+    GAsyncResult * res, GError ** error);
+
+static gboolean
+initable_interface_init (GInitable * iface,
+    GCancellable * cancellable, GError ** error);
+
+static void
+ges_material_filesource_load (const gchar * uri,
+    GAsyncReadyCallback material_loaded_cb, GSimpleAsyncResult * result);
 
 G_DEFINE_TYPE_WITH_CODE (GESMaterialFileSource, ges_material_filesource,
     GES_TYPE_MATERIAL,
@@ -181,27 +200,7 @@ ges_material_filesource_set_property (GObject * object, guint property_id,
   }
 }
 
-static gboolean
-initable_interface_init (GInitable * iface,
-    GCancellable * cancellable, GError ** error)
-{
-  return TRUE;
-}
 
-static void
-async_initable_init_async (GAsyncInitable * initable,
-    int io_priority,
-    GCancellable * cancellable,
-    GAsyncReadyCallback callback, gpointer user_data)
-{
-}
-
-static gboolean
-async_initable_init_finish (GAsyncInitable * initable,
-    GAsyncResult * res, GError ** error)
-{
-  return TRUE;
-}
 
 static void
 ges_material_filesource_initable_interface_init (GInitableIface * iface)
@@ -260,6 +259,7 @@ ges_material_filesource_load (const gchar * uri,
       g_slice_new (GESMaterialFileSourceCacheEntry);
 
   cache_entry->material = material;
+  GES_MATERIAL (material)->state = MATERIAL_INITIALIZING;
   cache_entry->callbacks =
       g_list_append (cache_entry->callbacks, material_loaded_cb);
   g_static_mutex_init (&cache_entry->lock);
@@ -267,6 +267,31 @@ ges_material_filesource_load (const gchar * uri,
   ges_material_filesource_cache_put (uri, cache_entry);
   ges_material_filesource_discoverer_discover_uri (uri);
 }
+
+static gboolean
+initable_interface_init (GInitable * iface,
+    GCancellable * cancellable, GError ** error)
+{
+  return TRUE;
+}
+
+static void
+async_initable_init_async (GAsyncInitable * initable,
+    int io_priority,
+    GCancellable * cancellable,
+    GAsyncReadyCallback callback, gpointer user_data)
+{
+}
+
+static gboolean
+async_initable_init_finish (GAsyncInitable * initable,
+    GAsyncResult * res, GError ** error)
+{
+  return TRUE;
+}
+
+
+
 
 GESMaterialFileSource *
 ges_material_filesource_new (const gchar * uri,
@@ -326,5 +351,6 @@ discoverer_discovered_cb (GstDiscoverer * discoverer,
 
   g_static_mutex_lock (&entry->lock);
   entry->loaded = TRUE;
+  GES_MATERIAL (entry->material)->state = MATERIAL_INITIALIZED;
   g_static_mutex_unlock (&entry->lock);
 }
