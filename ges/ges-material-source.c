@@ -39,10 +39,6 @@ static gboolean
 initable_interface_init (GInitable * iface,
     GCancellable * cancellable, GError ** error);
 
-static void
-ges_material_filesource_load (const gchar * uri,
-    GAsyncReadyCallback material_loaded_cb, GSimpleAsyncResult * result);
-
 G_DEFINE_TYPE_WITH_CODE (GESMaterialFileSource, ges_material_filesource,
     GES_TYPE_MATERIAL,
     G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
@@ -149,24 +145,6 @@ ges_material_filesource_cache_put (const gchar * uri,
 }
 
 static void
-ges_material_filesource_discoverer_discover_uri (const gchar * uri)
-{
-  g_static_mutex_lock (&discoverer_lock);
-  if (discoverer == NULL) {
-    discoverer = gst_discoverer_new (15 * GST_SECOND, NULL);
-    g_signal_connect (discoverer, "finished",
-        G_CALLBACK (discoverer_finished_cb), NULL);
-    g_signal_connect (discoverer, "discovered",
-        G_CALLBACK (discoverer_discovered_cb), NULL);
-
-    gst_discoverer_start (discoverer);
-  }
-  g_static_mutex_unlock (&discoverer_lock);
-
-  gst_discoverer_discover_uri_async (discoverer, uri);
-}
-
-static void
 ges_material_filesource_get_property (GObject * object, guint property_id,
     GValue * value, GParamSpec * pspec)
 {
@@ -243,35 +221,22 @@ ges_material_filesource_init (GESMaterialFileSource * self)
   self->priv->duration = 0;
 }
 
-/**
-* Full loading of material. Low-level function without caching.
-*/
-static void
-ges_material_filesource_load (const gchar * uri,
-    GAsyncReadyCallback material_loaded_cb, GSimpleAsyncResult * result)
-{
-
-  GESMaterialFileSource *material =
-      g_object_new (GES_TYPE_MATERIAL_FILESOURCE, "uri",
-      uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
-
-  GESMaterialFileSourceCacheEntry *cache_entry =
-      g_slice_new (GESMaterialFileSourceCacheEntry);
-
-  cache_entry->material = material;
-  GES_MATERIAL (material)->state = MATERIAL_INITIALIZING;
-  cache_entry->callbacks =
-      g_list_append (cache_entry->callbacks, material_loaded_cb);
-  g_static_mutex_init (&cache_entry->lock);
-
-  ges_material_filesource_cache_put (uri, cache_entry);
-  ges_material_filesource_discoverer_discover_uri (uri);
-}
-
 static gboolean
 initable_interface_init (GInitable * iface,
     GCancellable * cancellable, GError ** error)
 {
+
+
+  switch (GES_MATERIAL (iface)->state) {
+    case MATERIAL_NOT_INITIALIZED:
+      break;
+    case MATERIAL_INITIALIZING:
+      return FALSE;
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
   return TRUE;
 }
 
@@ -281,6 +246,20 @@ async_initable_init_async (GAsyncInitable * initable,
     GCancellable * cancellable,
     GAsyncReadyCallback callback, gpointer user_data)
 {
+  g_static_mutex_lock (&discoverer_lock);
+  if (discoverer == NULL) {
+    discoverer = gst_discoverer_new (15 * GST_SECOND, NULL);
+    g_signal_connect (discoverer, "finished",
+        G_CALLBACK (discoverer_finished_cb), NULL);
+    g_signal_connect (discoverer, "discovered",
+        G_CALLBACK (discoverer_discovered_cb), NULL);
+
+    gst_discoverer_start (discoverer);
+  }
+  g_static_mutex_unlock (&discoverer_lock);
+
+  gst_discoverer_discover_uri_async (discoverer,
+      GES_MATERIAL_FILESOURCE (initable)->priv->uri);
 }
 
 static gboolean
@@ -318,15 +297,9 @@ ges_material_filesource_new (const gchar * uri,
     /* return a ref to the material */
     return material;
 
-  } else if (material_created_cb == NULL) {
-    /* FIXME Implement a syncronous version here */
-    GST_WARNING ("No syncronous version yet, NOT DOING ANYTHING");
-    return NULL;
-  }
-
-  ges_material_filesource_load (uri, material_created_cb, simple);
-
-  return NULL;
+  } else
+    return g_object_new (GES_TYPE_MATERIAL_FILESOURCE, "uri",
+        uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
 }
 
 GstDiscovererInfo *
