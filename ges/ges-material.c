@@ -23,9 +23,7 @@
  */
 
 #include <gst/gst.h>
-#include "ges-types.h"
-#include "ges-material.h"
-#include "ges-extractable.h"
+#include "ges.h"
 
 static void ges_material_initable_interface_init (GInitableIface * iface);
 static void ges_material_async_initable_interface_init (GAsyncInitable * iface);
@@ -128,6 +126,70 @@ compare_gparamspec_str (GParamSpec * spec, const gchar * str)
   return g_strcmp0 (spec->name, str);
 }
 
+static GType
+check_type_and_params (GType extractable_type,
+    const gchar * first_property_name, va_list var_args)
+{
+  GType object_type;
+  const gchar *name;
+  GSList *tmp, *found, *params;
+
+  if (g_type_is_a (extractable_type, G_TYPE_OBJECT) == G_TYPE_INVALID) {
+    GST_WARNING ("%s not a GObject type", g_type_name (extractable_type));
+
+    return G_TYPE_INVALID;
+  }
+
+  if (g_type_is_a (extractable_type, GES_TYPE_EXTRACTABLE) == G_TYPE_INVALID) {
+    GST_WARNING ("%s not a GESExtractable type",
+        g_type_name (extractable_type));
+
+    return G_TYPE_INVALID;
+  }
+
+  object_type = ges_extractable_type_material_type (extractable_type);
+
+  if (g_type_is_a (object_type, GES_TYPE_MATERIAL) == G_TYPE_INVALID) {
+    GST_ERROR ("The extractable type %s is not an extractable_type",
+        g_type_name (object_type));
+
+    return G_TYPE_INVALID;
+  }
+
+  params = ges_extractable_type_mandatory_parameters (extractable_type);
+
+  if (params == NULL)
+    return object_type;
+
+  if (first_property_name == NULL)
+    return G_TYPE_INVALID;
+
+  /* Go over all params and remove the parameter that we found from
+   * the list of mandatory params */
+  name = first_property_name;
+  while (name) {
+    found = g_slist_find_custom (params, name,
+        (GCompareFunc) compare_gparamspec_str);
+
+    if (found) {
+      params = g_slist_delete_link (params, found);
+    }
+
+    name = va_arg (var_args, gchar *);
+  }
+
+  if (params) {
+    for (tmp = params; tmp; tmp = tmp->next) {
+      GST_WARNING ("Parameter %s missing to create material",
+          G_PARAM_SPEC (tmp->data)->name);
+      params = g_slist_delete_link (params, found);
+    }
+    return G_TYPE_INVALID;
+  }
+
+  return object_type;
+}
+
 /* API implementation */
 /**
  * ges_material_get_extractable_type:
@@ -149,7 +211,7 @@ ges_material_get_extractable_type (GESMaterial * self)
  * The class must implement the #GESExtractable
  * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
  * @error: (allow-none): a #GError location to store the error occurring, or %NULL to ignore.
- * @...: the value if the first property, followed by and other property value pairs, and ended by NULL.
+ * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
  *
  * Creates a new #GESMaterial syncroniously, @error will be set if something went
  * wrong and the constructor will return %NULL in this case
@@ -164,54 +226,21 @@ ges_material_new (GType extractable_type, GCancellable * cancellable,
   GESMaterial *object;
   va_list var_args;
   GType object_type;
-  GSList *tmp, *params = NULL;
 
-  g_return_val_if_fail (g_type_is_a (extractable_type, G_TYPE_OBJECT), NULL);
-  g_return_val_if_fail (g_type_is_a (extractable_type, GES_TYPE_EXTRACTABLE),
-      NULL);
+  va_start (var_args, first_property_name);
+  object_type = check_type_and_params (extractable_type,
+      first_property_name, var_args);
+  va_end (var_args);
 
-  object_type = ges_extractable_type_material_type (extractable_type);
-  g_return_val_if_fail (g_type_is_a (object_type, GES_TYPE_MATERIAL), NULL);
+  if (object_type == G_TYPE_INVALID) {
+    GST_WARNING ("Could create material with %s as extractable_type,"
+        "wrong input parameters", g_type_name (extractable_type));
 
-  params = ges_extractable_type_mandatory_parameters (extractable_type);
+    if (error)
+      *error = g_error_new (GES_ERROR_DOMAIN, 0, "Wrong parameter");
 
-  if (params) {
-    const gchar *name;
-    GSList *found;
-
-    if (first_property_name == NULL)
-      goto error;
-
-    /* Go over all params and remove the parameter that we found from
-     * the list of mandatory params */
-    va_start (var_args, first_property_name);
-    {
-      name = first_property_name;
-      while (name) {
-        found = g_slist_find_custom (params, name,
-            (GCompareFunc) compare_gparamspec_str);
-
-        if (found) {
-          params = g_slist_delete_link (params, found);
-        }
-
-        name = va_arg (var_args, gchar *);
-      }
-    }
-    va_end (var_args);
-
-    if (params) {
-      for (tmp = params; tmp; tmp = tmp->next) {
-        GST_WARNING ("Parameter %s missing to create material",
-            G_PARAM_SPEC (tmp->data)->name);
-        params = g_slist_delete_link (params, found);
-      }
-
-      va_end (var_args);
-      goto error;
-    }
+    return NULL;
   }
-
 
   if (first_property_name == NULL)
     return g_initable_newv (object_type, 0, NULL, cancellable, error);
@@ -223,13 +252,52 @@ ges_material_new (GType extractable_type, GCancellable * cancellable,
   va_end (var_args);
 
   return object;
+}
 
-error:
-  if (params)
-    g_slist_free (params);
+/**
+ * ges_material_new_async:
+ * @extractable_type: The #GType of the object that can be extracted from the new material.
+ * The class must implement the #GESExtractable
+ * @io_priority: The priority of the thread (Note that it is not always used,
+ *    e.g: for GESMaterialFileSource it will not be used)
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @callback: a #GAsyncReadyCallback to call when the initialization is finished
+ * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
+ *
+ * Creates a new #GESMaterial asyncroniously, @error will be set if something went
+ * wrong and the constructor will return %NULL in this case
+ *
+ * Returns: Created #GESMaterial or reference to existing one if it was created earlier
+ * or %NULL on error
+ */
+void
+ges_material_new_async (GType extractable_type, gint io_priority,
+    GCancellable * cancellable, GAsyncReadyCallback callback,
+    gpointer user_data, const gchar * first_property_name, ...)
+{
+  /*GESMaterial *object; */
+  va_list var_args;
+  GType object_type;
 
-  GST_WARNING ("Could create material with %s as extractable_type",
-      g_type_name (extractable_type));
+  va_start (var_args, first_property_name);
+  object_type = check_type_and_params (extractable_type,
+      first_property_name, var_args);
+  va_end (var_args);
 
-  return NULL;
+  if (object_type == G_TYPE_INVALID) {
+    GST_WARNING ("Could create material with %s as extractable_type,"
+        "wrong input parameters", g_type_name (extractable_type));
+
+    /* FIXME Define error codes */
+    g_simple_async_report_error_in_idle (NULL, callback, user_data,
+        GES_ERROR_DOMAIN, 0, "Wrong parameter");
+
+    return;
+  }
+
+  va_start (var_args, first_property_name);
+  g_async_initable_new_valist_async (object_type,
+      first_property_name, var_args, io_priority,
+      cancellable, callback, user_data);
+  va_end (var_args);
 }

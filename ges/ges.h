@@ -82,6 +82,8 @@ gboolean ges_init    (void);
 void     ges_version (guint * major, guint * minor, guint * micro,
                       guint * nano);
 
+#define GES_ERROR_DOMAIN g_quark_from_static_string("GES")
+
 G_END_DECLS
 
 #endif /* __GES_H__ */

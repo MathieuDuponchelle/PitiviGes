@@ -68,6 +68,13 @@ ges_material_new                  (GType extractable_type,
                                    GError **error,
                                    const gchar * first_property_name,
                                    ...);
+void
+ges_material_new_async            (GType extractable_type,
+                                   gint io_priority,
+                                   GCancellable * cancellable,
+                                   GAsyncReadyCallback callback,
+                                   gpointer user_data,
+                                   const gchar * first_property_name, ...);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */
