@@ -221,30 +221,8 @@ ges_material_filesource_init (GESMaterialFileSource * self)
   self->priv->duration = 0;
 }
 
-static gboolean
-initable_interface_init (GInitable * iface,
-    GCancellable * cancellable, GError ** error)
-{
-
-
-  switch (GES_MATERIAL (iface)->state) {
-    case MATERIAL_NOT_INITIALIZED:
-      break;
-    case MATERIAL_INITIALIZING:
-      return FALSE;
-      break;
-    default:
-      g_assert_not_reached ();
-      break;
-  }
-  return TRUE;
-}
-
-static void
-async_initable_init_async (GAsyncInitable * initable,
-    int io_priority,
-    GCancellable * cancellable,
-    GAsyncReadyCallback callback, gpointer user_data)
+static GstDiscoverer *
+ges_material_filesource_get_discoverer (void)
 {
   g_static_mutex_lock (&discoverer_lock);
   if (discoverer == NULL) {
@@ -258,7 +236,42 @@ async_initable_init_async (GAsyncInitable * initable,
   }
   g_static_mutex_unlock (&discoverer_lock);
 
-  gst_discoverer_discover_uri_async (discoverer,
+  return discoverer;
+}
+
+static gboolean
+initable_interface_init (GInitable * iface,
+    GCancellable * cancellable, GError ** error)
+{
+  switch (GES_MATERIAL (iface)->state) {
+    case MATERIAL_NOT_INITIALIZED:
+      break;
+    case MATERIAL_INITIALIZING:
+      return FALSE;
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+
+  GES_MATERIAL_FILESOURCE (iface)->priv->info =
+      gst_discoverer_discover_uri (ges_material_filesource_get_discoverer (),
+      GES_MATERIAL_FILESOURCE (iface)->priv->uri, NULL);
+
+  if (GES_MATERIAL_FILESOURCE (iface)->priv->info != NULL) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+static void
+async_initable_init_async (GAsyncInitable * initable,
+    int io_priority,
+    GCancellable * cancellable,
+    GAsyncReadyCallback callback, gpointer user_data)
+{
+  gst_discoverer_discover_uri_async (ges_material_filesource_get_discoverer (),
       GES_MATERIAL_FILESOURCE (initable)->priv->uri);
 }
 
