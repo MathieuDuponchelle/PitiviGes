@@ -182,12 +182,14 @@ class EffectProperties(gtk.Expander, gtk.HBox):
         self._table = gtk.Table(3, 1, False)
 
         self._toolbar = gtk.Toolbar()
+
         self._removeEffectBt = gtk.ToolButton("gtk-delete")
         self._removeEffectBt.set_label(_("Remove effect"))
         self._removeEffectBt.set_use_underline(True)
         self._removeEffectBt.set_is_important(True)
         self._removeEffectBt.set_sensitive(False)
         self._toolbar.insert(self._removeEffectBt, 0)
+
         self._table.attach(self._toolbar, 0, 1, 0, 1, yoptions=gtk.FILL)
 
         self.storemodel = gtk.ListStore(bool, str, str, str, object)

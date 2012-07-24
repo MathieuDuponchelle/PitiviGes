@@ -430,7 +430,7 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
 
         self.settings = instance.settings
         self.unfocus()
-        self.addCurve(instance, None, None)
+        #self.addCurve(instance, None, None)
 
 ## Properties
 
@@ -447,7 +447,8 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
         self._update()
 
     def addCurve(self, instance, element, interpolator):
-        self.add_child(Curve(instance, element, interpolator))
+        pass
+        #self.add_child(Curve(instance, element, interpolator))
 
     def getHeight(self):
         return self._height

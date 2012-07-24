@@ -863,11 +863,18 @@ class GstElementSettingsWidget(gtk.VBox, Loggable):
 
             self.properties[prop] = widget
 
+            self._configureKeyframesBt = gtk.ToolButton("gtk-properties")
+            self._configureKeyframesBt.set_label(_("Configure keyframes"))
+            self._configureKeyframesBt.set_use_underline(True)
+            self._configureKeyframesBt.set_is_important(True)
+            table.attach(self._configureKeyframesBt, 2, 3, y, y + 1, xoptions=gtk.FILL, yoptions=gtk.FILL)
+
             # The "reset to default" button associated with this property
             if default_btn:
                 button = self._getResetToDefaultValueButton(prop, widget)
-                table.attach(button, 2, 3, y, y + 1, xoptions=gtk.FILL, yoptions=gtk.FILL)
+                table.attach(button, 3, 4, y, y + 1, xoptions=gtk.FILL, yoptions=gtk.FILL)
                 self.buttons[button] = widget
+            self._configureKeyframesBt.connect("clicked", self._configureKeyframesClicked)
             self.element.connect('notify::' + prop.name, self._propertyChangedCb, widget)
 
             y += 1
@@ -903,6 +910,9 @@ class GstElementSettingsWidget(gtk.VBox, Loggable):
             if value != None and (value != prop.default_value or with_default):
                 d[prop.name] = value
         return d
+
+    def _configureKeyframesClicked(self, toolbutton):
+        pass
 
 
 class GstElementSettingsDialog(Loggable):
