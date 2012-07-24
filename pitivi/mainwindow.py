@@ -40,6 +40,7 @@ from pitivi.utils.loggable import Loggable
 from pitivi.utils.misc import in_devel
 from pitivi.settings import GlobalSettings
 from pitivi.effects import EffectListWidget
+from pitivi.transitions import TransitionsListWidget
 from pitivi.medialibrary import MediaLibraryWidget, MediaLibraryError
 
 from pitivi.utils.misc import show_user_manual
@@ -182,9 +183,6 @@ class PitiviMainWindow(gtk.Window, Loggable):
         Loggable.__init__(self, "mainwindow")
         self.app = instance
         self.log("Creating MainWindow")
-        self.actions = None
-        self.toggleactions = None
-        self.actiongroup = None
         self.settings = instance.settings
         self.is_fullscreen = False
         self.prefsdialog = None
@@ -193,7 +191,6 @@ class PitiviMainWindow(gtk.Window, Loggable):
         self._createUi(instance, allow_full_screen)
         self.recent_manager = RecentManager()
         self._zoom_duration_changed = False
-        self.zoomed_fitted = True
         self._missingUriOnLoading = False
 
         self.app.projectManager.connect("new-project-loading",
@@ -251,7 +248,7 @@ class PitiviMainWindow(gtk.Window, Loggable):
         #
         # name (required), stock ID, translatable label,
         # keyboard shortcut, translatable tooltip, callback function
-        self.actions = [
+        actions = [
             # In some cases we manually specify the translatable label,
             # because we want to have the "..." at the end, indicating
             # an action that requires "further interaction" from the user.
@@ -288,13 +285,16 @@ class PitiviMainWindow(gtk.Window, Loggable):
             ("Preferences", gtk.STOCK_PREFERENCES, None,
             None, None, self._prefsCb),
 
+            ("RemoveLayer", gtk.STOCK_REMOVE, _("Remove layer"),
+             None, _("Remove the selected layer from the project"), self._removeLayerCb),
+
             ("Quit", gtk.STOCK_QUIT, None, None, None, self._quitCb),
 
             ("About", gtk.STOCK_ABOUT, None,
             None, _("Information about %s") % APPNAME, self._aboutCb),
 
             ("UserManual", gtk.STOCK_HELP, _("User Manual"),
-             None, None, self._userManualCb),
+             "F1", None, self._userManualCb),
 
             # Set up the toplevel menu items for translation
             ("File", None, _("_Project")),
@@ -306,12 +306,9 @@ class PitiviMainWindow(gtk.Window, Loggable):
             ("Help", None, _("_Help")),
         ]
 
-        self.toggleactions = [
+        toggleactions = [
             ("FullScreen", gtk.STOCK_FULLSCREEN, None,
-            "f", _("View the main window on the whole screen"), self._fullScreenCb),
-
-            ("FullScreenAlternate", gtk.STOCK_FULLSCREEN, None,
-            "F11", None, self._fullScreenAlternateCb),
+            "F11", _("View the main window on the whole screen"), self._fullScreenCb),
 
             ("ShowHideMainToolbar", None, _("Main Toolbar"),
             None, None, self._showHideMainToolBar,
@@ -321,49 +318,41 @@ class PitiviMainWindow(gtk.Window, Loggable):
                 self.settings.mainWindowShowTimelineToolbar),
         ]
 
-        self.actiongroup = gtk.ActionGroup("mainwindow")
-        self.actiongroup.add_actions(self.actions)
-        self.actiongroup.add_toggle_actions(self.toggleactions)
+        self.main_actions = gtk.ActionGroup("mainwindow")
+        self.main_actions.add_actions(actions)
         self.undock_action = gtk.Action("WindowizeViewer", _("Undock Viewer"),
             _("Put the viewer in a separate window"), None)
-        self.actiongroup.add_action(self.undock_action)
+        self.main_actions.add_action(self.undock_action)
+        self.toggle_actions = gtk.ActionGroup("mainwindowtoggles")
+        self.toggle_actions.add_toggle_actions(toggleactions)
 
-        for action in self.actiongroup.list_actions():
+        important_actions = ("Undo", "SaveProject", "RenderProject")
+        for action in self.main_actions.list_actions():
             action_name = action.get_name()
+            if action_name in important_actions:
+                # Force showing a label alongside the action's toolbar button
+                action.props.is_important = True
             if action_name == "RenderProject":
                 # the button is set sensitive when the timeline duration changes
                 action.set_sensitive(False)
-                action.props.is_important = True
                 self.render_button = action
-            elif action_name in ["NewProject", "SaveProjectAs", "OpenProject"]:
+            elif action_name in ["NewProject", "SaveProject", "SaveProjectAs", "OpenProject"]:
                 if instance.settings.fileSupportEnabled:
                     action.set_sensitive(True)
-            elif action_name == "SaveProject":
-                action.props.is_important = True
-                if instance.settings.fileSupportEnabled:
-                    action.set_sensitive(True)
-                else:
-                    action.set_sensitive(False)
-            elif action_name == "Undo":
-                action.set_sensitive(True)
-                action.props.is_important = True
             elif action_name in [
                 "File", "Edit", "View", "Help",
-                "About", "Quit", "ImportSourcesFolder",
-                "FullScreen", "FullScreenAlternate", "UserManual",
-                "ShowHideMainToolbar", "ShowHideTimelineToolbar",
-                "FrameForward", "FrameBackward",
-                "SecondForward", "SecondBackward",
-                "EdgeForward", "EdgeBackward",
+                "UserManual", "About", "Quit", "ImportSourcesFolder",
                 "Preferences", "Project", "ProjectSettings",
                 "Library", "Timeline", "Viewer", "WindowizeViewer"]:
                 action.set_sensitive(True)
             else:
                 action.set_sensitive(False)
+                self.log("%s has been made insensitive" % action_name)
 
         self.uimanager = gtk.UIManager()
         self.add_accel_group(self.uimanager.get_accel_group())
-        self.uimanager.insert_action_group(self.actiongroup, 0)
+        self.uimanager.insert_action_group(self.main_actions, 0)
+        self.uimanager.insert_action_group(self.toggle_actions, -1)
         self.uimanager.add_ui_from_file(os.path.join(get_ui_dir(), "mainwindow.xml"))
 
     def _createUi(self, instance, allow_full_screen):
@@ -389,6 +378,7 @@ class PitiviMainWindow(gtk.Window, Loggable):
 
         self.timeline_ui = Timeline(instance, self.uimanager)
         self.timeline_ui.setProjectManager(self.app.projectManager)
+        self.timeline_ui.controls.connect("selection-changed", self._selectedLayerChangedCb)
         self.app.current = None
         vpaned.pack2(self.timeline_ui, resize=True, shrink=False)
         self.timeline_ui.show()
@@ -416,8 +406,11 @@ class PitiviMainWindow(gtk.Window, Loggable):
         # Second set of tabs
         self.context_tabs = BaseTabs(instance)
         self.clipconfig = ClipProperties(instance, self.uimanager)
+        self.trans_list = TransitionsListWidget(instance, self.uimanager)
         self.context_tabs.append_page(self.clipconfig, gtk.Label(_("Clip configuration")))
+        self.context_tabs.append_page(self.trans_list, gtk.Label(_("Transitions")))
         self.clipconfig.show()
+        self.trans_list.show()
 
         self.secondhpaned.pack2(self.context_tabs, resize=True, shrink=False)
         self.context_tabs.show()
@@ -464,20 +457,32 @@ class PitiviMainWindow(gtk.Window, Loggable):
         if not self.settings.mainWindowShowTimelineToolbar:
             ttb.props.visible = False
 
-        # Actions with key accelerators that will be made unsensitive while
-        # a gtk entry box is used to avoid conflicts.
-        self.sensitive_actions = []
-        for action in self.timeline_ui.playhead_actions:
-            self.sensitive_actions.append(action[0])
-        for action in self.toggleactions:
-            self.sensitive_actions.append(action[0])
-
         #application icon
         self.set_icon_name("pitivi")
 
         #pulseaudio 'role' (http://0pointer.de/blog/projects/tagging-audio.htm
         os.environ["PULSE_PROP_media.role"] = "production"
         os.environ["PULSE_PROP_application.icon_name"] = "pitivi"
+
+    def switchContextTab(self, tab=None):
+        """
+        Switch the tab being displayed on the second set of tabs,
+        depending on the context.
+
+        @param the name of the tab to switch to, or None to reset
+        """
+        if not tab:
+            page = 0
+        else:
+            tab = tab.lower()
+            if tab == "clip configuration":
+                page = 0
+            elif tab == "transitions":
+                page = 1
+            else:
+                self.debug("Invalid context tab switch requested")
+                return False
+        self.context_tabs.set_current_page(page)
 
     def setFullScreen(self, fullscreen):
         """ Toggle the fullscreen mode of the application """
@@ -487,30 +492,27 @@ class PitiviMainWindow(gtk.Window, Loggable):
             self.unfullscreen()
         self.is_fullscreen = fullscreen
 
-    #TODO check if it is the way to go
-    def setActionsSensitive(self, action_names, sensitive):
+    def setActionsSensitive(self, sensitive):
         """
         Grab (or release) keyboard letter keys focus/sensitivity
         for operations such as typing text in an entry.
 
-        @param action_names: The name of actions we want to set to (in)sensitive
-                             If set to "default", we use the default actions.
-        @type action_names: A {list} of action names
-        @param sensitive: %True if actions must be sensitive False otherwise
-        @type action_names: C{Bool}
+        This toggles the sensitivity of all actiongroups that might interfere.
+        This means mostly the timeline's actions.
+
+        This method does not need to be called when creating a separate window.
         """
-        if action_names == "default":
-            action_names = self.sensitive_actions
-
-        for action in self.actiongroup.list_actions():
-            if action.get_name() in action_names:
-                action.set_sensitive(sensitive)
-
+        self.log("Setting actions sensitivity to %s" % sensitive)
+        # The mainwindow's actions don't prevent typing into entry widgets;
+        # Only timeline actions (ex: deleting and play/pause) are dangerous.
         if self.timeline_ui:
-            for action_group in self.timeline_ui.ui_manager.get_action_groups():
-                for action in action_group.list_actions():
-                    if action.get_name() in action_names:
-                        action.set_sensitive(sensitive)
+            # Don't loop in self.timeline_ui.ui_manager.get_action_groups()
+            # otherwise you'll get all the action groups of the application.
+            self.timeline_ui.playhead_actions.set_sensitive(sensitive)
+            selected = self.timeline_ui.timeline.selection.getSelectedTrackObjs()
+            if not sensitive or (sensitive and selected):
+                self.log("Setting timeline selection actions sensitivity to %s" % sensitive)
+                self.timeline_ui.selection_actions.set_sensitive(sensitive)
 
 ## Missing Plugin Support
 
@@ -541,8 +543,8 @@ class PitiviMainWindow(gtk.Window, Loggable):
         self.settings.mainWindowHPanePosition = self.hpaned.get_position()
         self.settings.mainWindowMainHPanePosition = self.mainhpaned.get_position()
         self.settings.mainWindowVPanePosition = self.vpaned.get_position()
-        mtb = self.actiongroup.get_action("ShowHideMainToolbar")
-        ttb = self.actiongroup.get_action("ShowHideTimelineToolbar")
+        mtb = self.toggle_actions.get_action("ShowHideMainToolbar")
+        ttb = self.toggle_actions.get_action("ShowHideTimelineToolbar")
         self.settings.mainWindowShowMainToolbar = mtb.props.active
         self.settings.mainWindowShowTimelineToolbar = ttb.props.active
 
@@ -553,6 +555,9 @@ class PitiviMainWindow(gtk.Window, Loggable):
         """When a clip is removed from the Media Library, tell the timeline
         to remove all instances of that clip."""
         self.timeline_ui.purgeObject(uri)
+
+    def _selectedLayerChangedCb(self, widget, layer):
+        self.main_actions.get_action("RemoveLayer").set_sensitive(layer != None)
 
 ## Toolbar/Menu actions callback
 
@@ -591,6 +596,11 @@ class PitiviMainWindow(gtk.Window, Loggable):
     def _projectSettingsCb(self, unused_action):
         self.showProjectSettingsDialog()
 
+    def _removeLayerCb(self, unused_action):
+        layer = self.timeline_ui.controls.getSelectedLayer()
+        timeline = layer.get_timeline()
+        timeline.remove_layer(layer)
+
     def showProjectSettingsDialog(self):
         from pitivi.project import ProjectSettingsDialog
         ProjectSettingsDialog(self, self.app.current).window.run()
@@ -602,10 +612,6 @@ class PitiviMainWindow(gtk.Window, Loggable):
 
     def _fullScreenCb(self, unused_action):
         self.setFullScreen(not self.is_fullscreen)
-
-    def _fullScreenAlternateCb(self, unused_action):
-        # Nothing more, nothing less.
-        self.actiongroup.get_action("FullScreen").activate()
 
     def _showHideMainToolBar(self, action):
         self.uimanager.get_widget("/MainToolBar").props.visible = \
@@ -741,41 +747,15 @@ class PitiviMainWindow(gtk.Window, Loggable):
         #self._syncDoUndo(self.app.action_log)
 
         # Enable export functionality
-        self.actiongroup.get_action("ExportProject").set_sensitive(True)
+        self.main_actions.get_action("ExportProject").set_sensitive(True)
 
-        #FIXME GES reimplement me
         if self._missingUriOnLoading:
             self.app.current.setModificationState(True)
-            self.actiongroup.get_action("SaveProject").set_sensitive(True)
+            self.main_actions.get_action("SaveProject").set_sensitive(True)
             self._missingUriOnLoading = False
 
         if self.app.current.timeline.props.duration != 0:
             self.render_button.set_sensitive(True)
-
-    def setBestZoomRatio(self):
-        """
-        Set the zoom level so that the entire timeline is in view.
-        """
-        ruler_width = self.timeline_ui.ruler.get_allocation()[2]
-        # Add gst.SECOND - 1 to the timeline duration to make sure the
-        # last second of the timeline will be in view.
-        duration = self.app.current.timeline.props.duration
-        if duration == 0:
-            self.debug("The timeline duration is 0, impossible to calculate zoom")
-            return
-        timeline_duration = duration + gst.SECOND - 1
-        timeline_duration_s = int(timeline_duration / gst.SECOND)
-
-        self.debug("duration: %s, timeline duration: %s" % (duration,
-           gst.TIME_ARGS(timeline_duration)))
-        ideal_zoom_ratio = float(ruler_width) / timeline_duration_s
-        nearest_zoom_level = Zoomable.computeZoomLevel(ideal_zoom_ratio)
-        Zoomable.setZoomLevel(nearest_zoom_level)
-        self.app.current.timeline.props.snapping_distance = \
-            Zoomable.pixelToNs(self.app.settings.edgeSnapDeadband)
-        # Only do this at the very end, after updating the other widgets.
-        self.log("Setting 'zoomed_fitted' to True")
-        self.zoomed_fitted = True
 
     def _projectManagerNewProjectLoadingCb(self, projectManager, uri):
         if uri:
@@ -1023,19 +1003,19 @@ class PitiviMainWindow(gtk.Window, Loggable):
         self._syncDoUndo(action_log)
 
     def _syncDoUndo(self, action_log):
-        undo_action = self.actiongroup.get_action("Undo")
+        undo_action = self.main_actions.get_action("Undo")
         can_undo = bool(action_log.undo_stacks)
         undo_action.set_sensitive(can_undo)
 
         dirty = action_log.dirty()
-        save_action = self.actiongroup.get_action("SaveProject")
+        save_action = self.main_actions.get_action("SaveProject")
         save_action.set_sensitive(dirty)
         if self.app.current.uri is not None:
-            revert_action = self.actiongroup.get_action("RevertToSavedProject")
+            revert_action = self.main_actions.get_action("RevertToSavedProject")
             revert_action.set_sensitive(dirty)
         self.app.current.setModificationState(dirty)
 
-        redo_action = self.actiongroup.get_action("Redo")
+        redo_action = self.main_actions.get_action("Redo")
         can_redo = bool(action_log.redo_stacks)
         redo_action.set_sensitive(can_redo)
         self.updateTitle()
@@ -1059,7 +1039,6 @@ class PitiviMainWindow(gtk.Window, Loggable):
         self._settingsChangedCb(self.app.current, None, self.app.current.settings)
         if self.timeline_ui:
             self.timeline_ui.setProject(self.app.current)
-            self.setBestZoomRatio()
             self.clipconfig.project = self.app.current
             #FIXME GES port undo/redo
             #self.app.timelineLogObserver.pipeline = self.app.current.pipeline
@@ -1079,19 +1058,10 @@ class PitiviMainWindow(gtk.Window, Loggable):
         return res
 
     def _timelineDurationChangedCb(self, timeline, unused_duration):
+        duration = timeline.get_duration()
         self.debug("Timeline duration changed to %s",
-            gst.TIME_ARGS(timeline.props.duration))
-        if timeline.props.duration > 0:
-            sensitive = True
-            if self.zoomed_fitted:
-                self.log("The timeline was zoomed fitted, readjusting to fit again")
-                self.setBestZoomRatio()
-            else:
-                self.log("User had changed the zoom, so not autozooming")
-                self.timeline_ui.updateHScrollAdjustments()
-        else:
-            sensitive = False
-        self.render_button.set_sensitive(sensitive)
+            gst.TIME_ARGS(duration))
+        self.render_button.set_sensitive(duration > 0)
 
 ## other
     def _showExportDialog(self, project):

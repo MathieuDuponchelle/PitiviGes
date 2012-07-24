@@ -77,7 +77,7 @@ class PitiviViewer(gtk.VBox, Loggable):
             gobject.TYPE_NONE, (gobject.TYPE_BOOLEAN,)),
     }
 
-    INHIBIT_REASON = _("Currently playing media")
+    INHIBIT_REASON = _("Currently playing")
 
     def __init__(self, app, undock_action=None):
         gtk.VBox.__init__(self)
@@ -266,14 +266,10 @@ class PitiviViewer(gtk.VBox, Loggable):
             self.warning("could not set ratio !")
 
     def _entryFocusInCb(self, entry, event):
-        sensitive_actions = self.app.gui.sensitive_actions
-        self.app.gui.setActionsSensitive(sensitive_actions, False)
-        self.app.gui.setActionsSensitive(['DeleteObj'], False)
+        self.app.gui.setActionsSensitive(False)
 
     def _entryFocusOutCb(self, entry, event):
-        sensitive_actions = self.app.gui.sensitive_actions
-        self.app.gui.setActionsSensitive(sensitive_actions, True)
-        self.app.gui.setActionsSensitive(['DeleteObj'], True)
+        self.app.gui.setActionsSensitive(True)
 
     ## active Timeline calllbacks
     def _durationChangedCb(self, unused_pipeline, duration):
@@ -395,10 +391,8 @@ class PitiviViewer(gtk.VBox, Loggable):
         """
         While a clip is being trimmed, show a live preview of it.
         """
-        self._clipTrimPreviewed = True
         if tl_obj.props.is_image or not hasattr(tl_obj, "get_uri"):
             self.log("%s is an image or has no URI, so not previewing trim" % tl_obj)
-            self._clipTrimPreviewed = False
             return False
 
         clip_uri = tl_obj.props.uri
@@ -421,7 +415,8 @@ class PitiviViewer(gtk.VBox, Loggable):
         """
         After trimming a clip, reset the project pipeline into the viewer.
         """
-        if self._clipTrimPreviewed:
+        if self._tmp_pipeline is not None:
+            self._tmp_pipeline.set_state(gst.STATE_NULL)
             self._tmp_pipeline = None  # Free the memory
             self.setPipeline(self.app.current.pipeline, self._oldTimelinePos)
             self.debug("Back to old pipeline")

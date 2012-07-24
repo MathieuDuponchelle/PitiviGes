@@ -23,6 +23,7 @@
 import goocanvas
 import ges
 import gtk
+import gtk.gdk
 import os.path
 import pango
 import cairo
@@ -39,9 +40,7 @@ from pitivi.settings import GlobalSettings
 from pitivi.utils.signal import Signallable
 from pitivi.utils.timeline import SELECT, SELECT_ADD, UNSELECT, \
     SELECT_BETWEEN, EditingContext, Controller, View, Zoomable
-from pitivi.utils.ui import LAYER_HEIGHT_EXPANDED,\
-        LAYER_HEIGHT_COLLAPSED, LAYER_SPACING, \
-        unpack_cairo_pattern, unpack_cairo_gradient
+from pitivi.utils.ui import unpack_cairo_pattern, unpack_cairo_gradient
 from thumbnailer import Preview
 from pitivi.timeline.curve import Curve
 
@@ -118,11 +117,14 @@ def text_size(text):
 
 #--------------------------------------------------------------#
 #                            Main Classes                      #
-class Selected (Signallable):
+class Selected(Signallable):
     """
     A simple class that let us emit a selected-changed signal
     when needed, and that can be check directly to know if the
     object is selected or not.
+
+    This is meant only for individual elements, do not confuse this with
+    utils.timeline's "Selection" class.
     """
 
     __signals__ = {
@@ -130,6 +132,7 @@ class Selected (Signallable):
 
     def __init__(self):
         self._selected = False
+        self.movable = True
 
     def __nonzero__(self):
         """
@@ -191,18 +194,22 @@ class TrackObjectController(Controller):
         self._mousedown = Point(self._mousedown[0], 0)
 
     def drag_end(self, item, target, event):
+        if not self._view.movable:
+            return
         self.debug("Drag end")
         self._context.finish()
         self._context = None
         self._view.app.action_log.commit()
 
     def set_pos(self, item, pos):
+        if not self._view.movable:
+            return
         x, y = pos
         x = x + self._hadj.get_value()
 
         position = Zoomable.pixelToNs(x)
-        priority = int((y - self._y_offset + self._vadj.get_value()) //
-            (LAYER_HEIGHT_EXPANDED + LAYER_SPACING))
+        priority = self.app.gui.timeline_ui.controls.getPriorityForY(
+                        y - self._y_offset + self._vadj.get_value())
 
         self._context.setMode(self._getMode())
         self.debug("Setting position")
@@ -233,8 +240,10 @@ class TrimHandle(View, goocanvas.Image, Loggable, Zoomable):
         self.app = instance
         self.element = element
         self.timeline = timeline
+        self.movable = True
+        self.current_pixbuf = TRIMBAR_PIXBUF
         goocanvas.Image.__init__(self,
-            pixbuf=TRIMBAR_PIXBUF,
+            pixbuf=self.current_pixbuf,
             line_width=0,
             pointer_events=goocanvas.EVENTS_FILL,
             **kwargs)
@@ -243,10 +252,30 @@ class TrimHandle(View, goocanvas.Image, Loggable, Zoomable):
         Loggable.__init__(self)
 
     def focus(self):
-        self.props.pixbuf = TRIMBAR_PIXBUF_FOCUS
+        self.current_pixbuf = TRIMBAR_PIXBUF_FOCUS
+        self._scalePixbuf()
 
     def unfocus(self):
-        self.props.pixbuf = TRIMBAR_PIXBUF
+        self.current_pixbuf = TRIMBAR_PIXBUF
+        self._scalePixbuf()
+
+    _height = 0
+
+    def setHeight(self, height):
+        self._height = height
+        self.props.height = height
+        self._scalePixbuf()
+
+    def getHeight(self):
+        return self._height
+
+    height = property(getHeight, setHeight)
+
+    def _scalePixbuf(self):
+        self.props.pixbuf = self.current_pixbuf.scale_simple(
+                                                self.current_pixbuf.get_width(),
+                                                self.height,
+                                                gtk.gdk.INTERP_BILINEAR)
 
 
 class StartHandle(TrimHandle):
@@ -322,6 +351,8 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
         _handle_enter_leave = True
 
         def drag_start(self, item, target, event):
+            if not self._view.movable:
+                return
             point = self.from_item_event(item, event)
             TrackObjectController.drag_start(self, item, target, event)
 
@@ -368,6 +399,7 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
         self.nameheight = 0
         self._element = None
         self._settings = None
+        self.movable = True
 
         self.bg = goocanvas.Rect(height=self.height, line_width=1)
 
@@ -402,12 +434,16 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
 
 ## Properties
 
-    _height = LAYER_HEIGHT_EXPANDED
+    _height = 0
 
     def setHeight(self, height):
         self._height = height
-        self.start_handle.props.height = height
-        self.end_handle.props.height = height
+        self.bg.props.height = height
+        self.start_handle.height = height
+        self.end_handle.height = height
+        self._selec_indic.props.height = height
+        if hasattr(self, "preview"):
+            self.preview.height = height
         self._update()
 
     def addCurve(self, instance, element, interpolator):
@@ -423,17 +459,12 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
     def setExpanded(self, expanded):
         self._expanded = expanded
         if not self._expanded:
-            self.height = LAYER_HEIGHT_COLLAPSED
             self.preview.props.visibility = goocanvas.ITEM_INVISIBLE
             self.namebg.props.visibility = goocanvas.ITEM_INVISIBLE
-            self.bg.props.height = LAYER_HEIGHT_COLLAPSED
             self.name.props.y = 0
         else:
-            self.height = LAYER_HEIGHT_EXPANDED
             self.preview.props.visibility = goocanvas.ITEM_VISIBLE
             self.namebg.props.visibility = goocanvas.ITEM_VISIBLE
-            self.bg.props.height = LAYER_HEIGHT_EXPANDED
-            self.height = LAYER_HEIGHT_EXPANDED
             self.name.props.y = NAME_VOFFSET + NAME_PADDING
 
     def getExpanded(self):
@@ -499,11 +530,9 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
         pattern = unpack_cairo_gradient(color)
         self.bg.props.fill_pattern = pattern
         self.namebg.props.fill_pattern = pattern
-        self._selec_indic.props.fill_pattern = unpack_cairo_pattern(
-            self.settings.selectedColor)
+        self._selec_indic.props.fill_pattern = unpack_cairo_pattern(self.settings.selectedColor)
         self.name.props.font = self.settings.clipFontDesc
-        self.name.props.fill_pattern = unpack_cairo_pattern(
-            self.settings.clipFontColor)
+        self.name.props.fill_pattern = unpack_cairo_pattern(self.settings.clipFontColor)
         twidth, theight = text_size(self.name)
         self.namewidth = twidth
         self.nameheight = theight
@@ -546,8 +575,18 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
     def _updateCb(self, track_object, start):
         self._update()
 
-    def selectedChangedCb(self, element, selected):
+    def selectedChangedCb(self, element, unused_selection):
+        # Do not confuse this method with _selectionChangedCb in Timeline
+        # unused_selection is True only when no clip was selected before
+        # Note that element is a track.Selected object,
+        # whereas self.element is a GES object (ex: TrackVideoTransition)
         if element.selected:
+            if isinstance(self.element, ges.TrackTransition):
+                if isinstance(self.element, ges.TrackVideoTransition):
+                    self.app.gui.trans_list.activate(self.element)
+            else:
+                self.app.gui.trans_list.deactivate()
+                self.app.gui.switchContextTab()
             self._selec_indic.props.visibility = goocanvas.ITEM_VISIBLE
         else:
             self._selec_indic.props.visibility = goocanvas.ITEM_INVISIBLE
@@ -559,8 +598,20 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
         except Exception, e:
             raise Exception(e)
 
-        priority = self.element.get_timeline_object().get_layer().get_priority()
-        y = (self.height + LAYER_SPACING) * priority
+        # get layer and track_type
+        layer = self.element.get_timeline_object().get_layer()
+        track_type = self.element.get_track().props.track_type
+
+        # update height, compare with current height to not run into recursion
+        new_height = self.app.gui.timeline_ui.controls.getHeightOfLayer(track_type, layer)
+        if self.height != new_height:
+            self.height = new_height
+
+        # get y position for layer
+        y = self.app.gui.timeline_ui.controls.getYOfLayer(track_type, layer)
+        # get relative y for audio
+        if track_type == ges.TRACK_TYPE_AUDIO:
+            y -= self.app.gui.timeline_ui.controls.getHeightOfTrack(ges.TRACK_TYPE_VIDEO)
 
         # Setting new position
         self.set_simple_transform(x, y, 1, 0)
@@ -572,8 +623,7 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
         if width < min_width:
             width = min_width
         w = width - handles_width
-        self.name.props.clip_path = "M%g,%g h%g v%g h-%g z" % (
-            0, 0, w, self.height, w)
+        self.name.props.clip_path = "M%g,%g h%g v%g h-%g z" % (0, 0, w, self.height, w)
         self.bg.props.width = width
 
         self._selec_indic.props.width = width
@@ -591,8 +641,6 @@ class TrackObject(View, goocanvas.Group, Zoomable, Loggable):
         self.app.gui.timeline_ui._canvas.regroupTracks()
         self.app.gui.timeline_ui.unsureVadjHeight()
 
-TRACK_CONTROL_WIDTH = 75
-
 
 class TrackTransition(TrackObject):
     """
@@ -600,16 +648,22 @@ class TrackTransition(TrackObject):
     """
     def __init__(self, instance, element, track, timeline, utrack):
         TrackObject.__init__(self, instance, element, track, timeline, utrack)
-        for thing in (self.bg, self.name):
+        for thing in (self.bg, self._selec_indic, self.namebg, self.name):
             self.add_child(thing)
+        if isinstance(element, ges.TrackVideoTransition):
+            element.connect("notify::transition-type", self._changeVideoTransitionCb)
+        self.movable = False
 
     def _setElement(self, element):
-        # FIXME: add the transition name as the label
-        pass
+        if isinstance(element, ges.TrackVideoTransition):
+            self.name.props.text = element.props.transition_type.value_nick
 
     def _getColor(self):
         # Transitions are bright blue, independent of the user color settings
         return 0x0089CFF0
+
+    def _changeVideoTransitionCb(self, transition, unused_transition_type):
+        self.name.props.text = transition.props.transition_type.value_nick
 
 
 class TrackFileSource(TrackObject):
@@ -618,7 +672,7 @@ class TrackFileSource(TrackObject):
     """
     def __init__(self, instance, element, track, timeline, utrack):
         TrackObject.__init__(self, instance, element, track, timeline, utrack)
-        self.preview = Preview(self.app, element)
+        self.preview = Preview(self.app, element, self.height)
         for thing in (self.bg, self.preview, self._selec_indic,
             self.start_handle, self.end_handle, self.namebg, self.name):
             self.add_child(thing)
@@ -643,73 +697,10 @@ class TrackFileSource(TrackObject):
             return self.settings.videoClipBg
 
 
-class TrackControls(gtk.Label, Loggable):
-    """Contains a timeline track name.
-
-    @ivar track: The track for which to display the name.
-    @type track: An L{pitivi.timeline.track.Track} object
-    """
-
-    __gtype_name__ = 'TrackControls'
-
-    def __init__(self, track):
-        gtk.Label.__init__(self)
-        Loggable.__init__(self)
-        # Center the label horizontally.
-        self.set_alignment(0.5, 0)
-        # The value below is arbitrarily chosen so the text appears
-        # centered vertically when the represented track has a single layer.
-        self.set_padding(0, LAYER_SPACING * 2)
-        self.set_markup(self._getTrackName(track))
-        self._track = None
-        self._timeline = None
-        self.setTrack(track)
-        self._setSize(layers_count=1)
-
-    def getTrack(self):
-        return self._track
-
-    def setTrack(self, track):
-        if self._track:
-            self._timeline.disconnect_by_func(self._layerAddedCb)
-            self._timeline.disconnect_by_func(self._layerRemovedCb)
-
-        self._track = track
-        if track:
-            self._timeline = track.get_timeline()
-            self._timeline.connect("layer-added", self._layerAddedCb)
-            self._timeline.connect("layer-removed", self._layerRemovedCb)
-        else:
-            self._timeline = None
-
-    track = property(getTrack, setTrack, None, "The (GESTrack property")
-
-    def _layerAddedCb(self, timeline, unused_layer):
-        max_priority = len(timeline.get_layers())
-        self._setSize(max_priority)
-
-    def _layerRemovedCb(self, timeline, unused_layer):
-        max_priority = len(timeline.get_layers())
-        self._setSize(max_priority)
-
-    def _setSize(self, layers_count):
-        assert layers_count >= 1
-        height = layers_count * (LAYER_HEIGHT_EXPANDED + LAYER_SPACING)
-        self.set_size_request(TRACK_CONTROL_WIDTH, height)
-
-    @staticmethod
-    def _getTrackName(track):
-        track_name = ""
-        if track.props.track_type == ges.TRACK_TYPE_AUDIO:
-            track_name = _("Audio:")
-        elif track.props.track_type == ges.TRACK_TYPE_VIDEO:
-            track_name = _("Video:")
-        elif track.props.track_type == ges.TRACK_TYPE_TEXT:
-            track_name = _("Text:")
-        return "<b>%s</b>" % track_name
-
-
 class Track(goocanvas.Group, Zoomable, Loggable):
+    """
+    Groups all TrackObjects of one Track
+    """
     __gtype_name__ = 'Track'
 
     def __init__(self, instance, track, timeline=None):
@@ -735,14 +726,8 @@ class Track(goocanvas.Group, Zoomable, Loggable):
             self.get_canvas().regroupTracks()
 
     def getHeight(self):
-        # FIXME we have a refcount issue somewhere, the following makes sure
-        # no to crash because of it
-        #track_objects = self.track.get_objects()
-        if self._expanded:
-            nb_layers = len(self.timeline.get_layers())
-            return  nb_layers * (LAYER_HEIGHT_EXPANDED + LAYER_SPACING)
-        else:
-            return LAYER_HEIGHT_COLLAPSED + LAYER_SPACING
+        track_type = self.track.props.track_type
+        return self.app.gui.timeline_ui.controls.getHeightOfTrack(track_type)
 
     height = property(getHeight)
 
@@ -790,3 +775,7 @@ class Track(goocanvas.Group, Zoomable, Loggable):
         self.add_child(w)
         self.transitions.append(w)
         w.raise_(None)
+
+    def updateTrackObjects(self):
+        for track_object in self.widgets.itervalues():
+            track_object._update()

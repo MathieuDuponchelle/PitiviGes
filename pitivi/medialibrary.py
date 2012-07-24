@@ -271,7 +271,6 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
         self.settings = instance.settings
         self._errors = []
         self._project = None
-        self._sources_to_insert = []
         self.dummy_selected = []
 
         # Store
@@ -332,7 +331,7 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
         self.treeview.connect("button-press-event", self._treeViewButtonPressEventCb)
         self.treeview.connect("focus-in-event", self._disableKeyboardShortcutsCb)
         self.treeview.connect("focus-out-event", self._enableKeyboardShortcutsCb)
-        self.treeview.connect("row-activated", self._rowActivatedCb)
+        self.treeview.connect("row-activated", self._itemOrRowActivatedCb)
         self.treeview.set_property("rules_hint", True)
         self.treeview.set_headers_visible(False)
         self.treeview.set_property("search_column", COL_SEARCH_TEXT)
@@ -374,6 +373,7 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
         self.iconview.connect("button-press-event", self._iconViewButtonPressEventCb)
         self.iconview.connect("focus-in-event", self._disableKeyboardShortcutsCb)
         self.iconview.connect("focus-out-event", self._enableKeyboardShortcutsCb)
+        self.iconview.connect("item-activated", self._itemOrRowActivatedCb)
         self.iconview.connect("selection-changed", self._viewSelectionChangedCb)
         self.iconview.set_orientation(gtk.ORIENTATION_VERTICAL)
         self.iconview.set_property("has_tooltip", True)
@@ -426,8 +426,8 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
         self.app.connect("new-project-failed", self._newProjectFailedCb)
 
         # default pixbufs
-        self.audiofilepixbuf = self._getIcon("audio-x-generic", "pitivi-sound.png")
-        self.videofilepixbuf = self._getIcon("video-x-generic", "pitivi-video.png")
+        self.audiofilepixbuf = self._getIcon("audio-x-generic")
+        self.videofilepixbuf = self._getIcon("video-x-generic")
 
         # Drag and Drop
         self.drag_dest_set(gtk.DEST_DEFAULT_DROP | gtk.DEST_DEFAULT_MOTION,
@@ -550,14 +550,13 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
         self._selectUnusedSources()
 
     def _insertEndCb(self, unused_action):
-        self.app.action_log.begin("add clip")
+        sources = []
+        for uri in self.getSelectedItems():
+            sources.append(ges.TimelineFileSource(uri))
 
-        # Handle the case of a blank project
-        self.app.gui.timeline_ui._ensureLayer()
+        self.app.gui.timeline_ui.insertEnd(sources)
 
         self._sources_to_insert = self.getSelectedItems()
-        # Start adding sources in the timeline
-        self._insertNextSource()
 
     def _disableKeyboardShortcutsCb(self, *unused_args):
         """
@@ -566,43 +565,14 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
 
         This is used when focusing the search entry, icon on tree view widgets.
         """
-        self.app.gui.setActionsSensitive("default", False)
-        self.app.gui.setActionsSensitive(['DeleteObj'], False)
+        self.app.gui.setActionsSensitive(False)
 
     def _enableKeyboardShortcutsCb(self, *unused_args):
         """
         When focusing out of media library widgets,
         re-enable the timeline keyboard shortcuts.
         """
-        self.app.gui.setActionsSensitive("default", True)
-        self.app.gui.setActionsSensitive(['DeleteObj'], True)
-
-    def _insertNextSource(self):
-        """ Insert a source at the end of the timeline's first track """
-        timeline = self.app.current.timeline
-
-        if not self._sources_to_insert:
-            # We need to wait (100ms is enoug for sure) for TrackObject-s to
-            # be added to the Tracks
-            # FIXME remove this "hack" when Materials are merged
-            glib.timeout_add(100, self._seekToEnd)
-            self.app.action_log.commit()
-            return
-
-        uri = self._sources_to_insert.pop()
-        source = ges.TimelineFileSource(uri)
-        layer = timeline.get_layers()[0]  # FIXME Get the longest layer
-        layer.add_object(source)
-
-        # Waiting for the TrackObject to be created because of a race
-        # condition, and to know the real length of the timeline when
-        # adding several sources at a time.
-        source.connect("track-object-added", self._trackObjectAddedCb)
-
-    def _seekToEnd(self):
-        timeline = self.app.current.timeline
-        self.app.current.seeker.seek(timeline.props.duration)
-        return False
+        self.app.gui.setActionsSensitive(True)
 
     def _trackObjectAddedCb(self, source, trackobj):
         """ After an object has been added to the first track, position it
@@ -638,17 +608,19 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
         else:
             return text in model.get_value(iter, COL_INFOTEXT).lower()
 
-    def _getIcon(self, iconname, alternate):
+    def _getIcon(self, iconname, alternate=None):
         icontheme = gtk.icon_theme_get_default()
         pixdir = get_pixmap_dir()
         icon = None
         try:
-            icon = icontheme.load_icon(iconname, 32, 0)
+            icon = icontheme.load_icon(iconname, 48, 0)
         except:
             # empty except clause is bad but load_icon raises gio.Error.
             # Right, *gio*.
-            if not icon:
+            if alternate:
                 icon = gtk.gdk.pixbuf_new_from_file(os.path.join(pixdir, alternate))
+            else:
+                icon = icontheme.load_icon("dialog-question", 48, 0)
         return icon
 
     def _connectToProject(self, project):
@@ -1191,8 +1163,12 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
         else:
             self.selection_actions.set_sensitive(False)
 
-    def _rowActivatedCb(self, unused_treeview, path, unused_column):
-        path = self.storemodel[path][COL_URI]
+    def _itemOrRowActivatedCb(self, unused_view, path, *unused_column):
+        """
+        When Space, Shift+Space, Return or Enter is pressed, preview the clip.
+        This method is the same for both iconview and treeview.
+        """
+        path = self.modelFilter[path][COL_URI]
         self.emit('play', path)
 
     def _iconViewMotionNotifyEventCb(self, iconview, event):
@@ -1326,7 +1302,7 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
         if len(paths) < 1:
             context.drag_abort(int(time.time()))
         else:
-            row = self.storemodel[paths[0]]
+            row = self.modelFilter[paths[0]]
             context.set_icon_pixbuf(row[COL_ICON], 0, 0)
 
     def getSelectedPaths(self):
@@ -1347,7 +1323,7 @@ class MediaLibraryWidget(gtk.VBox, Loggable):
 
     def getSelectedItems(self):
         """ Returns a list of selected items URIs """
-        return [self.storemodel[path][COL_URI]
+        return [self.modelFilter[path][COL_URI]
             for path in self.getSelectedPaths()]
 
     def _dndDataGetCb(self, unused_widget, context, selection,

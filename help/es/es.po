@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: pitivi master\n"
-"POT-Creation-Date: 2012-03-13 12:28+0000\n"
-"PO-Revision-Date: 2012-03-13 17:57+0100\n"
+"POT-Creation-Date: 2012-05-18 15:51+0000\n"
+"PO-Revision-Date: 2012-05-21 14:00+0200\n"
 "Last-Translator: Daniel Mustieles <daniel.mustieles@gmail.com>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -21,36 +21,37 @@ msgstr ""
 
 #: C/welcomedialog.page:10(name) C/usingclips.page:10(name)
 #: C/trimming.page:11(name) C/sysreq.page:11(name) C/splitting.page:10(name)
-#: C/selectunusedfiles.page:12(name) C/saveproject.page:11(name)
-#: C/rendering.page:10(name) C/projectsettings.page:10(name)
-#: C/presets.page:11(name) C/othertransitions.page:10(name)
-#: C/movearoundtimeline.page:10(name) C/medialibrary.page:10(name)
-#: C/makeselections.page:10(name) C/mainwindow.page:12(name)
-#: C/layers.page:10(name) C/keyframecurves.page:10(name)
-#: C/interface.page:10(name) C/insertintimeline.page:10(name)
-#: C/index.page:11(name) C/importing.page:10(name)
-#: C/importingmpegts.page:11(name) C/gstreamer.page:10(name)
-#: C/fadeinfadeout.page:10(name) C/effectsanimation.page:10(name)
-#: C/effects.page:11(name) C/crossfading.page:11(name)
-#: C/codecscontainers.page:10(name) C/about.page:10(name)
+#: C/selectunusedfiles.page:12(name) C/savescreenshot.page:10(name)
+#: C/saveproject.page:11(name) C/rendering.page:10(name)
+#: C/projectsettings.page:10(name) C/presets.page:11(name)
+#: C/othertransitions.page:10(name) C/movearoundtimeline.page:10(name)
+#: C/medialibrary.page:10(name) C/makeselections.page:10(name)
+#: C/mainwindow.page:12(name) C/layers.page:10(name)
+#: C/keyframecurves.page:10(name) C/interface.page:10(name)
+#: C/insertintimeline.page:10(name) C/index.page:11(name)
+#: C/importing.page:10(name) C/importingmpegts.page:11(name)
+#: C/gstreamer.page:10(name) C/fadeinfadeout.page:10(name)
+#: C/effectsanimation.page:10(name) C/effects.page:11(name)
+#: C/crossfading.page:11(name) C/codecscontainers.page:10(name)
+#: C/about.page:10(name)
 msgid "Jean-François Fortin Tam"
 msgstr "Jean-François Fortin Tam"
 
 #: C/welcomedialog.page:11(email) C/usingclips.page:11(email)
 #: C/trimming.page:12(email) C/sysreq.page:12(email)
 #: C/splitting.page:11(email) C/selectunusedfiles.page:13(email)
-#: C/saveproject.page:12(email) C/rendering.page:11(email)
-#: C/projectsettings.page:11(email) C/presets.page:12(email)
-#: C/othertransitions.page:11(email) C/movearoundtimeline.page:11(email)
-#: C/medialibrary.page:11(email) C/makeselections.page:11(email)
-#: C/mainwindow.page:13(email) C/layers.page:11(email)
-#: C/keyframecurves.page:11(email) C/interface.page:11(email)
-#: C/insertintimeline.page:11(email) C/index.page:12(email)
-#: C/importing.page:11(email) C/importingmpegts.page:12(email)
-#: C/gstreamer.page:11(email) C/fadeinfadeout.page:11(email)
-#: C/effectsanimation.page:11(email) C/effects.page:12(email)
-#: C/crossfading.page:12(email) C/codecscontainers.page:11(email)
-#: C/about.page:11(email)
+#: C/savescreenshot.page:11(email) C/saveproject.page:12(email)
+#: C/rendering.page:11(email) C/projectsettings.page:11(email)
+#: C/presets.page:12(email) C/othertransitions.page:11(email)
+#: C/movearoundtimeline.page:11(email) C/medialibrary.page:11(email)
+#: C/makeselections.page:11(email) C/mainwindow.page:13(email)
+#: C/layers.page:11(email) C/keyframecurves.page:11(email)
+#: C/interface.page:11(email) C/insertintimeline.page:11(email)
+#: C/index.page:12(email) C/importing.page:11(email)
+#: C/importingmpegts.page:12(email) C/gstreamer.page:11(email)
+#: C/fadeinfadeout.page:11(email) C/effectsanimation.page:11(email)
+#: C/effects.page:12(email) C/crossfading.page:12(email)
+#: C/codecscontainers.page:11(email) C/about.page:11(email)
 msgid "nekohayo@gmail.com"
 msgstr "nekohayo@gmail.com"
 
@@ -60,10 +61,10 @@ msgstr "Crear proyectos nuevos y abrir proyectos recientes al iniciar"
 
 #: C/welcomedialog.page:17(p) C/usingclips.page:21(p) C/trimming.page:22(p)
 #: C/sysreq.page:22(p) C/splitting.page:21(p) C/selectunusedfiles.page:19(p)
-#: C/saveproject.page:22(p) C/rendering.page:21(p)
+#: C/savescreenshot.page:14(p) C/saveproject.page:22(p) C/rendering.page:21(p)
 #: C/projectsettings.page:21(p) C/presets.page:15(p)
 #: C/othertransitions.page:19(p) C/movearoundtimeline.page:23(p)
-#: C/medialibrary.page:17(p) C/makeselections.page:21(p)
+#: C/medialibrary.page:21(p) C/makeselections.page:21(p)
 #: C/mainwindow.page:19(p) C/layers.page:21(p) C/keyframecurves.page:21(p)
 #: C/interface.page:15(p) C/insertintimeline.page:21(p) C/index.page:19(p)
 #: C/importing.page:21(p) C/importingmpegts.page:18(p) C/gstreamer.page:21(p)
@@ -615,6 +616,29 @@ msgstr ""
 "Si no hay clips sin usar en su proyecto, no se seleccionará nada en la "
 "biblioteca de medios."
 
+#: C/savescreenshot.page:18(title)
+msgid "Saving a snapshot of the current frame"
+msgstr "Guardar una instantánea del fotograma actual"
+
+#: C/savescreenshot.page:20(p)
+msgid ""
+"You can use <guiseq><gui>Timeline</gui><gui>Export current frame...</gui></"
+"guiseq> to save a copy of the current frame as an image file."
+msgstr ""
+"Puede usar <guiseq><gui>Línea del tiempo</gui><gui>Exportar fotograma "
+"actual...</gui></guiseq> para guardar una copia del fotograma actual como un "
+"archivo de imagen."
+
+#: C/savescreenshot.page:21(p)
+msgid ""
+"Currently, PNG and JPEG are supported as file formats. The image resolution "
+"will match the project settings and any effect or transformation will also "
+"be applied to the resulting image."
+msgstr ""
+"Actualmente, PNG y JPEG se soportan como formatos de archivo. La resolución "
+"de la imagen coincidirá con las configuraciones del proyecto y cualquier "
+"efecto o transformación se aplicará a la imagen resultante."
+
 #: C/saveproject.page:18(desc)
 msgid "How to save your project for later editing use."
 msgstr "Como guardar su proyecto para su posterior uso de edición."
@@ -710,14 +734,11 @@ msgstr "Pulse el botón <gui>Renderizar</gui>."
 msgid ""
 "If your computer is set to suspend or hibernate automatically, <app>PiTiVi</"
 "app> will automatically inhibit the power saving features during the render "
-"process (see bug <link href=\"https://bugzilla.gnome.org/show_bug.cgi?"
-"id=571885\">bug #571885</link>)."
+"process."
 msgstr ""
 "Si su equipo está configurado para suspenderse o hibernar automáticamente, "
 "<app>PiTiVi</app> impedirá automáticamente las funciones de ahorro de "
-"energía durante el proceso de renderizado (consulte el informe de error "
-"error <link href=\"https://bugzilla.gnome.org/show_bug.cgi?id=571885"
-"\">#571885</link>)."
+"energía durante el proceso de renderizado."
 
 #: C/projectsettings.page:17(desc)
 msgid ""
@@ -954,11 +975,11 @@ msgstr ""
 "están aún implementadas (consulte el <link href=\"https://bugzilla.gnome.org/"
 "show_bug.cgi?id=609353\">error nº 609353</link>)."
 
-#: C/movearoundtimeline.page:16(name)
+#: C/movearoundtimeline.page:16(name) C/medialibrary.page:14(name)
 msgid "Brian Grohe"
 msgstr "Brian Grohe"
 
-#: C/movearoundtimeline.page:17(email)
+#: C/movearoundtimeline.page:17(email) C/medialibrary.page:15(email)
 msgid "grohe43@gmail.com"
 msgstr "grohe43@gmail.com"
 
@@ -1033,10 +1054,10 @@ msgid ""
 "used in conjunction with scrolling to move quickly between distant points of "
 "your project's chronology."
 msgstr ""
-"Alejarse le permite desplazarse rápidamente a lo largo de la línea del "
-"tiempo. Por lo tanto, la ampliación se puede usar en junto con el "
-"desplazamiento para moverse rápido entre puntos distantes en la cronología "
-"de su proyecto."
+"Alejarse le permite desplazarse rápidamente a lo largo de la línea del "
+"tiempo. Por lo tanto, la ampliación se puede usar en junto con el "
+"desplazamiento para moverse rápidamente entre puntos distantes en la "
+"cronología de su proyecto."
 
 #: C/movearoundtimeline.page:46(p)
 msgid "You can zoom in and out by:"
@@ -1155,129 +1176,163 @@ msgstr ""
 
 #: C/movearoundtimeline.page:78(title)
 msgid "Scrubbing"
-msgstr ""
+msgstr "Depuración"
 
 #: C/movearoundtimeline.page:79(p)
 msgid "<em>Scrubbing</em> is a way of moving the playhead that allows you to:"
 msgstr ""
+"<em>Depuración</em> es una manera de mover la posición actual que le "
+"permitirá:"
 
 #: C/movearoundtimeline.page:81(p)
 msgid ""
 "Search for a specific position in time by approximation/trial and error."
 msgstr ""
+"Buscar una posición específica en el tiempo por aproximación/prueba y error."
 
 #: C/movearoundtimeline.page:82(p)
 msgid ""
 "Review repeatedly the visual motion in a scene by moving back and forth in "
 "time."
 msgstr ""
+"Revisar repetidamente el movimiento visual en una escena moviéndose adelante "
+"y atrás en el tiempo."
 
 #: C/movearoundtimeline.page:84(p)
 msgid ""
 "To scrub, click on the ruler and move the mouse with the button still held "
 "down."
-msgstr ""
+msgstr "Para depurar, pulse en la regla y mueva el ratón con el botón pulsado."
 
 #: C/movearoundtimeline.page:85(p)
 msgid ""
 "You can also scrub by dragging the black vertical line that stems from the "
 "playhead and spans across the timeline."
 msgstr ""
+"Puede incluso depurar arrastrando la línea vertical negra que se deriva de "
+"la posición actual y que se expande a lo largo de la línea del tiempo."
 
 #. When image changes, this message will be marked fuzzy or untranslated for you.
 #. It doesn't matter what you translate it to: it's not used at all.
-#: C/medialibrary.page:28(None)
+#: C/medialibrary.page:32(None)
 msgid ""
 "@@image: 'figures/previewsource.png'; md5=ec55ba71f7c9ec058d4619b342654a0e"
 msgstr ""
 "@@image: 'figures/previewsource.png'; md5=ec55ba71f7c9ec058d4619b342654a0e"
 
-#: C/medialibrary.page:13(desc)
+#: C/medialibrary.page:17(desc)
 msgid "Managing your imported clips with the Media Library"
-msgstr ""
+msgstr "Gestione sus clips importados con la biblioteca de medios"
 
-#: C/medialibrary.page:21(title)
+#: C/medialibrary.page:25(title)
 msgid "Using the Media Library"
-msgstr ""
+msgstr "Usar la biblioteca de medios"
 
-#: C/medialibrary.page:24(title)
+#: C/medialibrary.page:28(title)
 msgid "Previewing a clip from the <gui>Media Library</gui>"
-msgstr ""
+msgstr "Vista previa de un clip desde la <gui>Biblioteca de medios</gui>"
 
-#: C/medialibrary.page:25(p)
+#: C/medialibrary.page:29(p)
 msgid ""
 "To preview a clip before placing it on the timeline, you can double-click on "
-"it in the <gui>Media Library</gui>, or right-click and choose <gui>Play "
-"clip</gui> from the popup menu."
+"it in the <gui>Media Library</gui>, or right-click and choose <gui>Preview "
+"Clip</gui> from the popup menu. This will open the clip in a window that "
+"automatically closes whenever you click outside the window."
 msgstr ""
+"Para previsualizar de un clip antes de colocarlo en la línea del tiempo, "
+"puede pulsar dos veces en él en la <gui>Biblioteca de medios</gui>, o pulsar "
+"con el botón derecho y elegir <gui>Reproducir clip</gui> del menú emergente. "
+"Esto abrirá el clip en una ventana que se cierra automáticamente cuando "
+"pulse fuera de la ventana."
 
-#: C/medialibrary.page:27(desc)
+#: C/medialibrary.page:31(desc)
 msgid "Popup menu"
 msgstr "Menú emergente"
 
-#: C/medialibrary.page:32(title)
+#: C/medialibrary.page:36(title)
 msgid "Filtering search"
-msgstr ""
+msgstr "Filtro de búsqueda"
 
-#: C/medialibrary.page:33(p)
+#: C/medialibrary.page:37(p)
 msgid ""
 "A search bar is shown at the top of the <gui>Media Library</gui>. Typing "
 "into the search entry filters the contents of the <gui>Media Library</gui> "
 "to show only clips whose filenames match your search terms. To reset the "
 "search entry, click the \"cleanup\" icon in the search entry."
 msgstr ""
+"En la parte superior de la <gui>Biblioteca de medios</gui> se muestra una "
+"barra de búsqueda. Escriba en los filtros de entrada de búsqueda los "
+"contenidos de la <gui>Biblioteca de medios</gui> para mostrar solo los clips "
+"cuyos nombres de archivo coincidan con sus términos de búsqueda. Para "
+"restablecer la entrada de búsqueda, pulse en el icono \"limpiar\" en la "
+"entrada de búsqueda."
 
-#: C/medialibrary.page:36(title)
+#: C/medialibrary.page:40(title)
 msgid "Typeahead search"
-msgstr ""
+msgstr "Búsqueda escrita por adelantado"
 
-#: C/medialibrary.page:37(p)
+#: C/medialibrary.page:41(p)
 msgid ""
 "An alternative way of searching, if you know the beginning of a clip's "
 "filename, is to click anywhere in the <gui>Media Library</gui> and start "
 "typing the name of the file you're looking for."
 msgstr ""
+"Una forma alternativa de búsqueda, si sabe el inicio del nombre del archivo "
+"del clip, es pulsar en cualquier lugar de la <gui>Biblioteca de medios</gui> "
+"y empezar a escribir el nombre del archivo que esté buscando."
 
-#: C/medialibrary.page:39(p)
+#: C/medialibrary.page:43(p)
 msgid "As you type, the first matching file will become selected."
-msgstr ""
+msgstr "A medida que escriba, el primer archivo que coincida se seleccionará."
 
-#: C/medialibrary.page:40(p)
+#: C/medialibrary.page:44(p)
 msgid "You can keep typing to refine your search."
-msgstr ""
+msgstr "Puede seguir escribiendo para refinar su búsqueda."
 
-#: C/medialibrary.page:41(p)
+#: C/medialibrary.page:45(p)
 msgid ""
 "When there are multiple results, you can use the <gui>up</gui> and "
 "<app>down</app> arrow keys to switch the selection between each search "
 "result."
 msgstr ""
+"Cuando hay múltiples resultados, puede usar las flechas <gui>arriba</gui> y "
+"<app>abajo</app> para cambiar la selección entre cada resultado de la "
+"búsqueda."
 
-#: C/medialibrary.page:44(p)
+#: C/medialibrary.page:48(p)
 msgid "This method only allows searching from the beginning of the filename."
 msgstr ""
+"Este método solo permite la búsqueda desde el comienzo del nombre del "
+"archivo."
 
-#: C/medialibrary.page:47(title)
+#: C/medialibrary.page:51(title)
 msgid "View modes"
 msgstr "Modos de vistas"
 
-#: C/medialibrary.page:48(p)
+#: C/medialibrary.page:52(p)
 msgid ""
 "The <gui>Media Library</gui> can display your clips in a list "
 "(<guiseq><gui>View</gui><gui>Show Clips as a List</gui></guiseq>) or in an "
 "icon view (<guiseq><gui>View</gui><gui>Show Clips as Icons</gui></guiseq>)."
 msgstr ""
+"La <gui>Biblioteca de medios</gui> puede mostrar sus clips en una lista "
+"(<guiseq><gui>Ver</gui><gui>Mostrar clips como una lista</gui></guiseq>) o "
+"en una vista de iconos (<guiseq><gui>Ver</gui><gui>Mostrar clips como "
+"iconos</gui></guiseq>)."
 
-#: C/medialibrary.page:49(p)
+#: C/medialibrary.page:53(p)
 msgid ""
 "The list view mode shows more details about each clip, but the icon view "
 "mode can display more clips without needing to scroll (especially on high "
 "resolution computer monitors)."
 msgstr ""
+"El modo de vista de lista muestra más detalles acerca de cada clip, pero el "
+"modo de vista de iconos puede mostrar más clips sin la necesidad de "
+"desplazarse (especialmente en monitores de equipos de alta resolución)."
 
 #: C/makeselections.page:17(desc)
 msgid "Selecting and deselecting single or multiple items."
-msgstr ""
+msgstr "Seleccionar y deseleccionar elementos simples o varios."
 
 #: C/makeselections.page:25(title)
 msgid "Making selections"
@@ -1290,6 +1345,7 @@ msgstr "Seleccionar un solo elemento"
 #: C/makeselections.page:29(p)
 msgid "To select a file or a clip in <app>PiTiVi</app>, click it."
 msgstr ""
+"Para seleccionar un archivo o un clip en <app>PiTiVi</app>, pulse en él."
 
 #: C/makeselections.page:33(title)
 msgid "Selecting multiple items"
@@ -1300,10 +1356,12 @@ msgid ""
 "Multiple selections allow you to apply actions (dragging, deleting, "
 "grouping, etc.) to many clips at once."
 msgstr ""
+"Las selecciones múltiples permiten aplicar acciones (arrastrar, eliminar, "
+"agrupar, etc) a muchos clips a la vez."
 
 #: C/makeselections.page:35(p)
 msgid "Selecting multiple adjacent items:"
-msgstr ""
+msgstr "Seleccionar varios elementos adyacentes:"
 
 #: C/makeselections.page:37(p)
 msgid "Click the first item."
@@ -1311,7 +1369,7 @@ msgstr "Pulse sobre el primer elemento"
 
 #: C/makeselections.page:38(p)
 msgid "Hold the <key>Shift</key> key."
-msgstr "mantenga pulsada la tecla <key>Mayús</key>."
+msgstr "Mantenga pulsada la tecla <key>Mayús</key>."
 
 #: C/makeselections.page:39(p)
 msgid "Click the last item."
@@ -1335,6 +1393,9 @@ msgid ""
 "<key>Ctrl</key> key held down. This can be used in conjunction with the "
 "<em>Selecting multiple adjacent items</em> technique above."
 msgstr ""
+"Puede deseleccionar un elemento individual al pulsar en él otra vez y "
+"manteniendo la tecla <key>Ctrl</key> pulsada. Esto se puede usar junto con "
+"la técnica anterior <em>Seleccionar varios elementos adyacentes</em>."
 
 #. When image changes, this message will be marked fuzzy or untranslated for you.
 #. It doesn't matter what you translate it to: it's not used at all.
@@ -1374,6 +1435,11 @@ msgid ""
 "the toolbars, the timeline and various customizable components (media "
 "library, previewer, effects library, transitions library, etc.)."
 msgstr ""
+"La ventana principal, como su nombre indica, es la ventana que contiene los "
+"componentes principales de la interfaz de usuario de <app>PiTiVi</app>, es "
+"decir: la barra de menú, las barras de herramientas, la línea del tiempo y "
+"los distintos componentes personalizados (la biblioteca de medios, la vista "
+"previa, la biblioteca de efectos, la biblioteca de transiciones, etc.)."
 
 #: C/mainwindow.page:34(title)
 msgid "Menu bar"
@@ -1386,6 +1452,11 @@ msgid ""
 "access to further customizations in the <gui>Project settings</gui> dialog "
 "and <gui>Preferences</gui> dialog."
 msgstr ""
+"La barra de menú contiene todas las acciones posibles de las barras de "
+"herramientas, así como cualquier otra. La barra de menú también ofrece "
+"algunos ajustes instantáneos aplicables, así como el acceso a más "
+"personalizaciones en el diálogo <gui>Configuraciones del proyecto</gui> y en "
+"el diálogo <gui>Preferencias</gui>."
 
 #: C/mainwindow.page:36(p)
 msgid "The menu bar cannot be hidden."
@@ -1401,16 +1472,22 @@ msgid ""
 "app>. All items in toolbars can also be accessed through the menu bar. "
 "Toolbars can be activated or deactivated in the <gui>View</gui> menu."
 msgstr ""
+"Las barras de herramientas ofrecen acceso a las funciones más comúnmente "
+"utilizadas de <app>PiTiVi</app>. Puede acceder a todos los elementos de las "
+"barras de herramientas a través de la barra de menú. Se pueden activar o "
+"desactivar las barras de herramientas en el menú <gui>Ver</gui>."
 
 #: C/mainwindow.page:43(p)
 msgid ""
 "You can hover the mouse cursor over a toolbar item to reveal an information "
 "tooltip regarding its function."
 msgstr ""
+"Puede situar el cursor del ratón sobre un elemento de la barra de "
+"herramientas para revelar una descripción emergente relativa a a su función."
 
 #: C/mainwindow.page:50(title)
 msgid "Ruler"
-msgstr ""
+msgstr "Regla"
 
 #: C/mainwindow.page:51(p)
 msgid ""
@@ -1418,10 +1495,13 @@ msgid ""
 "addition to giving you time measurements (in seconds), it is the primary way "
 "of moving the playhead (and thus, your position in time)."
 msgstr ""
+"La regla juega un papel crucial en su interacción con la línea del tiempo. "
+"Además de darle mediciones de tiempo (en segundos), es la forma principal de "
+"mover la posición actual (y por lo tanto, su posición en el tiempo)."
 
 #: C/mainwindow.page:52(p)
 msgid "The current playhead position is indicated by a red vertical line:"
-msgstr ""
+msgstr "La posición actual se indica mediante una línea vertical roja:"
 
 #: C/mainwindow.page:57(p)
 msgid ""
@@ -1429,6 +1509,9 @@ msgid ""
 "light and dark areas in the bottom part; those are based on the project "
 "framerate settings."
 msgstr ""
+"Cuando se amplía, las imágenes se representan visualmente en la regla como "
+"alternancia de zonas claras y oscuras en la parte inferior; estos se basan "
+"en las configuraciones del proyecto de imágenes por segundo."
 
 #: C/mainwindow.page:59(p)
 msgid ""
@@ -1437,10 +1520,14 @@ msgid ""
 "mouse button while moving. See the section on <link xref=\"movearoundtimeline"
 "\">scrubbing</link> for more details."
 msgstr ""
+"Para mover su posición, pulse en cualquier parte de la regla. Puede también "
+"<em>depurar</em> la línea del tiempo pulsando en la regla y manteniendo "
+"pulsado el botón del ratón mientras se mueve. Consulte la sección <link xref="
+"\"movearoundtimeline\">depuración</link> para obtener más detalles."
 
 #: C/mainwindow.page:63(title)
 msgid "Marker bar"
-msgstr ""
+msgstr "Barra de marcadores"
 
 #: C/mainwindow.page:64(p)
 msgid ""
@@ -1448,12 +1535,18 @@ msgid ""
 "points or regions in your project's timeline. The marker bar allows you to "
 "view and edit markers that you created."
 msgstr ""
+"Los marcadores son señales visuales que puede crear para <em>marcar</em> "
+"puntos o regiones importantes en la línea de tiempo de su proyecto. La barra "
+"de marcadores le permite ver y editar los marcadores que ha creado."
 
 #: C/mainwindow.page:66(p)
 msgid ""
 "This feature is not yet implemented. See <link href=\"https://bugzilla.gnome."
 "org/show_bug.cgi?id=608682\">bug #608682</link> for more information."
 msgstr ""
+"Esta función aún no está implementada. Consulte el <link href=\"https://"
+"bugzilla.gnome.org/show_bug.cgi?id=608682\">error nº 608682</link> para "
+"obtener más información."
 
 #: C/mainwindow.page:71(title)
 msgid "Timeline"
@@ -1465,6 +1558,9 @@ msgid ""
 "editing. It is a visual, time-proportional representation of your project's "
 "chronology."
 msgstr ""
+"La línea de tiempo es el componente central de la interfaz de usuario que "
+"puede utilizar para la edición. Es una representación visual del tiempo "
+"proporcional de la cronología de su proyecto."
 
 #: C/mainwindow.page:76(title)
 msgid "Playback toolbar"
@@ -1473,40 +1569,47 @@ msgstr "Barra de herramientas de reproducción"
 #: C/mainwindow.page:77(p)
 msgid "This toolbar, located below the previewer, contains buttons controlling"
 msgstr ""
+"Esta barra de herramienta, ubicada debajo de la vista previa, contiene los "
+"botones de control"
 
 #: C/mainwindow.page:79(p)
 msgid "The playback of the timeline."
-msgstr ""
+msgstr "Reproducción de la línea de tiempo."
 
 #: C/mainwindow.page:80(p)
 msgid "The playback of a clip being previewed from the media library."
-msgstr ""
+msgstr "La reproducción de un clip en vista previa de la biblioteca de medios."
 
 #: C/mainwindow.page:82(p)
 msgid ""
 "The <gui>Play</gui> button transforms into a <gui>Pause</gui> button when "
 "playing, and reverts to a <gui>Play</gui> button again when not playing."
 msgstr ""
+"El botón <gui>Reproducir</gui> se transforma en un botón <gui>Pausa</gui> "
+"durante la reproducción y vuelve otra vez al botón <gui>Reproducir</gui> "
+"cuando ya no se reproduce."
 
 #: C/mainwindow.page:86(title)
 msgid "Previewer"
-msgstr ""
+msgstr "Vista previa"
 
 #: C/mainwindow.page:87(p)
 msgid "The previewer displays"
-msgstr ""
+msgstr "La vista previa muestra"
 
 #: C/mainwindow.page:89(p)
 msgid "Your project's video when playing back."
-msgstr ""
+msgstr "El vídeo de su proyecto cuando se reproduce."
 
 #: C/mainwindow.page:90(p)
 msgid "The video frame at the current position of the playhead."
-msgstr ""
+msgstr "El fotograma en la posición actual."
 
 #: C/mainwindow.page:91(p)
 msgid "A <em>live preview</em> when trimming a clip's beginning/end point."
 msgstr ""
+"Una <em>vista previa en vivo</em> cuando recorte un punto inicio/final del "
+"clip."
 
 #: C/mainwindow.page:93(p)
 msgid ""
@@ -1514,6 +1617,9 @@ msgid ""
 "\"https://bugzilla.gnome.org/show_bug.cgi?id=569980\">bug #569980</link> for "
 "more information."
 msgstr ""
+"La característica <em>vista previa en vivo</em> aún no está implementada. "
+"Consulte el <link href=\"https://bugzilla.gnome.org/show_bug.cgi?id=569980"
+"\">el informe de error nº 569980</link> para obtener mayor información."
 
 #: C/mainwindow.page:100(title)
 msgid "Media Library"
@@ -1524,6 +1630,8 @@ msgid ""
 "The media library displays the imported media files in your project and "
 "allows you to manage them."
 msgstr ""
+"La biblioteca de medios muestra los archivos multimedia importados en su "
+"proyecto y le permite gestionarlos."
 
 #: C/license.page:8(desc)
 msgid "Legal information."
@@ -1598,6 +1706,10 @@ msgid ""
 "link>, or read the full <link href=\"http://creativecommons.org/licenses/by-"
 "sa/3.0/\">Commons Deed</link>."
 msgstr ""
+"Para ver el texto completo de la licencia consulte la <link href=\"http://"
+"creativecommons.org/licenses/by-sa/3.0/legalcode\">página web de Creative "
+"Commons</link> o lea el <link href=\"http://creativecommons.org/licenses/by-"
+"sa/3.0/\"> Escrito de Commons</link>."
 
 #. When image changes, this message will be marked fuzzy or untranslated for you.
 #. It doesn't matter what you translate it to: it's not used at all.
@@ -1607,7 +1719,7 @@ msgstr "@@image: 'figures/layers.png'; md5=27c5f543944b381bc7147ff90b3deaee"
 
 #: C/layers.page:25(title)
 msgid "Understanding layers"
-msgstr ""
+msgstr "Entender las capas"
 
 #: C/layers.page:27(p)
 msgid ""
@@ -1615,6 +1727,9 @@ msgid ""
 "timeline: compositing, mixing multiple videos simultaneously, and adding "
 "titles depend on this feature."
 msgstr ""
+"Las <em>capas</em> son un concepto fundamental para la edición avanzada en "
+"la línea de tiempo: la composición, mezcla de varios vídeos al mismo tiempo, "
+"y la adición de títulos dependerán de esta característica."
 
 #: C/layers.page:28(p)
 msgid ""
@@ -1623,16 +1738,23 @@ msgid ""
 "of glass is a layer. If the top piece of glass is completely painted over, "
 "none of the pieces of glass underneath will be visible."
 msgstr ""
+"Es más fácil pensar en capas en términos de imágenes pintadas sobre vidrio. "
+"Con varias piezas de vidrio apiladas una encima de otra, cada una de estas "
+"piezas de vidrio es una capa. Si la pieza superior del vidrio está "
+"completamente pintada, ninguna de las piezas de vidrio por debajo será "
+"visible."
 
 #: C/layers.page:29(p)
 msgid ""
 "If, on the other hand, you only paint over a portion of a piece of glass, "
 "you will be able to see what is underneath the non-painted parts."
 msgstr ""
+"En cambio, si solo pinta sobre una porción de una pieza de vidrio, podrá ver "
+"qué hay debajo de las partes no pintadas"
 
 #: C/layers.page:32(title)
 msgid "Opacity (how solid “opaque” things are)"
-msgstr ""
+msgstr "Opacidad (cómo de sólidas son las cosas «opacas»)"
 
 #: C/layers.page:33(p)
 msgid ""
@@ -1641,10 +1763,15 @@ msgid ""
 "Visually, an opacity of 100% means you cannot see the clips below that layer "
 "or clip, and an opacity of of 50% means you can partly see them."
 msgstr ""
+"Cada capa (y cada clip) tiene su propia transparencia. Para continuar la "
+"metáfora de la pintura en el vidrio, si la pintura es lo suficientemente "
+"delgada, se puede ver a través de ella. Visualmente, una opacidad de 100% "
+"significa que no puede ver los clips por debajo de la capa o clip, y una "
+"opacidad de 50% significa que puede verlos parcialmente."
 
 #: C/layers.page:37(title)
 msgid "How this translates in terms of user interface"
-msgstr ""
+msgstr "Como esto se traduce en términos de interfaz de usuario"
 
 #: C/layers.page:38(p)
 msgid ""
@@ -1653,6 +1780,11 @@ msgid ""
 "<em>layers on top</em> (the “Z” axis in the physical world) are also "
 "visually <em>on top</em>, albeit on the “Y” axis."
 msgstr ""
+"Aunque en la vida real, puede apilar piezas de vidrio sobre otras en tres "
+"dimensiones, la pantalla de su equipo solo tiene dos dimensiones. Por lo "
+"tanto, las <em>capas en la parte superior</em> (el eje \"Z\" en el mundo "
+"físico) son también visibles <em>en la parte superior</em>, aunque en el eje "
+"\"Y\"."
 
 #: C/layers.page:39(p)
 msgid ""
@@ -1660,6 +1792,9 @@ msgid ""
 "how they are show as <em>layers</em> in <app>PiTiVi</app>'s user interface "
 "(right)."
 msgstr ""
+"Los siguientes diagramas ilustran las <em>piezas de vidrio</em> (izquierda) "
+"y como están mostradas como <em>capas</em> en la interfaz de usuario de "
+"<app>PiTiVi</app> (derecha)."
 
 #: C/layers.page:43(p)
 msgid ""
@@ -1667,6 +1802,9 @@ msgid ""
 "it has an opacity value lower than 100% (as shown with the two topmost "
 "layers in the previous illustration)."
 msgstr ""
+"Los clips ubicados en una capa por encima bloquearán los clips por debajo de "
+"la vista, a menos que tenga un valor de opacidad inferior al 100% (como se "
+"muestra con las dos capas superiores de la ilustración anterior)."
 
 #: C/layers.page:47(title)
 msgid "Adding and removing layers"
@@ -1677,21 +1815,28 @@ msgid ""
 "Layers are created and removed automatically. There is no “layer management” "
 "interface in <app>PiTiVi</app> (at least, not yet)."
 msgstr ""
+"Las capas se crean y se quitan automáticamente. No hay una interfaz para "
+"«gestionar las capas» en <app>PiTiVi</app> (al menos no todavía)."
 
 #: C/layers.page:49(p)
 msgid ""
 "To create a layer, drag a clip downwards until a new layer appears for it."
 msgstr ""
+"Para crear una capa, arrastre un clip hacia abajo hasta que una nueva capa "
+"aparezca."
 
 #: C/layers.page:50(p)
 msgid ""
 "If there are no more clips on a layer, it is automatically removed. Thus, to "
 "remove a layer, simply drag its clips upwards onto another layer."
 msgstr ""
+"Si no hubiera más clips en una capa, esta se quita automáticamente. Por lo "
+"tanto, para quitar una capa, simplemente arrastre sus clips hacia arriba "
+"sobre otra capa."
 
 #: C/layers.page:54(title)
 msgid "What about audio layers?"
-msgstr ""
+msgstr "¿Qué pasa con las capas de sonido?"
 
 #: C/layers.page:55(p)
 msgid ""
@@ -1700,6 +1845,10 @@ msgid ""
 "will be mixed together. Controlling the volume of those audio clips simply "
 "changes their relative loudness."
 msgstr ""
+"A diferencia de la visión, los sonidos múltiples (objetivamente) no "
+"«bloquean» a los otros. Por lo tanto, si tiene varios clips de sonido en "
+"capas separadas, sus sonidos se mezclarán juntos. Controle el volumen de "
+"esos clips de sonido simplemente cambiando sus volúmenes relativos."
 
 #. When image changes, this message will be marked fuzzy or untranslated for you.
 #. It doesn't matter what you translate it to: it's not used at all.
@@ -1711,11 +1860,11 @@ msgstr ""
 
 #: C/keyframecurves.page:17(desc)
 msgid "Changing the opacity or volume of a clip over time."
-msgstr ""
+msgstr "Cambiar la opacidad o volumen de un clip en el tiempo."
 
 #: C/keyframecurves.page:25(title)
 msgid "Keyframe curves"
-msgstr ""
+msgstr "Curvas de fotograma clave"
 
 #: C/keyframecurves.page:27(p)
 msgid ""
@@ -1726,6 +1875,12 @@ msgid ""
 "as a <em>curve</em> drawn over the clip. Currently only linear interpolation "
 "is supported."
 msgstr ""
+"Algunos tipos de clips (actualmente solo clips de sonido) soportan valores "
+"de la propiedad de interpolación sobre su tiempo. El usuario puede añadir "
+"uno o mas <em>fotogramas clave</em> para controlar la interpolación, un "
+"término tomado de la animación. <app>PiTiVi</app> representa el valor de una "
+"propiedad entre los fotogramas clave como una <em>curva</em> dibujada sobre "
+"el clip. Actualmente solo se soporta la interpolación linear."
 
 #: C/keyframecurves.page:33(title)
 msgid "General usage"
@@ -1737,15 +1892,20 @@ msgid ""
 "user. The start and end points of the curve are fixed to the start and end "
 "points of the clip, and also can not be removed by the user."
 msgstr ""
+"Las curvas son una propiedad intrínseca de los clips y el usuario no puede "
+"quitarlas. Los puntos de inicio y fin de la curva se fijan en los puntos de "
+"inicio y fin del clip, e incluso el usuario no puede quitarlas."
 
 #: C/keyframecurves.page:36(p)
 msgid ""
 "You can add a new keyframe by double-clicking on an empty portion of a curve."
 msgstr ""
+"Puede añadir un nuevo fotograma pulsando dos veces en una porción vacía de "
+"una curva."
 
 #: C/keyframecurves.page:37(p)
 msgid "You can remove a keyframe by double-clicking on it."
-msgstr ""
+msgstr "Puede quitar un fotograma clave pulsando dos veces en él."
 
 #: C/keyframecurves.page:38(p)
 msgid ""
@@ -1753,26 +1913,33 @@ msgid ""
 "You can place the keyframe anywhere on the clip you like, even if this "
 "changes the order of the keyframes."
 msgstr ""
+"Puede modificar el tiempo y el valor de un fotograma clave moviéndolo con el "
+"ratón. Puede colocar el fotograma clave en cualquier lugar en el clip que "
+"quiera, incluso si esto cambia el orden de los fotogramas clave."
 
 #: C/keyframecurves.page:39(p)
 msgid ""
 "You can click-and-drag on a segment of a curve between two keyframes to "
 "adjust the vertical position of the segment."
 msgstr ""
+"Puede pulsar y arrastrar en un segmento de una curva entre dos fotogramas "
+"claves para modificar la posición vertical del segmento."
 
 #: C/keyframecurves.page:44(title)
 msgid "Audio curves"
-msgstr ""
+msgstr "Curvas de sonido"
 
 #: C/keyframecurves.page:45(p)
 msgid ""
 "For volume curves the vertical position represents the volume of the clip on "
 "a scale from 0 to 200%."
 msgstr ""
+"Para las curvas de volumen la posición vertical representa el volumen del "
+"clip en una escala del 0 al 200%"
 
 #: C/keyframecurves.page:49(title)
 msgid "Video compositing curves"
-msgstr ""
+msgstr "Curvas de composición de vídeo"
 
 #: C/keyframecurves.page:50(p)
 msgid ""
@@ -1780,22 +1947,27 @@ msgid ""
 "from 0 to 100%. See the <link xref=\"layers\">Understanding layers</link> "
 "section for more details."
 msgstr ""
+"La posición vertical representa el alfa (opacidad) del clip en una escala "
+"del 0 al 100%. Consulte la sección <link xref=\"layers\">Entender las capas</"
+"link> para obtener mayor información."
 
 #: C/interface.page:13(desc)
 msgid "Discover the various windows, components and widgets."
-msgstr ""
+msgstr "Descubrir varias ventanas, componentes y widgets."
 
 #: C/interface.page:19(title)
 msgid "An overview of the user interface"
-msgstr ""
+msgstr "Una visión general de la interfaz de usuario"
 
 #: C/insertintimeline.page:17(desc)
 msgid "Putting your project media files into the timeline for editing."
 msgstr ""
+"Poner sus archivos de medios del proyecto en la línea del tiempo para "
+"editarlos."
 
 #: C/insertintimeline.page:25(title)
 msgid "Inserting clips"
-msgstr ""
+msgstr "Insertar clips"
 
 #: C/insertintimeline.page:27(p)
 msgid ""
@@ -1803,22 +1975,29 @@ msgid ""
 "(using the <key>Ctrl</key> or <key>Shift</key> keys to select multiple "
 "clips) and:"
 msgstr ""
+"Puede insertar uno o más clips de la biblioteca de medios seleccionándolos "
+"(usando las teclas <key>Ctrl</key> o <key>Mayús</key> para seleccionar "
+"varios clips) y:"
 
 #: C/insertintimeline.page:29(p)
 msgid "Dragging and dropping them onto place in the timeline."
-msgstr ""
+msgstr "Arrastrarlos y soltarlos en el lugar en la línea del tiempo."
 
 #: C/insertintimeline.page:30(p)
 msgid ""
 "Using <guiseq><gui>Library</gui><gui>Insert at End of Timeline</gui></"
 "guiseq>."
 msgstr ""
+"Usar <guiseq><gui>Biblioteca</gui><gui>Insertar al final de la línea del "
+"tiempo</gui></guiseq>."
 
 #: C/insertintimeline.page:31(p)
 msgid ""
 "Pressing the <key>Insert</key> (Ins) key. Those clips will be inserted at "
 "the end of the timeline."
 msgstr ""
+"Pulsar la tecla <key>Ins</key>. Estos clips se insertarán al final de la "
+"línea del tiempo."
 
 #: C/insertintimeline.page:34(p)
 msgid ""
@@ -1829,6 +2008,12 @@ msgid ""
 "\"https://bugzilla.gnome.org/show_bug.cgi?id=608682\">bug #570118</link> for "
 "more information."
 msgstr ""
+"También será posible importar archivos directamente en la línea del tiempo "
+"arrastrándolos desde otra aplicación y soltándolos en la línea del tiempo de "
+"<app>PiTiVi</app>. Los archivos se añadirán automáticamente a la biblioteca "
+"de medios en el proceso. Esta función aún no está implementada, consulte el "
+"<link href=\"https://bugzilla.gnome.org/show_bug.cgi?id=608682\">error n° "
+"570118</link> para obtener más información."
 
 #. When image changes, this message will be marked fuzzy or untranslated for you.
 #. It doesn't matter what you translate it to: it's not used at all.
@@ -1856,12 +2041,19 @@ msgid ""
 "href=\"http://gnome.org\"><app>GNOME</app></link> and can appeal to newbies "
 "and professionals alike."
 msgstr ""
+"Construido sobre el entorno de trabajo multimedia <link href=\"http://en."
+"wikipedia.org/wiki/GStreamer\"><app>GStreamer</app></link>, <app>PiTiVi</"
+"app> pretende ser un editor de vídeo intuitivo y flexible que se integre "
+"bien con <link href=\"http://gnome.org\"><app>GNOME</app></link> y puede "
+"atraer a novatos y profesionales por igual."
 
 #: C/index.page:29(p)
 msgid ""
 "This guide is intended to help you grasp the concepts behind its design and "
 "get productive quickly."
 msgstr ""
+"Esta guía está destinada a ayudarle a entender los conceptos detrás de su "
+"diseño y ser productivo con rapidez."
 
 #: C/index.page:32(title)
 msgid "Introduction"
@@ -1873,7 +2065,7 @@ msgstr "Primeros Pasos"
 
 #: C/index.page:40(title)
 msgid "Basic Editing with the Timeline"
-msgstr ""
+msgstr "Edición básica con la línea de tiempo"
 
 #: C/index.page:44(title)
 msgid "Special Effects"
@@ -1885,7 +2077,7 @@ msgstr "Transiciones"
 
 #: C/index.page:52(title)
 msgid "Exporting Your Finished Movie"
-msgstr ""
+msgstr "Exportar su película terminada"
 
 #. When image changes, this message will be marked fuzzy or untranslated for you.
 #. It doesn't matter what you translate it to: it's not used at all.
@@ -1897,11 +2089,11 @@ msgstr ""
 
 #: C/importing.page:17(desc)
 msgid "Importing files into your project as clips."
-msgstr ""
+msgstr "Importar archivos en su proyecto como clips."
 
 #: C/importing.page:25(title)
 msgid "Getting media"
-msgstr ""
+msgstr "Obtener medios"
 
 #: C/importing.page:27(p)
 msgid ""
@@ -1911,22 +2103,29 @@ msgid ""
 "connection, you may use <app>Kino</app> or <app>dvgrab</app> to capture "
 "footage."
 msgstr ""
+"En el momento de escribir esto, el único método soportado es importar "
+"archivos de su disco duro. Por lo tanto, no puede usar <app>PiTiVi</app> "
+"para capturar directamente desde una cámara de vídeo. Para cámaras de vídeo "
+"DV/HDV que usen una conexión IEEE 1394, debe usar <app>Kino</app> o "
+"<app>dvgrab</app> para capturar imágenes."
 
 #: C/importing.page:29(p)
 msgid "We would welcome good quality patches to implement the following:"
 msgstr ""
+"Los parches de buena calidad son bien recibidos para implementar lo "
+"siguiente:"
 
 #: C/importing.page:31(p)
 msgid "Capture from a DV or HDV camcorder using an IEEE 1394 connection."
-msgstr ""
+msgstr "Capturar de una cámara DV o HDV usando una conexión IEEE 1394."
 
 #: C/importing.page:32(p)
 msgid "Capture from a webcam."
-msgstr ""
+msgstr "Capturar desde una cámara web."
 
 #: C/importing.page:33(p)
 msgid "Dumping a network/Internet stream."
-msgstr ""
+msgstr "Descargar un flujo de red/Internet."
 
 #: C/importing.page:34(p)
 msgid "Importing from DVD."
@@ -1943,6 +2142,10 @@ msgid ""
 "link>, <link href=\"http://creativecommons.org/\">CreativeCommons</link>, "
 "etc."
 msgstr ""
+"Descargar de los proveedores de contenido tales como <link href=\"http://www."
+"jamendo.com\">Jamendo</link>, <link href=\"http://www.magnatune.com/"
+"\">Magnatune</link>, <link href=\"http://creativecommons.org/"
+"\">CreativeCommons</link>, etc."
 
 #: C/importing.page:42(title)
 msgid "Importing files"
@@ -1960,6 +2163,12 @@ msgid ""
 "Files...</gui></guiseq> menu, the <gui>Import Files...</gui> button on the "
 "main toolbar, or press <keyseq><key>Ctrl</key><key>i</key></keyseq>."
 msgstr ""
+"Puede importar medios a la <gui>Biblioteca de medios</gui> usando el diálogo "
+"del selector de archivos, que la ventaja de permitirle visualizar "
+"previamente los archivos que quiere importar. Para hacer esto, use el menú "
+"<guiseq><gui>Biblioteca</gui><gui>Importar archivos...</gui></guiseq>, el "
+"botón en la barra de herramientas principal <gui>Importar archivos...</gui>, "
+"o pulse <keyseq><key>Ctrl</key><key>i</key></keyseq>."
 
 #: C/importing.page:46(p)
 msgid "The following file chooser dialog window will appear:"
@@ -1976,6 +2185,10 @@ msgid ""
 "subfolders) by using <guiseq><gui>Library</gui><gui>Import Folders...</gui></"
 "guiseq> in the menu bar."
 msgstr ""
+"Pulse <key>Ctrl</key> o <key>Mayús</key> para seleccionar varios archivos al "
+"mismo tiempo. También puede importar todos los archivos contenidos en una "
+"carpeta (y sus subcarpetas) usando en la barra de menú "
+"<guiseq><gui>Biblioteca</gui><gui>Importar carpetas...</gui></guiseq>."
 
 #: C/importing.page:55(title)
 msgid "Using drag and drop"
@@ -1989,6 +2202,11 @@ msgid ""
 "and drag them with your mouse onto <app>PiTiVi</app>'s <gui>Media Library</"
 "gui>."
 msgstr ""
+"El concepto de arrastrar y soltar es un método bien establecido para reducir "
+"la brecha entre las aplicaciones de software. Simplemente seleccione los "
+"archivos que quiera importar en otra aplicación (tal como un gestor de "
+"archivos o una aplicación multimedia) y arrastrelos con su ratón a la "
+"<gui>Biblioteca de Medios</gui> de <app>PiTiVi</app>."
 
 #: C/importing.page:57(p)
 msgid "This feature can be used to:"
@@ -1999,6 +2217,8 @@ msgid ""
 "Easily import music or video clips from a media player (such as "
 "<app>Rhythmbox</app> or <app>Totem</app>)."
 msgstr ""
+"Importar con facilidad música o clips de vídeo de un reproductor multimedia "
+"(tal como <app>Rhythmbox</app> o <app>Totem</app>)."
 
 #: C/importing.page:63(p)
 msgid ""
@@ -2006,10 +2226,14 @@ msgid ""
 "<app>Thunar</app>, <app>Dolphin</app> or <app>Konqueror</app>) instead of "
 "the file chooser dialog."
 msgstr ""
+"Permitir el uso de un gestor de archivos completo (tales como <app>Nautilus</"
+"app>, <app>Thunar</app>, <app>Dolphin</app> o <app>Konqueror</app>) en lugar "
+"del diálogo del selector de archivos."
 
 #: C/importing.page:66(p)
 msgid "Import a combination of multiple files and folders at the same time."
 msgstr ""
+"Importar una combinación de varios archivos y carpetas al mismo tiempo."
 
 #: C/importing.page:69(p)
 msgid ""
@@ -2017,12 +2241,17 @@ msgid ""
 "Shell</app>, <app>Tracker</app>, <app>GNOME Activity Journal</app>, "
 "<app>GNOME Search Tool</app>, etc.)."
 msgstr ""
+"Aprovechar la capacidad de búsqueda de otra aplicación (tales como "
+"<app>GNOME Shell</app>, <app>Tracker</app>, <app>GNOME Activity Journal</"
+"app>, <app>GNOME Search Tool</app>, etc.)."
 
 #: C/importingmpegts.page:14(desc)
 msgid ""
 "How to convert .mts and .m2ts files to a format that can be parsed by "
 "GStreamer and PiTiVi."
 msgstr ""
+"Cómo convertir archivos .mts y .m2ts a un formato que GStreamer y PiTiVi "
+"puedan analizar."
 
 #. TODO: remove this manual page when gstreamer supports mpeg-ts files !
 #: C/importingmpegts.page:22(title)
@@ -2038,6 +2267,13 @@ msgid ""
 "<app>ffmpeg</app>. To convert losslessly to an MPEG4 container, you can use "
 "the following command:"
 msgstr ""
+"En este momento, los archivos de flujo de transporte MPEG (por lo general "
+"con extensiones de archivo como .mts, .m2ts y aveces .mpg o .mpeg), tales "
+"como los utilizados por algunas cámaras de vídeo HD, no se pueden reproducir "
+"de forma fiable con <app>GStreamer</app>. Por lo tanto, es posible que desee "
+"cambiarlos a un formato de contenedor diferente utilizando <app>ffmpeg</"
+"app>. Para convertir sin pérdida a un contenedor MPEG4, puede usar el "
+"siguiente comando:"
 
 #: C/importingmpegts.page:25(code)
 #, no-wrap
@@ -2049,6 +2285,8 @@ msgid ""
 "Ensuring you have the proper multimedia codecs and plugins installed for "
 "maximum compatibility."
 msgstr ""
+"Asegurarse de que dispone de los códecs multimedia apropiados y los "
+"complementos instalados para una máxima compatibilidad."
 
 #: C/gstreamer.page:25(title)
 msgid "Gstreamer and compatibility"
@@ -2061,22 +2299,30 @@ msgid ""
 "multimedia applications across desktop environments, operating systems and "
 "architectures."
 msgstr ""
+"La gran fortaleza en <app>PiTiVi</app> radica en su uso del entorno de "
+"trabajo multimedia <app>GStreamer</app>. <app>GStreamer</app> lo usan "
+"docenas de aplicaciones multimedia a través de entornos de escritorio, "
+"sistemas operativos y arquitecturas."
 
 #: C/gstreamer.page:28(p)
 msgid "This essentially means three things to you, the user:"
-msgstr ""
+msgstr "Esto significa esencialmente tres cosas para usted, el usuario:"
 
 #: C/gstreamer.page:31(p)
 msgid ""
 "You can, in theory, import pretty much any media file supported by "
 "<app>GStreamer</app> (but see the next section)."
 msgstr ""
+"Puede, en teoría, importar casi cualquier archivo multimedia soportado por "
+"<app>GStreamer</app> (pero consulte la siguiente sección)."
 
 #: C/gstreamer.page:34(p)
 msgid ""
 "You can render your projects using any supported container and codec "
 "combination from <app>GStreamer</app>."
 msgstr ""
+"Puede renderizar sus proyectos utilizando cualquier contenedor compatible y "
+"combinación de códec de <app>GStreamer</app>."
 
 #: C/gstreamer.page:37(p)
 msgid ""
@@ -2086,10 +2332,15 @@ msgid ""
 "problems directly in <app>GStreamer</app> (instead of putting temporary "
 "workarounds inside <app>PiTiVi</app>)."
 msgstr ""
+"Necesita la versión más reciente de <app>GStreamer</app> para maximizar las "
+"capacidades de <app>PiTiVi</app> y reducir las posibilidades de errores. "
+"Esto es porque los desarrolladores del proyecto de <app>PiTiVi</app> "
+"trabajan duro solucionando problemas directamente en <app>GStreamer</app> "
+"(en lugar de poner soluciones temporales dentro de <app>PiTiVi</app>."
 
 #: C/gstreamer.page:42(title)
 msgid "A word about editing-friendly codecs"
-msgstr ""
+msgstr "Un comentario acerca de los códecs de edición amigable"
 
 #: C/gstreamer.page:43(p)
 msgid ""
@@ -2099,6 +2350,12 @@ msgid ""
 "seeking) will not perform as well as they would with frame-independent "
 "compressed video (such as <em>MJPEG</em> or <em>DV</em>)."
 msgstr ""
+"Algunos formatos, como <em>MPEG</em>, están orientados solo hacia la "
+"reproducción, no a comprimir cada imagen de forma independiente. Mientras "
+"este es el objetivo de <app>PiTiVi</app> para ser compatible con el trabajo "
+"de estos archivos, ciertas operaciones (como la búsqueda rápida) no "
+"funcionará tan bien como lo harían con el vídeo comprimido de imágenes "
+"independientes (tales como <em>MJPEG</em> o <em>DV</em>)."
 
 #: C/gstreamer.page:47(title)
 msgid "The Good, the Bad and the Ugly"
@@ -2112,30 +2369,45 @@ msgid ""
 "install them is up to you, and may depend on your country's jurisdiction "
 "regarding software patents."
 msgstr ""
+"Los complementos de <app>GStreamer</app> vienen en tres categorías: buenos, "
+"feos y malos. Para maximizar su experiencia, necesita instalar algunos de "
+"los complementos para asegurar compatibilidad con sus archivos de medios. "
+"Los instale o no depende de usted, y dependerá de la jurisdicción de su país "
+"en relación con las patentes de software."
 
 #: C/gstreamer.page:50(p)
 msgid ""
 "The \"Good\" plugins are good quality plugins under the LGPL license. These "
 "plugins are considered safe and recommended at any time."
 msgstr ""
+"Los complementos «buenos» son complementos de buena calidad bajo la licencia "
+"LGPL. Estos complementos se consideran seguros y recomendados en todo "
+"momento."
 
 #: C/gstreamer.page:51(p)
 msgid ""
 "The \"Bad\" plugins are plugins whose code is not of good enough quality, or "
 "are not considered tested well enough. The licensing may or may not be LGPL."
 msgstr ""
+"Los complementos «malos» son complementos cuyo código no es de suficiente "
+"buena calidad, o no son lo suficientemente buenos para probarlos. La "
+"licencia puede ser o no LGPL."
 
 #: C/gstreamer.page:52(p)
 msgid ""
 "The \"Ugly\" plugins are good quality plugins whose license is not LGPL or "
 "with licensing issues."
 msgstr ""
+"Los complementos «feos» son complementos de buena calidad cuya licencia no es "
+"LGPL o tienen problemas de licencia."
 
 #: C/gstreamer.page:54(p)
 msgid ""
 "In addition to the Good, Bad and Ugly plugins, you may want to install "
 "gstreamer-ffmpeg to have access to ffmpeg's set of codecs."
 msgstr ""
+"Además de los complementos Buenos, Malos y Feos, es posible que quiera "
+"instalar gstreamer-ffmpeg para tener acceso al conjunto de códecs de ffmpeg."
 
 #: C/gstreamer.page:59(title)
 msgid "Image file formats"
@@ -2147,6 +2419,9 @@ msgid ""
 "video or audio formats, it is however possible to list the static image "
 "formats that can be imported: JPEG, PNG, JPEG 2000, PNM and SVG."
 msgstr ""
+"Aunque no es factible listar todas las combinaciones posibles de formatos de "
+"vídeo y sonido soportados, de alguna manera es posible listar los formatos "
+"de imagen estática que se pueden importar: JPEG, PNG, JPEG 2000, PNM y SVG."
 
 #. When image changes, this message will be marked fuzzy or untranslated for you.
 #. It doesn't matter what you translate it to: it's not used at all.
@@ -2169,10 +2444,12 @@ msgstr "@@image: 'figures/fadestep3.png'; md5=5aa08a9539d2d7bb6e39be379e88d778"
 #: C/fadeinfadeout.page:17(desc)
 msgid "Fading video to black or to a layer below, or fading audio."
 msgstr ""
+"Oscurecer el vídeo o moverse a una capa inferior, o aumentar/disminuir el "
+"sonido."
 
 #: C/fadeinfadeout.page:25(title)
 msgid "Fade-ins and fade-outs"
-msgstr ""
+msgstr "Desvanecimientos"
 
 #: C/fadeinfadeout.page:27(p)
 msgid ""
@@ -2180,38 +2457,48 @@ msgid ""
 "capabilities, which relies on keyframes controlling each clip's opacity (see "
 "also: <link xref=\"layers\">Understanding layers</link>)."
 msgstr ""
+"Puede hacer «desvanecimientos» de un solo clip usando las capacidades de "
+"mezcla de vídeo de <app>PiTiVi</app>, que se basan en fotogramas clave que "
+"controlan la opacidad de cada clip (consulte la sección: <link xref=\"layers"
+"\">entender las capas</link>)."
 
 #: C/fadeinfadeout.page:28(p)
 msgid "To fade a clip to black:"
-msgstr ""
+msgstr "Para oscurecer un clip:"
 
 #: C/fadeinfadeout.page:31(p)
 msgid ""
 "Double-click on its opacity keyframe curve where you want the fade-out to "
 "start (or the fade-in to end)."
 msgstr ""
+"Pulse dos veces en su curva de fotograma clave de opacidad donde quiere que "
+"empiece (o termine) el desvanecimiento.."
 
 #: C/fadeinfadeout.page:40(p)
 msgid "Click and drag the last (or first) keyframe of the clip downwards."
 msgstr ""
+"Pulse y arrastre el último (o el primer) fotograma clave del clip hacia "
+"abajo."
 
 #: C/effectsanimation.page:13(desc)
 msgid "Changing the properties of effects over time"
-msgstr ""
+msgstr "Cambiar las propiedades de los efectos en el tiempo"
 
 #: C/effectsanimation.page:19(title)
 msgid "Animating effects with Keyframes"
-msgstr ""
+msgstr "Animar efectos con fotogramas clave"
 
 #: C/effectsanimation.page:21(p)
 msgid ""
 "This feature is not yet implemented, but is planned to be completed as a "
 "GSoC 2011 project."
 msgstr ""
+"Está función aún no está implementada, pero está previsto que se complete "
+"como un proyecto en GSoC 2011."
 
 #: C/effects.page:14(desc)
 msgid "Adding special effects to your video and audio"
-msgstr ""
+msgstr "Añadir efectos especiales a su vídeo y sonido"
 
 #: C/effects.page:20(title)
 msgid "Introduction to effects"
@@ -2223,6 +2510,10 @@ msgid ""
 "up your movies. Effects are non destructive: they are only applied to the "
 "resulting rendered movie and do not affect your source files."
 msgstr ""
+"<app>PiTiVi</app> ofrece una amplia variedad de efectos de vídeo y sonido "
+"para darle vida a sus películas. Los efectos son no destructivos: sólo se "
+"aplican a la película renderizada resultante y no afectan sus archivos de "
+"origen."
 
 #: C/effects.page:24(p)
 msgid ""
@@ -2230,10 +2521,15 @@ msgid ""
 "don't see anything (or only a handful of effects) in <app>PiTiVi</app>'s "
 "effect library, make sure that the following are installed on your system:"
 msgstr ""
+"Los efectos disponibles dependen del software instalado en su equipo. Si no "
+"ve nada (o solo un puñado de efectos) en la biblioteca de efectos de "
+"<app>PiTiVi</app>, asegúrese que los siguientes paquetes están instalados en "
+"su sistema:"
 
 #: C/effects.page:26(p)
 msgid "The <link xref=\"gstreamer\">appropriate GStreamer plugins</link>"
 msgstr ""
+"Los <link xref=\"gstreamer\">complementos de GStreamer apropiados</link>"
 
 #: C/effects.page:27(p)
 msgid "frei0r-plugins"
@@ -2245,7 +2541,7 @@ msgstr "gnome-video-effects"
 
 #: C/effects.page:33(title)
 msgid "Adding and removing effects to clips"
-msgstr ""
+msgstr "Añadir y quitar efectos a los clips"
 
 #: C/effects.page:34(p)
 msgid "To add an effect:"
@@ -2253,7 +2549,7 @@ msgstr "Para añadir un efecto:"
 
 #: C/effects.page:36(p)
 msgid "Select an existing clip on the timeline"
-msgstr ""
+msgstr "Seleccione un clip existente en la línea del tiempo"
 
 #: C/effects.page:37(p)
 msgid "Choose an effect in the effect library"
@@ -2264,16 +2560,20 @@ msgid ""
 "Drag the chosen effect into the <gui>Clip configuration</gui> pane's "
 "<gui>Effects</gui> section"
 msgstr ""
+"Arrastre el efecto elegido dentro de la sección <gui>Efectos</gui> del panel "
+"de <gui>Configuración del clip</gui>"
 
 #: C/effects.page:40(p)
 msgid ""
 "To remove an effect on a selected clip, select it in the clip's effect list "
 "and click the <gui>Remove</gui> button."
 msgstr ""
+"Para quitar un efecto de un clip seleccionado, selecciónelo en la lista de "
+"efectos del clip y pulse el botón <gui>Quitar</gui>."
 
 #: C/effects.page:43(title)
 msgid "Toggling effects on and off"
-msgstr ""
+msgstr "Activar y desactivar efectos"
 
 #: C/effects.page:44(p)
 msgid ""
@@ -2281,20 +2581,25 @@ msgid ""
 "the effect, or for performance reasons), click the corresponding checkbox in "
 "the effect properties pane."
 msgstr ""
+"Si quiere desactivar temporalmente un efecto (para comparar con y sin el "
+"efecto, o por razones de rendimiento), pulse en la casilla correspondiente "
+"en el panel de propiedades del efecto."
 
 #: C/effects.page:46(p)
 msgid ""
 "Currently, effects are applied on a \"per-clip\" basis. It is not yet "
 "possible to apply effects to timeline layers."
 msgstr ""
+"Actualmente, los efectos se aplican «por clip\"». Todavía no es posible "
+"aplicar efectos a las capas de la línea del tiempo."
 
 #: C/crossfading.page:18(desc)
 msgid "Making two clips fade into each other."
-msgstr ""
+msgstr "Hacer que dos clips se desvanezcan uno en el otro."
 
 #: C/crossfading.page:26(title)
 msgid "Crossfading clips"
-msgstr ""
+msgstr "Mezclar clips"
 
 #: C/crossfading.page:28(p)
 msgid ""
@@ -2303,18 +2608,28 @@ msgid ""
 "used for transitions (crossfade by default) between the two clips. You can "
 "adjust the length of the transition by moving or trimming the clips."
 msgstr ""
+"Para hacer una mezcla entre dos clips en la misma capa, simplemente arrastre "
+"uno de los clips sobre el otro para que se superponga. La región de "
+"superposición se usará para transiciones (mezcla predeterminada) entre los "
+"dos clips. Puede modificar la longitud de la transición moviendo o "
+"recortando los clips."
 
 #: C/crossfading.page:30(p)
 msgid ""
 "Crossfades are achieved using <app>PiTiVi</app>'s video mixing features, "
 "which use keyframes to control the opacity of clips."
 msgstr ""
+"Las mezclas se logran utilizando las funciones de mezcla de vídeo de "
+"<app>PiTiVi</app>, que usan fotogramas clave para controlar la opacidad de "
+"los clips."
 
 #: C/crossfading.page:31(p)
 msgid ""
 "This also means that if you set opacity keyframes for that clip, they will "
 "be taken into account for the crossfade."
 msgstr ""
+"Esto también significa que si se establece fotogramas clave de opacidad para "
+"ese clip, se tendrán en cuenta para la mezcla."
 
 #. When image changes, this message will be marked fuzzy or untranslated for you.
 #. It doesn't matter what you translate it to: it's not used at all.
@@ -2329,10 +2644,12 @@ msgid ""
 "What is the difference between OGG and Vorbis? AVI and DivX? x264 and H.264? "
 "Learn about codecs and container formats here."
 msgstr ""
+"¿Cuál es la diferencia entre OGG y Vorbis? ¿AVI y DivX? ¿x264 y H.264? "
+"Aprenda acerca de códecs y formatos de contenedor aquí."
 
 #: C/codecscontainers.page:19(title)
 msgid "Understanding codecs and containers"
-msgstr ""
+msgstr "Entender los códecs y los contenedores"
 
 #: C/codecscontainers.page:20(p)
 msgid ""
@@ -2341,6 +2658,10 @@ msgid ""
 "formats, thanks in part to the general lack of standardization, confusing "
 "marketing terms and filename extensions."
 msgstr ""
+"El siguiente tema es uno de los más complejos de edición de vídeo. Muchas "
+"personas no saben la diferencia entre códecs y formatos de archivo de "
+"contenedor, en parte debido a la falta general de estandarización, "
+"confundiendo términos de marketing y extensiones de nombre de archivo."
 
 #: C/codecscontainers.page:21(p)
 msgid ""
@@ -2350,6 +2671,11 @@ msgid ""
 "wikipedia.org/wiki/Container_format_(digital)\">containers</link> and <link "
 "href=\"http://en.wikipedia.org/wiki/Codec\">codecs</link>."
 msgstr ""
+"Esta guía es un intento de aclarar esta diferencia, sin entrar en detalles "
+"técnicos. Si quiere aprender más acerca de los contenedores y códecs, "
+"probablemente debería revisar en la página de Wikipedia en <link href="
+"\"http://en.wikipedia.org/wiki/Container_format_(digital)\">contenedores</"
+"link> y <link href=\"http://en.wikipedia.org/wiki/Codec\">códecs</link>."
 
 #: C/codecscontainers.page:22(p)
 msgid ""
@@ -2359,6 +2685,12 @@ msgid ""
 "soundtracks and subtitles included in a video file, if the container format "
 "allows it. Example of popular containers are OGG, Matroska, AVI, MPEG."
 msgstr ""
+"Básicamente, un contenedor es lo que normalmente asociamos con el formato de "
+"archivo. Los contenedores «contienen» los diversos componentes de un vídeo: "
+"el flujo de imágenes, el sonido, y cualquier otra cosa. Por ejemplo, puede "
+"tener varias pistas de sonido y subtítulos incluidos en un archivo de vídeo, "
+"si el formato de contenedor lo permite. Ejemplos de contenedores populares "
+"son OGG, Matroska, AVI, MPEG."
 
 #: C/codecscontainers.page:23(p)
 msgid ""
@@ -2369,14 +2701,21 @@ msgid ""
 "peculiarities, and choosing the right codec with the right settings for the "
 "right situation is a form of art."
 msgstr ""
+"Los códecs son maneras de «codificar» y «decodificar» flujos. Su trabajo "
+"generalmente consiste en comprimir datos (y descomprimirlos cuando se "
+"reproducen) para que se puedan almacenar y transmitir archivos con un tamaño "
+"de archivo más pequeño. Hay muchos códecs disponibles por ahí, cada uno con "
+"sus bondades, debilidades y peculiaridades, y elegir el códec adecuado con "
+"los ajustes adecuados para la situación adecuada es una forma de arte."
 
 #: C/codecscontainers.page:24(p)
 msgid "The following figure should make things clearer:"
-msgstr "Las siguientes imágenes debería aclarar las cosas:"
+msgstr "Las siguientes imágenes deberían aclarar las cosas:"
 
 #: C/about.page:17(desc)
 msgid "Current state of this user manual and call for participation."
 msgstr ""
+"Estado actual de este manual del usuario e invitación a la participación."
 
 #: C/about.page:25(title)
 msgid "About this manual"
@@ -2384,17 +2723,19 @@ msgstr "Acerca de este manual"
 
 #: C/about.page:26(p)
 msgid "This user manual is written and maintained by Jean-François Fortin Tam."
-msgstr "Este manual lo ha escrito y lo mantiene Jean-François Fortin Tam."
+msgstr "Jean-François Fortin Tam ha escrito y mantiene este manual."
 
 #: C/about.page:28(title)
 msgid "Work in progress"
-msgstr ""
+msgstr "Trabajo en curso"
 
 #: C/about.page:29(p)
 msgid ""
 "You may encounter unwritten portions due to features that have not yet been "
 "implemented in PiTiVi at the time of writing."
 msgstr ""
+"Puede encontrar fragmentos no escritas, debido a que hay características que "
+"aún no se han implementado en PiTiVi en el momento de escribir esto."
 
 #: C/about.page:30(p)
 msgid ""
@@ -2402,6 +2743,10 @@ msgid ""
 "manual but have not been implemented in PiTiVi – those are areas where the "
 "design and expected user interaction are quite narrow/certain."
 msgstr ""
+"También puede encontrar pequeñas áreas que han sido documentadas en este "
+"manual, pero no han sido implementadas en PiTiVi; esas son las zonas donde "
+"el diseño y la interacción esperada con el usuario son bastante estrechas/"
+"seguras."
 
 #: C/about.page:34(title)
 msgid "Patches welcome"
@@ -2416,8 +2761,17 @@ msgid ""
 "product=pitivi;component=documentation\">file bugs on the “documentation” "
 "component in our bug tracker</link>."
 msgstr ""
+"Si por casualidad encuentra errores, falta de información o partes poco "
+"claras en este manual, no dude en enviar sus correcciones. Puede encontrar "
+"información de contacto en <link href=\"http://jeff.ecchi.ca/\">la página "
+"web personal</link>. También puede <link href=\"https://bugzilla.gnome.org/"
+"enter_bug.cgi?product=pitivi;component=documentation\">informar de un error "
+"en el componente «documentation» en el gestor de seguimiento de errores</"
+"link>."
 
 #. Put one translator per line, in the form of NAME <EMAIL>, YEAR1, YEAR2
 #: C/index.page:0(None)
 msgid "translator-credits"
-msgstr "Daniel Mustieles <daniel.mustieles@gmail.com>, 2011"
+msgstr ""
+"Milagros Alessandra Infante Montero <maim92@gmail.com>, 2012\n"
+"Daniel Mustieles <daniel.mustieles@gmail.com>, 2011 - 2012"
