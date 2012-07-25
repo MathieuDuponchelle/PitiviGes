@@ -145,6 +145,12 @@ ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
   g_object_class_install_properties (object_class, PROP_LAST, properties);
 }
 
+static const gchar *
+ges_material_filesource_get_id (GESMaterial * self)
+{
+  return GES_MATERIAL_FILESOURCE (self)->priv->uri;
+}
+
 static void
 ges_material_filesource_init (GESMaterialFileSource * self)
 {
@@ -153,6 +159,7 @@ ges_material_filesource_init (GESMaterialFileSource * self)
 
   self->priv->info = NULL;
   self->priv->duration = 0;
+  GES_MATERIAL (self)->get_id = ges_material_filesource_get_id;
 }
 
 static GstDiscoverer *
