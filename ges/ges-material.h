@@ -83,5 +83,8 @@ ges_material_new_async            (GType extractable_type,
                                    gpointer user_data,
                                    const gchar * first_property_name, ...);
 
+const gchar* ges_material_get_id(GESMaterial* self);
+
+
 G_END_DECLS
 #endif /* _GES_MATERIAL */

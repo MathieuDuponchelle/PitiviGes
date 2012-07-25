@@ -321,3 +321,9 @@ ges_material_new_async (GType extractable_type, gint io_priority,
       cancellable, callback, user_data);
   va_end (var_args);
 }
+
+const gchar *
+ges_material_get_id (GESMaterial * self)
+{
+  return NULL;
+}

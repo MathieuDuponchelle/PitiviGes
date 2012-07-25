@@ -60,32 +60,15 @@ enum
 };
 
 static GParamSpec *properties[PROP_LAST];
-static GHashTable *material_cache = NULL;
 static GstDiscoverer *discoverer;
 
-static GStaticMutex material_cache_lock = G_STATIC_MUTEX_INIT;
+
 static GStaticMutex discoverer_lock = G_STATIC_MUTEX_INIT;
 
 static void discoverer_finished_cb (GstDiscoverer * discoverer);
 static void
 discoverer_discovered_cb (GstDiscoverer * discoverer,
     GstDiscovererInfo * info, GError * err);
-
-/**
- * Internal structure to help avoid full loading
- * of one material several times
- */
-typedef struct
-{
-  gboolean loaded;
-  GESMaterialFileSource *material;
-  guint64 ref_counter;
-
-  /* List off callbacks to call when  the material is finally ready */
-  GList *callbacks;
-
-  GStaticMutex lock;
-} GESMaterialFileSourceCacheEntry;
 
 struct _GESMaterialFileSourcePrivate
 {
@@ -94,61 +77,6 @@ struct _GESMaterialFileSourcePrivate
   GstClockTime duration;
 };
 
-static GHashTable *
-ges_material_filesource_cache_get (void)
-{
-  g_static_mutex_lock (&material_cache_lock);
-  if (G_UNLIKELY (material_cache == NULL)) {
-    material_cache = g_hash_table_new (g_str_hash, g_str_equal);
-  }
-  g_static_mutex_unlock (&material_cache_lock);
-
-  return material_cache;
-}
-
-static inline GESMaterialFileSourceCacheEntry *
-ges_material_filesource_cache_get_entry (const gchar * uri)
-{
-  GHashTable *cache = ges_material_filesource_cache_get ();
-  GESMaterialFileSourceCacheEntry *entry = NULL;
-
-  g_static_mutex_lock (&material_cache_lock);
-  entry = g_hash_table_lookup (cache, uri);
-  g_static_mutex_unlock (&material_cache_lock);
-
-  return entry;
-}
-
-/**
-* Looks for material with specified uri in cache and it's completely loaded.
-* In other case returns NULL
-*/
-static GESMaterialFileSource *
-ges_material_filesource_cache_lookup (const gchar * uri)
-{
-  GESMaterialFileSourceCacheEntry *entry = NULL;
-
-  entry = ges_material_filesource_cache_get_entry (uri);
-  if (entry && entry->loaded)
-    return entry->material;
-
-  return NULL;
-}
-
-static inline void
-ges_material_filesource_cache_put (const gchar * uri,
-    GESMaterialFileSourceCacheEntry * entry)
-{
-  GHashTable *cache = ges_material_filesource_cache_get ();
-
-  GST_DEBUG_OBJECT (entry, "Adding to the cached list of materials");
-
-  g_static_mutex_lock (&material_cache_lock);
-  if (!g_hash_table_contains (cache, uri)) {
-    g_hash_table_insert (cache, (gpointer) uri, (gpointer) entry);
-  }
-  g_static_mutex_unlock (&material_cache_lock);
-}
 
 static void
 ges_material_filesource_get_property (GObject * object, guint property_id,
@@ -304,30 +232,20 @@ GESMaterialFileSource *
 ges_material_filesource_new (const gchar * uri,
     GAsyncReadyCallback material_created_cb, gpointer user_data)
 {
-  GSimpleAsyncResult *simple;
-  GESMaterialFileSource *material;
+  GESMaterialFileSource *material = NULL;
 
-  material = ges_material_filesource_cache_lookup (uri);
+  material = GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
   if (material) {
-    /* FIXME check if loaded, if not lock and you need a list of pointer to
-     * function in your struct, you can remove the ref_count prop, and just
-     * have that list */
 
-    simple = g_simple_async_result_new (NULL, material_created_cb, user_data,
-        (gpointer) ges_material_filesource_new);
-
-    g_simple_async_result_set_op_res_gpointer (simple,
-        g_object_ref (material), g_object_unref);
-
-    g_simple_async_result_complete_in_idle (simple);
-    g_object_unref (simple);
-
-    /* return a ref to the material */
-    return material;
+    if (!ges_material_cache_is_loaded (uri)) {
+      ges_material_cache_append_callback (uri, material_created_cb);
+    }
 
   } else
-    return g_object_new (GES_TYPE_MATERIAL_FILESOURCE, "uri",
+    material = g_object_new (GES_TYPE_MATERIAL_FILESOURCE, "uri",
         uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
+
+  return material;
 }
 
 /**
@@ -354,12 +272,5 @@ discoverer_discovered_cb (GstDiscoverer * discoverer,
     GstDiscovererInfo * info, GError * err)
 {
   const gchar *uri = gst_discoverer_info_get_uri (info);
-  GESMaterialFileSourceCacheEntry *entry =
-      ges_material_filesource_cache_get_entry (uri);
-
-
-  g_static_mutex_lock (&entry->lock);
-  entry->loaded = TRUE;
-  GES_MATERIAL (entry->material)->state = MATERIAL_INITIALIZED;
-  g_static_mutex_unlock (&entry->lock);
+  ges_material_cache_set_loaded (uri);
 }
