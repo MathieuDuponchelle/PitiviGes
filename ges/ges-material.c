@@ -137,6 +137,8 @@ ges_material_init (GESMaterial * self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialPrivate);
   self->state = MATERIAL_NOT_INITIALIZED;
+
+  self->get_id = NULL;
 }
 
 /* Some helper functions */
@@ -325,5 +327,8 @@ ges_material_new_async (GType extractable_type, gint io_priority,
 const gchar *
 ges_material_get_id (GESMaterial * self)
 {
-  return NULL;
+  if (self->get_id) {
+    return (*self->get_id) (self);
+  } else
+    return NULL;
 }
