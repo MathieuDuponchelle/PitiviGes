@@ -15,6 +15,12 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+/**
+* SECTION: ges-material-source
+* @short_description: An object that is used to constuct another objects from files
+*
+* FIXME: Long description needed
+*/
 #include <gst/pbutils/pbutils.h>
 #include "ges.h"
 
@@ -284,7 +290,16 @@ async_initable_init_finish (GAsyncInitable * initable,
 
 
 
-
+/**
+ * ges_material_filesource_new:
+ * @uri: URI of file that should be loaded
+ *
+ * Constructor of GESMaterialFilesource. Creates new instance of material
+ * or returns reference to an existing material if such URI is already
+ * in cache
+ *
+ * Returns: (transfer none): Constructed material
+ */
 GESMaterialFileSource *
 ges_material_filesource_new (const gchar * uri,
     GAsyncReadyCallback material_created_cb, gpointer user_data)
@@ -315,6 +330,14 @@ ges_material_filesource_new (const gchar * uri,
         uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
 }
 
+/**
+ * ges_material_filesource_get_info:
+ * @self: Target material
+ *
+ * Gets GstDiscoverer information about specified object
+ *
+ * Returns: (transfer none): GstDiscovererInfo of specified material
+ */
 GstDiscovererInfo *
 ges_material_filesource_get_info (const GESMaterialFileSource * self)
 {
