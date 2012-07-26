@@ -236,22 +236,49 @@ async_initable_init_finish (GAsyncInitable * initable,
  * Returns: (transfer none): Constructed material
  */
 GESMaterialFileSource *
-ges_material_filesource_new (const gchar * uri,
-    GAsyncReadyCallback material_created_cb, gpointer user_data)
+ges_material_filesource_new_async (const gchar * uri,
+    gint io_priority,
+    GCancellable * cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data, const gchar * first_property_name, ...)
 {
   GESMaterialFileSource *material = NULL;
-
   material = GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
   if (material) {
-
     if (!ges_material_cache_is_loaded (uri)) {
-      ges_material_cache_append_callback (uri, material_created_cb);
+      ges_material_cache_append_callback (uri, callback);
     }
 
-  } else
+  } else {
     material = g_object_new (GES_TYPE_MATERIAL_FILESOURCE, "uri",
         uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
 
+    G_ASYNC_INITABLE_GET_IFACE (material)->init_async (G_ASYNC_INITABLE
+        (material), io_priority, cancellable, callback, user_data);
+  }
+  return material;
+}
+
+GESMaterialFileSource *
+ges_material_filesource_new (const gchar * uri,
+    GCancellable * cancellable,
+    GError ** error, const gchar * first_property_name, ...)
+{
+  GESMaterialFileSource *material = NULL;
+  material = GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
+  if (material) {
+    if (!ges_material_cache_is_loaded (uri)) {
+      material = NULL;
+      g_set_error (error, 0, 0, "Failed to retrieve material from cache");
+    }
+
+  } else {
+    material = g_object_new (GES_TYPE_MATERIAL_FILESOURCE, "uri",
+        uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
+
+    G_INITABLE_GET_IFACE (material)->init (G_INITABLE (material),
+        cancellable, error);
+  }
   return material;
 }
 
