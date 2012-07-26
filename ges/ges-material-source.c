@@ -128,6 +128,12 @@ ges_material_filesource_async_initable_interface_init (GAsyncInitableIface *
   iface->init_finish = async_initable_init_finish;
 }
 
+static const gchar *
+ges_material_filesource_get_id (GESMaterial * self)
+{
+  return g_strdup (GES_MATERIAL_FILESOURCE (self)->priv->uri);
+}
+
 static void
 ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
 {
@@ -143,12 +149,7 @@ ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
       NULL, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
 
   g_object_class_install_properties (object_class, PROP_LAST, properties);
-}
-
-static const gchar *
-ges_material_filesource_get_id (GESMaterial * self)
-{
-  return g_strdup (GES_MATERIAL_FILESOURCE (self)->priv->uri);
+  GES_MATERIAL_CLASS (klass)->get_id = ges_material_filesource_get_id;
 }
 
 static void
@@ -159,7 +160,6 @@ ges_material_filesource_init (GESMaterialFileSource * self)
 
   self->priv->info = NULL;
   self->priv->duration = 0;
-  GES_MATERIAL (self)->get_id = ges_material_filesource_get_id;
 }
 
 static GstDiscoverer *

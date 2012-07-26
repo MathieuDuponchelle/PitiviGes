@@ -114,6 +114,14 @@ ges_material_set_property (GObject * object, guint property_id,
   }
 }
 
+static const gchar *
+ges_material_get_id_default (GESMaterial * self)
+{
+  GString *id_str = g_string_new ("");
+  g_string_printf (id_str, "object#%p", self);
+  return g_string_free (id_str, FALSE);
+}
+
 void
 ges_material_class_init (GESMaterialClass * klass)
 {
@@ -129,14 +137,8 @@ ges_material_class_init (GESMaterialClass * klass)
       G_TYPE_OBJECT, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
 
   g_object_class_install_properties (object_class, PROP_LAST, properties);
-}
 
-static const gchar *
-ges_material_get_id_default (GESMaterial * self)
-{
-  GString *id_str = g_string_new ("");
-  g_string_printf (id_str, "object#%p", self);
-  return g_string_free (id_str, FALSE);
+  klass->get_id = ges_material_get_id_default;
 }
 
 void
@@ -145,8 +147,6 @@ ges_material_init (GESMaterial * self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialPrivate);
   self->state = MATERIAL_NOT_INITIALIZED;
-
-  self->get_id = ges_material_get_id_default;
 }
 
 /* Some helper functions */
@@ -335,8 +335,8 @@ ges_material_new_async (GType extractable_type, gint io_priority,
 const gchar *
 ges_material_get_id (GESMaterial * self)
 {
-  if (self->get_id) {
-    return (*self->get_id) (self);
+  if (GES_MATERIAL_GET_CLASS (self)->get_id) {
+    return (*GES_MATERIAL_GET_CLASS (self)->get_id) (self);
   } else
     return NULL;
 }

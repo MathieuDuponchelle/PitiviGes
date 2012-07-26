@@ -53,7 +53,6 @@ struct _GESMaterial
   
   /* <private> */
   GESMaterialPrivate *priv;
-  const gchar* (*get_id)	(GESMaterial *self);
 
   /* Padding for API extension */
   gpointer _ges_reserved[GES_PADDING];
@@ -62,7 +61,7 @@ struct _GESMaterial
 struct _GESMaterialClass
 {
   GObjectClass parent;
-
+  const gchar* (*get_id)	(GESMaterial *self);
   gpointer _ges_reserved[GES_PADDING];
 };
 
