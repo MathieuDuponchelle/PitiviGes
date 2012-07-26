@@ -131,6 +131,14 @@ ges_material_class_init (GESMaterialClass * klass)
   g_object_class_install_properties (object_class, PROP_LAST, properties);
 }
 
+static const gchar *
+ges_material_get_id_default (GESMaterial * self)
+{
+  GString *id_str = g_string_new ("");
+  g_string_printf (id_str, "object#%p", self);
+  return g_string_free (id_str, FALSE);
+}
+
 void
 ges_material_init (GESMaterial * self)
 {
@@ -138,7 +146,7 @@ ges_material_init (GESMaterial * self)
       GES_TYPE_MATERIAL, GESMaterialPrivate);
   self->state = MATERIAL_NOT_INITIALIZED;
 
-  self->get_id = NULL;
+  self->get_id = ges_material_get_id_default;
 }
 
 /* Some helper functions */

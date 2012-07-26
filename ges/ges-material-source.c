@@ -148,7 +148,7 @@ ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
 static const gchar *
 ges_material_filesource_get_id (GESMaterial * self)
 {
-  return GES_MATERIAL_FILESOURCE (self)->priv->uri;
+  return g_strdup (GES_MATERIAL_FILESOURCE (self)->priv->uri);
 }
 
 static void
