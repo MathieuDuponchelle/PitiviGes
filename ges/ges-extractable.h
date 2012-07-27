@@ -40,7 +40,7 @@ GType ges_extractable_get_type (void);
  * A function that return the #GESMaterial that instanciated the object that
  * implements that interface
  *
- * Returns: (transfer none): The #GESMaterial from which @self has been
+ * Returns: (transfer-mode none): The #GESMaterial from which @self has been
  * extracted
  */
 
@@ -86,6 +86,14 @@ struct _GESExtractableInterface
 GType ges_extractable_get_material_type        (GESExtractable *self);
 GType ges_extractable_type_material_type       (GType type);
 
+/**
+ * GESExtractableGetMaterial
+ * @self: The #GESExtractable
+ *
+ * Gets material that was used to create this extractable object
+ *
+ * Returns: (transfer:none) : The material that was used to create specified extractable object
+ */
 GESMaterial* ges_extractable_get_material      (GESExtractable *self);
 
 void ges_extractable_set_material              (GESExtractable *self,

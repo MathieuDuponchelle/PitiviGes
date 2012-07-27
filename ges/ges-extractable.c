@@ -48,7 +48,7 @@ ges_extractable_default_init (GESExtractableInterface * iface)
  *
  * Method to get material which was used to instaniate specified object
  *
- * Returns: (transfer none): origin material
+ * Returns: (transfer none) : origin material
  */
 GESMaterial *
 ges_extractable_get_material (GESExtractable * self)
