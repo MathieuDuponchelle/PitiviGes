@@ -24,6 +24,7 @@
 
 #include <gst/gst.h>
 #include "ges.h"
+#include "ges-internal.h"
 
 static void ges_material_initable_interface_init (GInitableIface * iface);
 static void ges_material_async_initable_interface_init (GAsyncInitableIface *
@@ -48,6 +49,36 @@ struct _GESMaterialPrivate
 {
   GType extractable_type;
 };
+
+
+/**
+ * Internal structure to help avoid full loading
+ * of one material several times
+ */
+typedef struct
+{
+  gboolean loaded;
+  GESMaterial *material;
+  guint64 ref_counter;
+
+  /* List off callbacks to call when  the material is finally ready */
+  GList *callbacks;
+
+  GMutex *lock;
+} GESMaterialCacheEntry;
+
+/**
+ * Internal structure to store callbacks and corresponding user data pointers
+  in lists 
+*/
+typedef struct
+{
+  GAsyncReadyCallback callback;
+  gpointer user_data;
+} GESCallbackData;
+
+static GHashTable *material_cache = NULL;
+static GStaticMutex material_cache_lock = G_STATIC_MUTEX_INIT;
 
 /* GInitable implementation */
 static gboolean
@@ -339,4 +370,141 @@ ges_material_get_id (GESMaterial * self)
     return (*GES_MATERIAL_GET_CLASS (self)->get_id) (self);
   } else
     return NULL;
+}
+
+/* Cache routines */
+void
+ges_material_cache_init (void)
+{
+  g_static_mutex_lock (&material_cache_lock);
+  if (G_UNLIKELY (material_cache == NULL)) {
+    material_cache = g_hash_table_new (g_str_hash, g_str_equal);
+  }
+  g_static_mutex_unlock (&material_cache_lock);
+}
+
+static GHashTable *
+ges_material_cache_get (void)
+{
+  return material_cache;
+}
+
+static inline GESMaterialCacheEntry *
+ges_material_cache_get_entry (const gchar * uri)
+{
+  GHashTable *cache = ges_material_cache_get ();
+  GESMaterialCacheEntry *entry = NULL;
+
+  g_static_mutex_lock (&material_cache_lock);
+  entry = g_hash_table_lookup (cache, uri);
+  g_static_mutex_unlock (&material_cache_lock);
+
+  return entry;
+}
+
+/**
+* Looks for material with specified uri in cache and it's completely loaded.
+* @id String identifier of material
+* @lookup_callback Callback that will be called after lookup. Can be %NULL 
+* if lookup should be done synchronously. 
+* In other case returns NULL
+*/
+GESMaterial *
+ges_material_cache_lookup (const gchar * id)
+{
+  GESMaterialCacheEntry *entry = NULL;
+  GESMaterial *material = NULL;
+
+  entry = ges_material_cache_get_entry (id);
+
+  if (entry) {
+    g_mutex_lock (entry->lock);
+    if (entry->loaded) {
+      material = entry->material;
+    } else {
+      material = NULL;
+    }
+    g_mutex_unlock (entry->lock);
+  }
+
+  return material;
+}
+
+gboolean
+ges_material_cache_append_callback (const gchar * id, GAsyncReadyCallback cb,
+    gpointer user_data)
+{
+  GESMaterialCacheEntry *entry = NULL;
+  entry = ges_material_cache_get_entry (id);
+
+  if (entry) {
+    GESCallbackData *cbdata = g_new (GESCallbackData, 1);
+    g_mutex_lock (entry->lock);
+    cbdata->callback = cb;
+    cbdata->user_data = user_data;
+    entry->callbacks = g_list_append (entry->callbacks, cbdata);
+    g_mutex_unlock (entry->lock);
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+gboolean
+ges_material_cache_is_loaded (const gchar * id)
+{
+  GESMaterialCacheEntry *entry = NULL;
+  gboolean loaded = FALSE;
+
+  entry = ges_material_cache_get_entry (id);
+
+  if (entry) {
+    g_mutex_lock (entry->lock);
+    if (entry->loaded) {
+      loaded = TRUE;
+    } else {
+      loaded = FALSE;
+    }
+    g_mutex_unlock (entry->lock);
+  }
+
+  return loaded;
+}
+
+gboolean
+ges_material_cache_set_loaded (const gchar * id)
+{
+  GESMaterialCacheEntry *entry = NULL;
+  gboolean loaded = FALSE;
+
+  entry = ges_material_cache_get_entry (id);
+
+  if (entry) {
+    g_mutex_lock (entry->lock);
+    entry->loaded = TRUE;
+    loaded = TRUE;
+    g_mutex_unlock (entry->lock);
+  } else {
+    loaded = FALSE;
+  }
+
+  return loaded;
+}
+
+void
+ges_material_cache_put (GESMaterial * material)
+{
+  GHashTable *cache = ges_material_cache_get ();
+  const gchar *material_id = ges_material_get_id (material);
+  g_static_mutex_lock (&material_cache_lock);
+
+  if (!g_hash_table_contains (cache, material_id)) {
+    GESMaterialCacheEntry *entry = g_new (GESMaterialCacheEntry, 1);
+    entry->lock = g_mutex_new ();
+    entry->material = material;
+    entry->callbacks = g_list_alloc ();
+    entry->loaded = FALSE;
+    g_hash_table_insert (cache, (gpointer) material_id, (gpointer) entry);
+  }
+  g_static_mutex_unlock (&material_cache_lock);
 }

@@ -23,6 +23,7 @@
 */
 #include <gst/pbutils/pbutils.h>
 #include "ges.h"
+#include "ges-internal.h"
 
 static void ges_material_filesource_initable_interface_init (GInitableIface *
     iface);
@@ -198,7 +199,6 @@ initable_interface_init (GInitable * iface,
   GES_MATERIAL_FILESOURCE (iface)->priv->info =
       gst_discoverer_discover_uri (ges_material_filesource_get_discoverer (),
       GES_MATERIAL_FILESOURCE (iface)->priv->uri, NULL);
-
   if (GES_MATERIAL_FILESOURCE (iface)->priv->info != NULL) {
     return TRUE;
   } else {
@@ -246,7 +246,7 @@ ges_material_filesource_new_async (const gchar * uri,
   material = GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
   if (material) {
     if (!ges_material_cache_is_loaded (uri)) {
-      ges_material_cache_append_callback (uri, callback);
+      ges_material_cache_append_callback (uri, callback, user_data);
     }
 
   } else {
@@ -265,14 +265,18 @@ ges_material_filesource_new (const gchar * uri,
     GError ** error, const gchar * first_property_name, ...)
 {
   GESMaterialFileSource *material = NULL;
+  GST_DEBUG ("Synchronous filesource material constructor");
   material = GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
   if (material) {
     if (!ges_material_cache_is_loaded (uri)) {
+      GST_DEBUG ("Failed to retrieve material from cache");
       material = NULL;
-      g_set_error (error, 0, 0, "Failed to retrieve material from cache");
+      *error =
+          g_error_new (GES_ERROR_DOMAIN, 0, "Can't retrieve cached material");
     }
 
   } else {
+    GST_DEBUG ("Construcing new material");
     material = g_object_new (GES_TYPE_MATERIAL_FILESOURCE, "uri",
         uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
 

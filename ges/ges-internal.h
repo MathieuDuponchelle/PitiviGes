@@ -21,6 +21,7 @@
 #ifndef __GES_INTERNAL_H__
 #define __GES_INTERNAL_H__
 
+#include <gio/gio.h>
 #include <gst/gst.h>
 #include "ges-timeline.h"
 #include "ges-track-object.h"
@@ -62,5 +63,24 @@ timeline_move_object           (GESTimeline *timeline, GESTrackObject * object,
 
 gboolean
 timeline_context_to_layer      (GESTimeline *timeline, gint offset);
+
+void
+ges_material_cache_init (void);
+
+void
+ges_material_cache_put(GESMaterial* material);
+
+gboolean
+ges_material_cache_is_loaded(const gchar * id);
+
+gboolean
+ges_material_cache_set_loaded(const gchar * id);
+
+gboolean
+ges_material_cache_append_callback(const gchar * id, GAsyncReadyCallback cb,
+  gpointer user_data);
+
+GESMaterial*
+ges_material_cache_lookup(const gchar * id);
 
 #endif /* __GES_INTERNAL_H__ */

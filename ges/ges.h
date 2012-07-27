@@ -82,12 +82,6 @@ gboolean ges_init    (void);
 void     ges_version (guint * major, guint * minor, guint * micro,
                       guint * nano);
 
-void         ges_material_cache_put(GESMaterial* material);
-gboolean ges_material_cache_is_loaded(const gchar * id);
-gboolean ges_material_cache_set_loaded(const gchar * id);
-gboolean ges_material_cache_append_callback(const gchar * id, GAsyncReadyCallback cb);
-GESMaterial* ges_material_cache_lookup(const gchar * id);
-
 #define GES_ERROR_DOMAIN g_quark_from_static_string("GES")
 
 G_END_DECLS
