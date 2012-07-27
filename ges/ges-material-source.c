@@ -239,8 +239,7 @@ GESMaterialFileSource *
 ges_material_filesource_new_async (const gchar * uri,
     gint io_priority,
     GCancellable * cancellable,
-    GAsyncReadyCallback callback,
-    gpointer user_data, const gchar * first_property_name, ...)
+    GAsyncReadyCallback callback, gpointer user_data)
 {
   GESMaterialFileSource *material = NULL;
   material = GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
@@ -261,8 +260,7 @@ ges_material_filesource_new_async (const gchar * uri,
 
 GESMaterialFileSource *
 ges_material_filesource_new (const gchar * uri,
-    GCancellable * cancellable,
-    GError ** error, const gchar * first_property_name, ...)
+    GCancellable * cancellable, GError ** error)
 {
   GESMaterialFileSource *material = NULL;
   GST_DEBUG ("Synchronous filesource material constructor");

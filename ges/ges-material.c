@@ -63,8 +63,6 @@ typedef struct
 
   /* List off callbacks to call when  the material is finally ready */
   GList *callbacks;
-
-  GMutex *lock;
 } GESMaterialCacheEntry;
 
 /**
@@ -416,17 +414,15 @@ ges_material_cache_lookup (const gchar * id)
   GESMaterial *material = NULL;
 
   entry = ges_material_cache_get_entry (id);
-
+  g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    g_mutex_lock (entry->lock);
     if (entry->loaded) {
       material = entry->material;
     } else {
       material = NULL;
     }
-    g_mutex_unlock (entry->lock);
   }
-
+  g_static_mutex_unlock (&material_cache_lock);
   return material;
 }
 
@@ -435,19 +431,20 @@ ges_material_cache_append_callback (const gchar * id, GAsyncReadyCallback cb,
     gpointer user_data)
 {
   GESMaterialCacheEntry *entry = NULL;
+  gboolean result = FALSE;
   entry = ges_material_cache_get_entry (id);
 
+  g_static_mutex_lock (&material_cache_lock);
   if (entry) {
     GESCallbackData *cbdata = g_new (GESCallbackData, 1);
-    g_mutex_lock (entry->lock);
     cbdata->callback = cb;
     cbdata->user_data = user_data;
     entry->callbacks = g_list_append (entry->callbacks, cbdata);
-    g_mutex_unlock (entry->lock);
-    return TRUE;
-  } else {
-    return FALSE;
+    result = TRUE;
   }
+
+  g_static_mutex_unlock (&material_cache_lock);
+  return result;
 }
 
 gboolean
@@ -457,17 +454,16 @@ ges_material_cache_is_loaded (const gchar * id)
   gboolean loaded = FALSE;
 
   entry = ges_material_cache_get_entry (id);
-
+  g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    g_mutex_lock (entry->lock);
     if (entry->loaded) {
       loaded = TRUE;
     } else {
       loaded = FALSE;
     }
-    g_mutex_unlock (entry->lock);
   }
 
+  g_static_mutex_lock (&material_cache_lock);
   return loaded;
 }
 
@@ -478,16 +474,14 @@ ges_material_cache_set_loaded (const gchar * id)
   gboolean loaded = FALSE;
 
   entry = ges_material_cache_get_entry (id);
-
+  g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    g_mutex_lock (entry->lock);
     entry->loaded = TRUE;
     loaded = TRUE;
-    g_mutex_unlock (entry->lock);
   } else {
     loaded = FALSE;
   }
-
+  g_static_mutex_unlock (&material_cache_lock);
   return loaded;
 }
 
@@ -497,10 +491,8 @@ ges_material_cache_put (GESMaterial * material)
   GHashTable *cache = ges_material_cache_get ();
   const gchar *material_id = ges_material_get_id (material);
   g_static_mutex_lock (&material_cache_lock);
-
   if (!g_hash_table_contains (cache, material_id)) {
     GESMaterialCacheEntry *entry = g_new (GESMaterialCacheEntry, 1);
-    entry->lock = g_mutex_new ();
     entry->material = material;
     entry->callbacks = g_list_alloc ();
     entry->loaded = FALSE;
