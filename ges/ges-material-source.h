@@ -78,5 +78,7 @@ ges_material_filesource_new_async (const gchar * uri,
 GstDiscovererInfo *ges_material_filesource_get_info (const GESMaterialFileSource
     * material);
 
+void
+ges_material_filesource_set_uri (GESMaterialFileSource * self, gchar * uri);
 G_END_DECLS
 #endif /* _GES_MATERIAL_FILESOURCE */

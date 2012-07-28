@@ -102,11 +102,7 @@ ges_material_filesource_set_property (GObject * object, guint property_id,
 
   switch (property_id) {
     case PROP_URI:
-      if (material->priv->uri) {
-        g_free (material->priv->uri);
-      }
-
-      material->priv->uri = g_strdup (g_value_get_string (value));
+      ges_material_filesource_set_uri (material, g_value_dup_string (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -147,7 +143,8 @@ ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
       g_param_spec_string ("uri",
       "URI of source material",
       "Get/set URI of source material",
-      NULL, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
+      NULL, G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+      | GES_PARAM_CONSTRUCT_MANDATORY);
 
   g_object_class_install_properties (object_class, PROP_LAST, properties);
   GES_MATERIAL_CLASS (klass)->get_id = ges_material_filesource_get_id;
@@ -196,14 +193,18 @@ initable_interface_init (GInitable * iface,
       break;
   }
 
+
+  *error = NULL;
   GES_MATERIAL_FILESOURCE (iface)->priv->info =
       gst_discoverer_discover_uri (ges_material_filesource_get_discoverer (),
-      GES_MATERIAL_FILESOURCE (iface)->priv->uri, NULL);
-  if (GES_MATERIAL_FILESOURCE (iface)->priv->info != NULL) {
-    return TRUE;
-  } else {
+      GES_MATERIAL_FILESOURCE (iface)->priv->uri, error);
+
+  if ((error && *error)
+      || (GES_MATERIAL_FILESOURCE (iface)->priv->info == NULL)) {
     return FALSE;
   }
+
+  return TRUE;
 }
 
 static void
@@ -242,6 +243,10 @@ ges_material_filesource_new_async (const gchar * uri,
     GAsyncReadyCallback callback, gpointer user_data)
 {
   GESMaterialFileSource *material = NULL;
+  if (!gst_uri_is_valid (uri)) {
+    return NULL;
+  }
+
   material = GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
   if (material) {
     if (!ges_material_cache_is_loaded (uri)) {
@@ -263,18 +268,22 @@ ges_material_filesource_new (const gchar * uri,
     GCancellable * cancellable, GError ** error)
 {
   GESMaterialFileSource *material = NULL;
-  GST_DEBUG ("Synchronous filesource material constructor");
+
+  if (!gst_uri_is_valid (uri)) {
+    if (error)
+      *error = g_error_new (GES_ERROR_DOMAIN, 0, "Invalid URI");
+    return NULL;
+  }
+
   material = GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
   if (material) {
     if (!ges_material_cache_is_loaded (uri)) {
-      GST_DEBUG ("Failed to retrieve material from cache");
       material = NULL;
       *error =
           g_error_new (GES_ERROR_DOMAIN, 0, "Can't retrieve cached material");
     }
 
   } else {
-    GST_DEBUG ("Construcing new material");
     material = g_object_new (GES_TYPE_MATERIAL_FILESOURCE, "uri",
         uri, "extractable-type", GES_TYPE_TIMELINE_FILE_SOURCE, NULL);
 
@@ -296,6 +305,15 @@ GstDiscovererInfo *
 ges_material_filesource_get_info (const GESMaterialFileSource * self)
 {
   return self->priv->info;
+}
+
+void
+ges_material_filesource_set_uri (GESMaterialFileSource * self, gchar * uri)
+{
+  if (self->priv->uri)
+    g_free (self->priv->uri);
+
+  self->priv->uri = uri;
 }
 
 static void
