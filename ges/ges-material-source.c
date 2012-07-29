@@ -157,7 +157,7 @@ ges_material_filesource_init (GESMaterialFileSource * self)
       GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSourcePrivate);
 
   self->priv->info = NULL;
-  self->priv->duration = 0;
+  self->priv->duration = GST_CLOCK_TIME_NONE;
 }
 
 static GstDiscoverer *
