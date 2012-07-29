@@ -154,7 +154,7 @@ static void
 ges_material_filesource_init (GESMaterialFileSource * self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-      GES_TYPE_MATERIAL, GESMaterialFileSourcePrivate);
+      GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSourcePrivate);
 
   self->priv->info = NULL;
   self->priv->duration = 0;
