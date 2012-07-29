@@ -171,7 +171,6 @@ ges_material_filesource_get_discoverer (void)
     g_signal_connect (discoverer, "discovered",
         G_CALLBACK (discoverer_discovered_cb), NULL);
 
-    gst_discoverer_start (discoverer);
   }
   g_static_mutex_unlock (&discoverer_lock);
 
@@ -213,6 +212,7 @@ async_initable_init_async (GAsyncInitable * initable,
     GCancellable * cancellable,
     GAsyncReadyCallback callback, gpointer user_data)
 {
+  gst_discoverer_start (discoverer);
   gst_discoverer_discover_uri_async (ges_material_filesource_get_discoverer (),
       GES_MATERIAL_FILESOURCE (initable)->priv->uri);
 }
