@@ -255,6 +255,18 @@ ges_material_get_extractable_type (GESMaterial * self)
   return self->priv->extractable_type;
 }
 
+gboolean
+ges_material_is_loaded (GESMaterial * self)
+{
+  return self->priv->state == MATERIAL_INITIALIZED;
+}
+
+void
+ges_material_set_loaded (GESMaterial * self)
+{
+  self->priv->state = MATERIAL_INITIALIZED;
+}
+
 /**
  * ges_material_new_async:
  * @extractable_type: The #GType of the object that can be extracted from the new material.
@@ -295,7 +307,7 @@ ges_material_new (GType extractable_type,
   if (id != NULL) {
     material = ges_material_cache_lookup (id);
     if (material != NULL) {
-      if (material->priv->state == MATERIAL_INITIALIZED) {
+      if (ges_material_is_loaded (material)) {
 
         g_simple_async_result_set_op_res_gpointer (simple,
             g_object_ref (material), g_object_unref);
@@ -331,6 +343,7 @@ ges_material_new (GType extractable_type,
       first_property_name, var_args);
   va_end (var_args);
 
+  material->priv->state = MATERIAL_INITIALIZING;
   (*GES_MATERIAL_CLASS (material)->load) (material, cancellable, callback,
       user_data);
 
@@ -392,7 +405,7 @@ ges_material_cache_lookup (const gchar * id)
   entry = ges_material_cache_get_entry (id);
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    if (entry->loaded) {
+    if (ges_material_is_loaded (material)) {
       material = entry->material;
     } else {
       material = NULL;
@@ -432,7 +445,7 @@ ges_material_cache_is_loaded (const gchar * id)
   entry = ges_material_cache_get_entry (id);
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    if (entry->loaded) {
+    if (ges_material_is_loaded (entry->material)) {
       loaded = TRUE;
     } else {
       loaded = FALSE;
@@ -452,7 +465,7 @@ ges_material_cache_set_loaded (const gchar * id)
   entry = ges_material_cache_get_entry (id);
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    entry->loaded = TRUE;
+    ges_material_set_loaded (entry->material);
     loaded = TRUE;
   } else {
     loaded = FALSE;
@@ -471,7 +484,6 @@ ges_material_cache_put (GESMaterial * material)
     GESMaterialCacheEntry *entry = g_new (GESMaterialCacheEntry, 1);
     entry->material = material;
     entry->callbacks = g_list_alloc ();
-    entry->loaded = FALSE;
     g_hash_table_insert (cache, (gpointer) material_id, (gpointer) entry);
   }
   g_static_mutex_unlock (&material_cache_lock);

@@ -73,6 +73,8 @@ ges_material_new            (GType extractable_type,
 
 const gchar* ges_material_get_id(GESMaterial* self);
 
+gboolean ges_material_is_loaded(GESMaterial* self);
+void ges_material_source_set_loaded(GESMaterial* self);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */
