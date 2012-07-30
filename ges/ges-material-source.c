@@ -106,7 +106,7 @@ ges_material_filesource_load (GESMaterial * material,
     GCancellable * cancellable,
     GAsyncReadyCallback callback, gpointer user_data)
 {
-  gst_discoverer_start (discoverer);
+  gst_discoverer_start (ges_material_filesource_get_discoverer ());
   gst_discoverer_discover_uri_async (ges_material_filesource_get_discoverer (),
       GES_MATERIAL_FILESOURCE (material)->priv->uri);
 }
