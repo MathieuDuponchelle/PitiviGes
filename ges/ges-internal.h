@@ -25,6 +25,7 @@
 #include <gst/gst.h>
 #include "ges-timeline.h"
 #include "ges-track-object.h"
+#include "ges-material.h"
 
 GST_DEBUG_CATEGORY_EXTERN (_ges_debug);
 #define GST_CAT_DEFAULT _ges_debug
@@ -77,8 +78,7 @@ gboolean
 ges_material_cache_set_loaded(const gchar * id);
 
 gboolean
-ges_material_cache_append_callback(const gchar * id, GAsyncReadyCallback cb,
-  gpointer user_data);
+ges_material_cache_append_callback(const gchar * id, GESMaterialCallback callback);
 
 GESMaterial*
 ges_material_cache_lookup(const gchar * id);

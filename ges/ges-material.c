@@ -266,6 +266,8 @@ ges_material_set_loaded (GESMaterial * self)
   self->priv->state = MATERIAL_INITIALIZED;
 }
 
+
+
 /**
  * ges_material_new:
  * @extractable_type: The #GType of the object that can be extracted from the new material.
@@ -331,7 +333,6 @@ ges_material_new (GType extractable_type,
   GST_DEBUG ("Pointer to material is %p", material);
   material->priv->state = MATERIAL_INITIALIZING;
   ges_material_cache_put (material);
-  GST_DEBUG ("Size is %d", g_hash_table_size (ges_material_cache_get ()));
   ges_material_cache_append_callback (id, callback);
   (*GES_MATERIAL_GET_CLASS (material)->load) (material, cancellable);
 
@@ -394,11 +395,7 @@ ges_material_cache_lookup (const gchar * id)
 
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    if (ges_material_is_loaded (material)) {
-      material = entry->material;
-    } else {
-      material = NULL;
-    }
+    material = entry->material;
   }
   g_static_mutex_unlock (&material_cache_lock);
   return material;

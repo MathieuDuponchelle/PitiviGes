@@ -24,14 +24,14 @@
 #include <ges/ges-internal.h>
 
 static void
-material_loaded_cb (GESMaterialFileSource * material, GAsyncResult * res,
-    gpointer user_data)
+material_loaded_cb (GESMaterial * material, gboolean loaded)
 {
+  GESMaterialFileSource *mfs = GES_MATERIAL_FILESOURCE (material);
   GstDiscovererInfo *discoverer_info = NULL;
-  discoverer_info = ges_material_filesource_get_info (material);
+  discoverer_info = ges_material_filesource_get_info (mfs);
 
   GST_DEBUG ("Result is %d", gst_discoverer_info_get_result (discoverer_info));
-  GST_DEBUG ("Info type is %s", G_OBJECT_TYPE_NAME (material));
+  GST_DEBUG ("Info type is %s", G_OBJECT_TYPE_NAME (mfs));
   GST_DEBUG ("Duration is %lu",
       gst_discoverer_info_get_duration (discoverer_info));
 }
@@ -56,7 +56,7 @@ main (int argc, gchar ** argv)
   mainloop = g_main_loop_new (NULL, FALSE);
 
   ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
-      (GAsyncReadyCallback) material_loaded_cb, NULL, "uri", argv[1], NULL);
+      material_loaded_cb, NULL, "uri", argv[1], NULL);
 
   g_main_loop_run (mainloop);
 

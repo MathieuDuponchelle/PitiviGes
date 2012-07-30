@@ -40,7 +40,7 @@ enum
 };
 
 static GParamSpec *properties[PROP_LAST];
-static GstDiscoverer *discoverer;
+static GstDiscoverer *discoverer = NULL;
 
 
 static GStaticMutex discoverer_lock = G_STATIC_MUTEX_INIT;
@@ -109,7 +109,7 @@ static void
 ges_material_filesource_load (GESMaterial * material,
     GCancellable * cancellable)
 {
-  GST_DEBUG ("Started loading");
+  GST_DEBUG ("Started loading %p", material);
   gst_discoverer_start (ges_material_filesource_get_discoverer ());
   gst_discoverer_discover_uri_async (ges_material_filesource_get_discoverer (),
       GES_MATERIAL_FILESOURCE (material)->priv->uri);
@@ -174,7 +174,7 @@ ges_material_filesource_set_info (GESMaterialFileSource * self,
   if (self->priv->info != NULL) {
     g_object_unref (self->priv->info);
   }
-  self->priv->info = g_object_ref (info);
+  self->priv->info = info;
 }
 
 static void

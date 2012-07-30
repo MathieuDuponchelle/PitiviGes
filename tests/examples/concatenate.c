@@ -27,9 +27,7 @@ bus_message_cb (GstBus * bus, GstMessage * message, GMainLoop * mainloop);
 
 static GstEncodingProfile *make_profile_from_info (GstDiscovererInfo * info);
 
-static void
-material_loaded_cb (GESMaterialFileSource * material, GAsyncResult * res,
-    gpointer user_data);
+static void material_loaded_cb (GESMaterial * material, gboolean loaded);
 
 GESTimelinePipeline *pipeline = NULL;
 gchar *output_uri = NULL;
@@ -67,7 +65,7 @@ main (int argc, char **argv)
 
   for (i = 2; i < argc; i++) {
     ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
-        (GAsyncReadyCallback) material_loaded_cb, NULL, "uri", argv[1], NULL);
+        material_loaded_cb, NULL, "uri", argv[1], NULL);
   }
 
   /* In order to view our timeline, let's grab a convenience pipeline to put
@@ -95,9 +93,9 @@ main (int argc, char **argv)
 }
 
 static void
-material_loaded_cb (GESMaterialFileSource * material, GAsyncResult * res,
-    gpointer user_data)
+material_loaded_cb (GESMaterial * material, gboolean loaded)
 {
+  GESMaterialFileSource *mfs = GES_MATERIAL_FILESOURCE (material);
   g_static_mutex_lock (&materialsLoadedLock);
   materialsLoaded++;
   g_static_mutex_unlock (&materialsLoadedLock);
@@ -106,7 +104,7 @@ material_loaded_cb (GESMaterialFileSource * material, GAsyncResult * res,
    * Check if we have loaded last material and trigger concatenating
    */
   if (materialsLoaded == materialsCount) {
-    GstDiscovererInfo *info = ges_material_filesource_get_info (material);
+    GstDiscovererInfo *info = ges_material_filesource_get_info (mfs);
     GstEncodingProfile *profile = make_profile_from_info (info);
     ges_timeline_pipeline_set_render_settings (pipeline, output_uri, profile);
     gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
