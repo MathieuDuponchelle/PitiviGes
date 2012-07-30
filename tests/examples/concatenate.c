@@ -66,8 +66,8 @@ main (int argc, char **argv)
   materialsCount = argc - 2;
 
   for (i = 2; i < argc; i++) {
-    ges_material_filesource_new (argv[i],
-        (GAsyncReadyCallback) material_loaded_cb, NULL);
+    ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
+        (GAsyncReadyCallback) material_loaded_cb, NULL, "uri", argv[1], NULL);
   }
 
   /* In order to view our timeline, let's grab a convenience pipeline to put
