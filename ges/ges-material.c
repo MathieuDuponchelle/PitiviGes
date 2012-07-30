@@ -26,15 +26,7 @@
 #include "ges.h"
 #include "ges-internal.h"
 
-static void ges_material_initable_interface_init (GInitableIface * iface);
-static void ges_material_async_initable_interface_init (GAsyncInitableIface *
-    iface);
-
-G_DEFINE_TYPE_WITH_CODE (GESMaterial, ges_material, G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-        ges_material_initable_interface_init);
-    G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
-        ges_material_async_initable_interface_init));
+G_DEFINE_TYPE (GESMaterial, ges_material, G_TYPE_OBJECT);
 
 enum
 {
@@ -43,13 +35,20 @@ enum
   PROP_LAST
 };
 
+typedef enum
+{
+  MATERIAL_NOT_INITIALIZED,
+  MATERIAL_INITIALIZING,
+  MATERIAL_INITIALIZED
+} GESMaterialState;
+
 static GParamSpec *properties[PROP_LAST];
 
 struct _GESMaterialPrivate
 {
+  GESMaterialState state;
   GType extractable_type;
 };
-
 
 /**
  * Internal structure to help avoid full loading
@@ -78,42 +77,6 @@ typedef struct
 static GHashTable *material_cache = NULL;
 static GStaticMutex material_cache_lock = G_STATIC_MUTEX_INIT;
 
-/* GInitable implementation */
-static gboolean
-initable_iface_init (GInitable * initable, GCancellable * cancellable,
-    GError ** error)
-{
-  return TRUE;
-}
-
-static void
-async_initable_init_async (GAsyncInitable * initable,
-    int io_priority,
-    GCancellable * cancellable,
-    GAsyncReadyCallback callback, gpointer user_data)
-{
-}
-
-static gboolean
-async_initable_init_finish (GAsyncInitable * initable,
-    GAsyncResult * res, GError ** error)
-{
-  return TRUE;
-}
-
-
-static void
-ges_material_initable_interface_init (GInitableIface * iface)
-{
-  iface->init = initable_iface_init;
-}
-
-static void
-ges_material_async_initable_interface_init (GAsyncInitableIface * iface)
-{
-  iface->init_async = async_initable_init_async;
-  iface->init_finish = async_initable_init_finish;
-}
 
 /* GObject virtual methods implementation */
 static void
@@ -143,6 +106,13 @@ ges_material_set_property (GObject * object, guint property_id,
   }
 }
 
+static void
+ges_material_load_default (GESMaterial * material,
+    GCancellable * cancellable,
+    GAsyncReadyCallback callback, gpointer user_data)
+{
+}
+
 static const gchar *
 ges_material_get_id_default (GESMaterial * self)
 {
@@ -168,6 +138,7 @@ ges_material_class_init (GESMaterialClass * klass)
   g_object_class_install_properties (object_class, PROP_LAST, properties);
 
   klass->get_id = ges_material_get_id_default;
+  klass->load = ges_material_load_default;
 }
 
 void
@@ -175,7 +146,8 @@ ges_material_init (GESMaterial * self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL, GESMaterialPrivate);
-  self->state = MATERIAL_NOT_INITIALIZED;
+
+  self->priv->state = MATERIAL_NOT_INITIALIZED;
 }
 
 /* Some helper functions */
@@ -249,6 +221,25 @@ check_type_and_params (GType extractable_type,
   return object_type;
 }
 
+static gchar *
+get_id_from_params (const gchar * id_property_name,
+    const gchar * first_property_name, va_list var_args)
+{
+  const gchar *name = first_property_name;
+  const gchar *value = NULL;
+  while (name) {
+    value = va_arg (var_args, gchar *);
+
+    if (g_strcmp0 (id_property_name, value)) {
+      return g_strdup (value);
+    }
+
+    name = va_arg (var_args, gchar *);
+  }
+
+  return value;
+}
+
 /* API implementation */
 /**
  * ges_material_get_extractable_type:
@@ -262,55 +253,6 @@ GType
 ges_material_get_extractable_type (GESMaterial * self)
 {
   return self->priv->extractable_type;
-}
-
-/**
- * ges_material_new:
- * @extractable_type: The #GType of the object that can be extracted from the new material.
- * The class must implement the #GESExtractable
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @error: (allow-none): a #GError location to store the error occurring, or %NULL to ignore.
- * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
- *
- * Creates a new #GESMaterial syncroniously, @error will be set if something went
- * wrong and the constructor will return %NULL in this case
- *
- * Returns: Created #GESMaterial or reference to existing one if it was created earlier
- * or %NULL on error
- */
-GESMaterial *
-ges_material_new (GType extractable_type, GCancellable * cancellable,
-    GError ** error, const gchar * first_property_name, ...)
-{
-  GESMaterial *object;
-  va_list var_args;
-  GType object_type;
-
-  va_start (var_args, first_property_name);
-  object_type = check_type_and_params (extractable_type,
-      first_property_name, var_args);
-  va_end (var_args);
-
-  if (object_type == G_TYPE_INVALID) {
-    GST_WARNING ("Could create material with %s as extractable_type,"
-        "wrong input parameters", g_type_name (extractable_type));
-
-    if (error)
-      *error = g_error_new (GES_ERROR_DOMAIN, 0, "Wrong parameter");
-
-    return NULL;
-  }
-
-  if (first_property_name == NULL)
-    return g_initable_newv (object_type, 0, NULL, cancellable, error);
-
-  va_start (var_args, first_property_name);
-  object =
-      GES_MATERIAL (g_initable_new_valist (object_type, first_property_name,
-          var_args, cancellable, error));
-  va_end (var_args);
-
-  return object;
 }
 
 /**
@@ -329,16 +271,46 @@ ges_material_new (GType extractable_type, GCancellable * cancellable,
  * Returns: Created #GESMaterial or reference to existing one if it was created earlier
  * or %NULL on error
  */
-void
-ges_material_new_async (GType extractable_type, gint io_priority,
+GESMaterial *
+ges_material_new (GType extractable_type,
     GCancellable * cancellable, GAsyncReadyCallback callback,
     gpointer user_data, const gchar * first_property_name, ...)
 {
   /*GESMaterial *object; */
+  GESMaterial *material = NULL;
   va_list var_args;
   GType object_type;
 
+  const gchar *id_name = ges_extractable_type_get_id_name (extractable_type);
+  const gchar *id = NULL;
+  GSimpleAsyncResult *simple = NULL;
+
   va_start (var_args, first_property_name);
+  id = get_id_from_params (id_name, first_property_name, var_args);
+  va_end (var_args);
+
+  simple = g_simple_async_result_new (NULL,
+      callback, user_data, ges_material_new);
+
+  if (id != NULL) {
+    material = ges_material_cache_lookup (id);
+    if (material != NULL) {
+      if (material->priv->state == MATERIAL_INITIALIZED) {
+
+        g_simple_async_result_set_op_res_gpointer (simple,
+            g_object_ref (material), g_object_unref);
+        g_simple_async_result_complete_in_idle (simple);
+        g_object_unref (simple);
+        g_object_unref (material);
+        return;
+      }
+
+
+    }
+  }
+
+  va_start (var_args, first_property_name);
+
   object_type = check_type_and_params (extractable_type,
       first_property_name, var_args);
   va_end (var_args);
@@ -351,14 +323,18 @@ ges_material_new_async (GType extractable_type, gint io_priority,
     g_simple_async_report_error_in_idle (NULL, callback, user_data,
         GES_ERROR_DOMAIN, 0, "Wrong parameter");
 
-    return;
+    return NULL;
   }
 
   va_start (var_args, first_property_name);
-  g_async_initable_new_valist_async (object_type,
-      first_property_name, var_args, io_priority,
-      cancellable, callback, user_data);
+  material = (GESMaterial *) g_object_new_valist (object_type,
+      first_property_name, var_args);
   va_end (var_args);
+
+  (*GES_MATERIAL_CLASS (material)->load) (material, cancellable, callback,
+      user_data);
+
+  return material;
 }
 
 const gchar *

@@ -167,6 +167,12 @@ ges_extractable_type_mandatory_parameters (GType type)
   return ret;
 }
 
+const gchar *
+ges_extractable_type_get_id_name (GType type)
+{
+  return NULL;
+}
+
 /**
  * ges_extractable_type_material_type:
  * @type: The #GType implementing #GESExtractable

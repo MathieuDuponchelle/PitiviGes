@@ -59,22 +59,6 @@ struct _GESMaterialFileSourceClass
   gpointer _ges_reserved[GES_PADDING];
 };
 
-GESMaterialFileSource *
-ges_material_filesource_new                  (const gchar * uri,
-                                   GCancellable *cancellable,
-                                   GError **error);
-                                   
-/* If material_created == NULL discover syncronously and return the material
- * If no need to discover @uri return the (refed) GESMaterialFileSource directly
- * otherwize return %NULL and call material_created when discovered
- */
-GESMaterialFileSource *
-ges_material_filesource_new_async (const gchar * uri,
-                                   gint io_priority,
-                                   GCancellable * cancellable,
-                                   GAsyncReadyCallback callback,
-                                   gpointer user_data);
-
 GstDiscovererInfo *ges_material_filesource_get_info (const GESMaterialFileSource
     * material);
 
