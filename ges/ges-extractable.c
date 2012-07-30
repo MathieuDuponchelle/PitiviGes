@@ -34,6 +34,12 @@ ges_extractable_get_default_get_id (GESExtractable * self)
   return g_type_name (G_OBJECT_TYPE (self));
 }
 
+static const gchar *
+ges_extractable_default_get_id_for_type (GType type, va_list var_args)
+{
+  return g_type_name (type);
+}
+
 static void
 ges_extractable_default_init (GESExtractableInterface * iface)
 {
@@ -41,6 +47,7 @@ ges_extractable_default_init (GESExtractableInterface * iface)
   iface->get_id = ges_extractable_get_default_get_id;
   iface->get_material = NULL;
   iface->set_material = NULL;
+  iface->get_id_for_type = ges_extractable_default_get_id_for_type;
 }
 
 /**
