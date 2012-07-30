@@ -24,6 +24,7 @@
 #include "ges-material.h"
 #include "ges-internal.h"
 #include "ges-extractable.h"
+#include "ges-timeline-file-source.h"
 
 G_DEFINE_INTERFACE (GESExtractable, ges_extractable, G_TYPE_OBJECT);
 
@@ -170,7 +171,7 @@ ges_extractable_type_mandatory_parameters (GType type)
 const gchar *
 ges_extractable_type_get_id_name (GType type)
 {
-  return NULL;
+  return "uri";
 }
 
 /**

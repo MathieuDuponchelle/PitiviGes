@@ -37,6 +37,7 @@ G_BEGIN_DECLS
 #define GES_MATERIAL_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS ((obj), GES_TYPE_MATERIAL, GESMaterialClass))
 typedef struct _GESMaterialPrivate GESMaterialPrivate;
+typedef void (*GESMaterialCallback)(GESMaterial *material, gboolean loaded);
 
 GType ges_material_get_type (void);
 /* Abstract type (for now) */
@@ -55,8 +56,7 @@ struct _GESMaterialClass
 {
   GObjectClass parent;
   const gchar* (*get_id)	(GESMaterial *self);
-  void (*load) (GESMaterial *self, GCancellable *cancallable, 
-    GAsyncReadyCallback callback, gpointer user_data);
+  void (*load) (GESMaterial *self, GCancellable *cancallable);
   gpointer _ges_reserved[GES_PADDING];
 };
 
@@ -67,14 +67,14 @@ ges_material_get_extractable_type (GESMaterial * self);
 GESMaterial*
 ges_material_new            (GType extractable_type,
                                    GCancellable * cancellable,
-                                   GAsyncReadyCallback callback,
+                                   GESMaterialCallback callback,
                                    gpointer user_data,
                                    const gchar * first_property_name, ...);
 
 const gchar* ges_material_get_id(GESMaterial* self);
 
 gboolean ges_material_is_loaded(GESMaterial* self);
-void ges_material_source_set_loaded(GESMaterial* self);
+void ges_material_set_loaded(GESMaterial* self);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */

@@ -27,6 +27,7 @@
 #include "ges-internal.h"
 
 G_DEFINE_TYPE (GESMaterial, ges_material, G_TYPE_OBJECT);
+static GHashTable *ges_material_cache_get (void);
 
 enum
 {
@@ -70,9 +71,9 @@ typedef struct
 */
 typedef struct
 {
-  GAsyncReadyCallback callback;
+  GESMaterialCallback callback;
   gpointer user_data;
-} GESCallbackData;
+} GESMaterialCallbackData;
 
 static GHashTable *material_cache = NULL;
 static GStaticMutex material_cache_lock = G_STATIC_MUTEX_INIT;
@@ -107,9 +108,7 @@ ges_material_set_property (GObject * object, guint property_id,
 }
 
 static void
-ges_material_load_default (GESMaterial * material,
-    GCancellable * cancellable,
-    GAsyncReadyCallback callback, gpointer user_data)
+ges_material_load_default (GESMaterial * material, GCancellable * cancellable)
 {
 }
 
@@ -268,11 +267,9 @@ ges_material_set_loaded (GESMaterial * self)
 }
 
 /**
- * ges_material_new_async:
+ * ges_material_new:
  * @extractable_type: The #GType of the object that can be extracted from the new material.
  * The class must implement the #GESExtractable
- * @io_priority: The priority of the thread (Note that it is not always used,
- *    e.g: for GESMaterialFileSource it will not be used)
  * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
  * @callback: a #GAsyncReadyCallback to call when the initialization is finished
  * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
@@ -285,7 +282,7 @@ ges_material_set_loaded (GESMaterial * self)
  */
 GESMaterial *
 ges_material_new (GType extractable_type,
-    GCancellable * cancellable, GAsyncReadyCallback callback,
+    GCancellable * cancellable, GESMaterialCallback callback,
     gpointer user_data, const gchar * first_property_name, ...)
 {
   /*GESMaterial *object; */
@@ -295,29 +292,22 @@ ges_material_new (GType extractable_type,
 
   const gchar *id_name = ges_extractable_type_get_id_name (extractable_type);
   const gchar *id = NULL;
-  GSimpleAsyncResult *simple = NULL;
 
   va_start (var_args, first_property_name);
   id = get_id_from_params (id_name, first_property_name, var_args);
   va_end (var_args);
 
-  simple = g_simple_async_result_new (NULL,
-      callback, user_data, ges_material_new);
-
+  GST_DEBUG ("Id name is %s", id_name);
   if (id != NULL) {
     material = ges_material_cache_lookup (id);
     if (material != NULL) {
       if (ges_material_is_loaded (material)) {
-
-        g_simple_async_result_set_op_res_gpointer (simple,
-            g_object_ref (material), g_object_unref);
-        g_simple_async_result_complete_in_idle (simple);
-        g_object_unref (simple);
-        g_object_unref (material);
-        return;
+        (*callback) (material, TRUE);
+      } else {
+        ges_material_cache_append_callback (id, callback);
       }
 
-
+      return material;
     }
   }
 
@@ -330,11 +320,6 @@ ges_material_new (GType extractable_type,
   if (object_type == G_TYPE_INVALID) {
     GST_WARNING ("Could create material with %s as extractable_type,"
         "wrong input parameters", g_type_name (extractable_type));
-
-    /* FIXME Define error codes */
-    g_simple_async_report_error_in_idle (NULL, callback, user_data,
-        GES_ERROR_DOMAIN, 0, "Wrong parameter");
-
     return NULL;
   }
 
@@ -343,9 +328,12 @@ ges_material_new (GType extractable_type,
       first_property_name, var_args);
   va_end (var_args);
 
+  GST_DEBUG ("Pointer to material is %p", material);
   material->priv->state = MATERIAL_INITIALIZING;
-  (*GES_MATERIAL_CLASS (material)->load) (material, cancellable, callback,
-      user_data);
+  ges_material_cache_put (material);
+  GST_DEBUG ("Size is %d", g_hash_table_size (ges_material_cache_get ()));
+  ges_material_cache_append_callback (id, callback);
+  (*GES_MATERIAL_GET_CLASS (material)->load) (material, cancellable);
 
   return material;
 }
@@ -403,6 +391,7 @@ ges_material_cache_lookup (const gchar * id)
   GESMaterial *material = NULL;
 
   entry = ges_material_cache_get_entry (id);
+
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
     if (ges_material_is_loaded (material)) {
@@ -416,8 +405,7 @@ ges_material_cache_lookup (const gchar * id)
 }
 
 gboolean
-ges_material_cache_append_callback (const gchar * id, GAsyncReadyCallback cb,
-    gpointer user_data)
+ges_material_cache_append_callback (const gchar * id, GESMaterialCallback cb)
 {
   GESMaterialCacheEntry *entry = NULL;
   gboolean result = FALSE;
@@ -425,9 +413,9 @@ ges_material_cache_append_callback (const gchar * id, GAsyncReadyCallback cb,
 
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    GESCallbackData *cbdata = g_new (GESCallbackData, 1);
+    GESMaterialCallbackData *cbdata = g_new (GESMaterialCallbackData, 1);
     cbdata->callback = cb;
-    cbdata->user_data = user_data;
+    cbdata->user_data = NULL;
     entry->callbacks = g_list_append (entry->callbacks, cbdata);
     result = TRUE;
   }
@@ -456,6 +444,16 @@ ges_material_cache_is_loaded (const gchar * id)
   return loaded;
 }
 
+static void
+execute_callback_func (GESMaterialCallbackData * cbdata, GESMaterial * material)
+{
+  if (cbdata == NULL)
+    return;
+
+  (*cbdata->callback) (material, TRUE);
+  g_free (cbdata);
+}
+
 gboolean
 ges_material_cache_set_loaded (const gchar * id)
 {
@@ -466,6 +464,12 @@ ges_material_cache_set_loaded (const gchar * id)
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
     ges_material_set_loaded (entry->material);
+    GST_DEBUG ("About to launch cb");
+    g_list_foreach (entry->callbacks, (GFunc) execute_callback_func,
+        entry->material);
+    g_list_free (entry->callbacks);
+    entry->callbacks = NULL;
+
     loaded = TRUE;
   } else {
     loaded = FALSE;
@@ -483,8 +487,9 @@ ges_material_cache_put (GESMaterial * material)
   if (!g_hash_table_contains (cache, material_id)) {
     GESMaterialCacheEntry *entry = g_new (GESMaterialCacheEntry, 1);
     entry->material = material;
-    entry->callbacks = g_list_alloc ();
-    g_hash_table_insert (cache, (gpointer) material_id, (gpointer) entry);
+    entry->callbacks = NULL;
+    g_hash_table_insert (cache, (gpointer) g_strdup (material_id),
+        (gpointer) entry);
   }
   g_static_mutex_unlock (&material_cache_lock);
 }

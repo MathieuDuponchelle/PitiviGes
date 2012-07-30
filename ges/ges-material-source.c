@@ -28,6 +28,10 @@
 G_DEFINE_TYPE (GESMaterialFileSource, ges_material_filesource,
     GES_TYPE_MATERIAL);
 
+static void
+ges_material_filesource_set_uri (GESMaterialFileSource * self,
+    const gchar * uri);
+
 enum
 {
   PROP_0,
@@ -44,7 +48,7 @@ static GStaticMutex discoverer_lock = G_STATIC_MUTEX_INIT;
 static void discoverer_finished_cb (GstDiscoverer * discoverer);
 static void
 discoverer_discovered_cb (GstDiscoverer * discoverer,
-    GstDiscovererInfo * info, GError * err);
+    GstDiscovererInfo * info, GError * err, gpointer user_data);
 
 struct _GESMaterialFileSourcePrivate
 {
@@ -77,7 +81,7 @@ ges_material_filesource_set_property (GObject * object, guint property_id,
 
   switch (property_id) {
     case PROP_URI:
-      ges_material_filesource_set_uri (material, g_value_dup_string (value));
+      ges_material_filesource_set_uri (material, g_value_get_string (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -103,9 +107,9 @@ ges_material_filesource_get_discoverer (void)
 
 static void
 ges_material_filesource_load (GESMaterial * material,
-    GCancellable * cancellable,
-    GAsyncReadyCallback callback, gpointer user_data)
+    GCancellable * cancellable)
 {
+  GST_DEBUG ("Started loading");
   gst_discoverer_start (ges_material_filesource_get_discoverer ());
   gst_discoverer_discover_uri_async (ges_material_filesource_get_discoverer (),
       GES_MATERIAL_FILESOURCE (material)->priv->uri);
@@ -164,12 +168,23 @@ ges_material_filesource_get_info (const GESMaterialFileSource * self)
 }
 
 void
-ges_material_filesource_set_uri (GESMaterialFileSource * self, gchar * uri)
+ges_material_filesource_set_info (GESMaterialFileSource * self,
+    GstDiscovererInfo * info)
+{
+  if (self->priv->info != NULL) {
+    g_object_unref (self->priv->info);
+  }
+  self->priv->info = g_object_ref (info);
+}
+
+static void
+ges_material_filesource_set_uri (GESMaterialFileSource * self,
+    const gchar * uri)
 {
   if (self->priv->uri)
     g_free (self->priv->uri);
 
-  self->priv->uri = uri;
+  self->priv->uri = g_strdup (uri);
 }
 
 static void
@@ -179,8 +194,11 @@ discoverer_finished_cb (GstDiscoverer * discoverer)
 
 static void
 discoverer_discovered_cb (GstDiscoverer * discoverer,
-    GstDiscovererInfo * info, GError * err)
+    GstDiscovererInfo * info, GError * err, gpointer user_data)
 {
   const gchar *uri = gst_discoverer_info_get_uri (info);
+  GESMaterialFileSource *mfs =
+      GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
+  ges_material_filesource_set_info (mfs, info);
   ges_material_cache_set_loaded (uri);
 }
