@@ -220,25 +220,6 @@ check_type_and_params (GType extractable_type,
   return object_type;
 }
 
-static gchar *
-get_id_from_params (const gchar * id_property_name,
-    const gchar * first_property_name, va_list var_args)
-{
-  const gchar *name = first_property_name;
-  const gchar *value = NULL;
-  while (name) {
-    value = va_arg (var_args, gchar *);
-
-    if (g_strcmp0 (id_property_name, value)) {
-      return g_strdup (value);
-    }
-
-    name = va_arg (var_args, gchar *);
-  }
-
-  return value;
-}
-
 /* API implementation */
 /**
  * ges_material_get_extractable_type:
@@ -292,14 +273,12 @@ ges_material_new (GType extractable_type,
   va_list var_args;
   GType object_type;
 
-  const gchar *id_name = ges_extractable_type_get_id_name (extractable_type);
   const gchar *id = NULL;
 
   va_start (var_args, first_property_name);
-  id = get_id_from_params (id_name, first_property_name, var_args);
+  id = ges_extractable_get_id_for_type (extractable_type, var_args);
   va_end (var_args);
 
-  GST_DEBUG ("Id name is %s", id_name);
   if (id != NULL) {
     material = ges_material_cache_lookup (id);
     if (material != NULL) {

@@ -40,6 +40,19 @@ ges_extractable_default_get_id_for_type (GType type, va_list var_args)
   return g_type_name (type);
 }
 
+const gchar *
+ges_extractable_get_id_for_type (GType type, va_list var_args)
+{
+  GObjectClass *klass;
+  GESExtractableInterface *iface;
+
+  klass = g_type_class_ref (type);
+  g_return_val_if_fail (G_IS_OBJECT_CLASS (klass), NULL);
+  iface = g_type_interface_peek (klass, GES_TYPE_EXTRACTABLE);
+
+  return (*iface->get_id_for_type) (type, var_args);
+}
+
 static void
 ges_extractable_default_init (GESExtractableInterface * iface)
 {
@@ -173,12 +186,6 @@ ges_extractable_type_mandatory_parameters (GType type)
   g_free (all_specs);
 
   return ret;
-}
-
-const gchar *
-ges_extractable_type_get_id_name (GType type)
-{
-  return "uri";
 }
 
 /**
