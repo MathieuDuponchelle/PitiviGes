@@ -276,7 +276,8 @@ ges_material_new (GType extractable_type,
   const gchar *id = NULL;
 
   va_start (var_args, first_property_name);
-  id = ges_extractable_get_id_for_type (extractable_type, var_args);
+  id = ges_extractable_get_id_for_type (extractable_type, first_property_name,
+      var_args);
   va_end (var_args);
 
   if (id != NULL) {
