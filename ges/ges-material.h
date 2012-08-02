@@ -23,6 +23,7 @@
 #include <ges/ges-types.h>
 #include <ges/ges-enums.h>
 #include <gio/gio.h>
+#include <gst/gst.h>
 
 G_BEGIN_DECLS
 #define GES_TYPE_MATERIAL ges_material_get_type()
@@ -50,11 +51,11 @@ typedef void (*GESMaterialCreatedCallback)(GESMaterial *material, GError *error,
 typedef struct _GESMaterialPrivate GESMaterialPrivate;
 
 GType ges_material_get_type (void);
-
+/* Abstract type (for now) */
 struct _GESMaterial
 {
   GObject parent;
-
+  
   /* <private> */
   GESMaterialPrivate *priv;
 
@@ -67,6 +68,11 @@ struct _GESMaterialClass
   GObjectClass parent;
   const gchar* (*get_id)	(GESMaterial *self);
   gboolean (*start_loading) (GESMaterial *self);
+  
+  GESTimelineObject* (*build_object)(GESMaterial *self, GstClockTime start,
+             GstClockTime inpoint, GstClockTime duration,
+             GESTrackType track_types);
+  
   gpointer _ges_reserved[GES_PADDING];
 };
 
