@@ -962,7 +962,16 @@ ges_timeline_layer_add_material (GESTimelineLayer * layer,
     GstClockTime inpoint, GstClockTime duration, GESTrackType track_types)
 {
   // TODO: Add actual implementation here
-  return NULL;
+  GESMaterialClass *klass = GES_MATERIAL_GET_CLASS (material);
+
+  GESTimelineObject *tlobj =
+      (*klass->build_object) (material, start, inpoint, duration, track_types);
+
+  if (!ges_timeline_layer_add_object (layer, tlobj)) {
+    tlobj = NULL;
+  }
+
+  return tlobj;
 }
 
 /**
