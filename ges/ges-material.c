@@ -107,9 +107,10 @@ ges_material_set_property (GObject * object, guint property_id,
   }
 }
 
-static void
-ges_material_load_default (GESMaterial * material, GCancellable * cancellable)
+static gboolean
+ges_material_start_loading_default (GESMaterial * material)
 {
+  return ges_material_cache_set_loaded (ges_material_get_id (material), NULL);
 }
 
 static const gchar *
@@ -137,7 +138,7 @@ ges_material_class_init (GESMaterialClass * klass)
   g_object_class_install_properties (object_class, PROP_LAST, properties);
 
   klass->get_id = ges_material_get_id_default;
-  klass->load = ges_material_load_default;
+  klass->start_loading = ges_material_start_loading_default;
 }
 
 void
@@ -408,39 +409,43 @@ ges_material_set_loaded (GESMaterial * self)
  * @callback: a #GAsyncReadyCallback to call when the initialization is finished
  * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
  *
- * Creates a new #GESMaterial asyncroniously, @error will be set if something went
- * wrong and the constructor will return %NULL in this case
+ * Creates a new #GESMaterial asyncronously, @callback will be called when the materail is loaded
  *
- * Returns: Created #GESMaterial or reference to existing one if it was created earlier
- * or %NULL on error
+ * Returns: %TRUE if the material could be loaded to load %FALSE otherwize
  */
-GESMaterial *
-ges_material_new (GType extractable_type,
-    GESMaterialCallback callback, gpointer user_data,
-    const gchar * first_property_name, ...)
+gboolean
+ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
+    gpointer user_data, const gchar * first_property_name, ...)
 {
-  /*GESMaterial *object; */
-  GESMaterial *material = NULL;
   va_list var_args;
   GType object_type;
 
   const gchar *id = NULL;
+  GESMaterial *material = NULL;
+
+  g_return_val_if_fail (callback, FALSE);
 
   va_start (var_args, first_property_name);
   id = ges_extractable_get_id_for_type (extractable_type, first_property_name,
       var_args);
   va_end (var_args);
 
-  if (id != NULL) {
-    material = ges_material_cache_lookup (id);
-    if (material != NULL) {
-      if (ges_material_is_loaded (material)) {
-        (*callback) (material, TRUE);
-      } else {
-        ges_material_cache_append_callback (id, callback);
-      }
+  if (id == NULL) {
+    GST_WARNING ("No ID found in arguments, can't create Material");
 
-      return material;
+    return FALSE;
+  }
+
+  material = ges_material_cache_lookup (id);
+  if (material != NULL && material->priv->state != MATERIAL_INITIALIZED) {
+    if (material->priv->state == MATERIAL_INITIALIZED) {
+      callback (material, NULL, user_data);
+
+      return TRUE;
+    } else {
+      ges_material_cache_append_callback (id, callback);
+
+      return TRUE;
     }
   }
 
@@ -452,7 +457,8 @@ ges_material_new (GType extractable_type,
   if (object_type == G_TYPE_INVALID) {
     GST_WARNING ("Could create material with %s as extractable_type,"
         "wrong input parameters", g_type_name (extractable_type));
-    return NULL;
+
+    return FALSE;
   }
 
   va_start (var_args, first_property_name);
@@ -460,11 +466,18 @@ ges_material_new (GType extractable_type,
       first_property_name, var_args);
   va_end (var_args);
 
-  GST_DEBUG ("Pointer to material is %p", material);
+  GST_DEBUG_OBJECT (material, "In creation");
+
   material->priv->state = MATERIAL_INITIALIZING;
   ges_material_cache_put (material);
   ges_material_cache_append_callback (id, callback);
-  (*GES_MATERIAL_GET_CLASS (material)->load) (material, cancellable);
 
-  return material;
+  if (GES_MATERIAL_GET_CLASS (material)->start_loading (material)
+      == FALSE) {
+
+
+    return FALSE;
+  }
+
+  return TRUE;
 }

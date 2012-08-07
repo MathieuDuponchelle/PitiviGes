@@ -56,7 +56,7 @@ struct _GESMaterialClass
 {
   GObjectClass parent;
   const gchar* (*get_id)	(GESMaterial *self);
-  void (*load) (GESMaterial *self, GCancellable *cancallable);
+  gboolean (*start_loading) (GESMaterial *self);
   gpointer _ges_reserved[GES_PADDING];
 };
 
@@ -64,7 +64,7 @@ struct _GESMaterialClass
 GType
 ges_material_get_extractable_type (GESMaterial * self);
 
-GESMaterial*
+gboolean
 ges_material_new            (GType extractable_type,
                              GESMaterialCallback callback,
                              gpointer user_data,

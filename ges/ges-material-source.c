@@ -105,14 +105,15 @@ ges_material_filesource_get_discoverer (void)
   return discoverer;
 }
 
-static void
-ges_material_filesource_load (GESMaterial * material,
-    GCancellable * cancellable)
+static gboolean
+ges_material_filesource_start_loading (GESMaterial * material)
 {
   GST_DEBUG ("Started loading %p", material);
   gst_discoverer_start (ges_material_filesource_get_discoverer ());
-  gst_discoverer_discover_uri_async (ges_material_filesource_get_discoverer (),
-      GES_MATERIAL_FILESOURCE (material)->priv->uri);
+
+  return
+      gst_discoverer_discover_uri_async (ges_material_filesource_get_discoverer
+      (), GES_MATERIAL_FILESOURCE (material)->priv->uri);
 }
 
 
@@ -139,7 +140,8 @@ ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
 
   g_object_class_install_properties (object_class, PROP_LAST, properties);
   GES_MATERIAL_CLASS (klass)->get_id = ges_material_filesource_get_id;
-  GES_MATERIAL_CLASS (klass)->load = ges_material_filesource_load;
+  GES_MATERIAL_CLASS (klass)->start_loading =
+      ges_material_filesource_start_loading;
 }
 
 static void
