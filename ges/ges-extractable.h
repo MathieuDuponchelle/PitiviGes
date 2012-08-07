@@ -77,17 +77,19 @@ struct _GESExtractableInterface
 
   GType material_type;
 
+  /*<protected>*/
   GESExtractableGetId get_id;
-  GESExtractableGetIdForType get_id_for_type;
   GESExtractableGetMaterial get_material;
   GESExtractableSetMaterial set_material;
-  
+  GESExtractableGetIdForType get_id_for_type;
+
   gpointer _ges_reserved[GES_PADDING];
 };
 
 GType ges_extractable_get_material_type        (GESExtractable *self);
 GType ges_extractable_type_material_type       (GType type);
-const gchar* ges_extractable_get_id_for_type  (GType type, va_list va_args);
+const gchar* ges_extractable_get_id_for_type   (GType type, const gchar *first_property,
+  va_list va_args);
 
 /**
  * GESExtractableGetMaterial

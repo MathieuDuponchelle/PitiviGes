@@ -25,21 +25,23 @@ GST_START_TEST (test_basic)
   GESMaterial *material;
 
   material = ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
-      NULL, "uri", "file:///this/is/not/for/real", NULL);
+      NULL, NULL, "uri", "file:///this/is/not/for/real", NULL);
 
   fail_unless (GES_IS_MATERIAL_SOURCE (material));
   gst_object_unref (material);
 
   material = ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
-      NULL, "uri", "file:///this/is/not/for/real", NULL);
+      NULL, NULL, "uri", "file:///this/is/not/for/real", NULL);
 
   fail_unless (GES_IS_MATERIAL_SOURCE (material));
   gst_object_unref (material);
 
-  material = ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL, NULL, NULL);
+  material =
+      ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL, NULL, NULL, NULL);
   fail_unless (material == NULL);
 
-  material = ges_material_new (GES_TYPE_TIMELINE_TRANSITION, NULL, NULL, NULL);
+  material =
+      ges_material_new (GES_TYPE_TIMELINE_TRANSITION, NULL, NULL, NULL, NULL);
   fail_unless (GES_IS_MATERIAL (material));
   gst_object_unref (material);
 }

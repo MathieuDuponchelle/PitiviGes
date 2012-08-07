@@ -41,7 +41,8 @@ ges_extractable_default_get_id_for_type (GType type, va_list var_args)
 }
 
 const gchar *
-ges_extractable_get_id_for_type (GType type, va_list var_args)
+ges_extractable_get_id_for_type (GType type, const gchar * first_property,
+    va_list var_args)
 {
   GObjectClass *klass;
   GESExtractableInterface *iface;
