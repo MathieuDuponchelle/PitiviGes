@@ -302,6 +302,7 @@ ges_material_cache_append_callback (const gchar * id,
 static void
 execute_callback_func (GESMaterialCallbackData * cbdata)
 {
+  gst_object_ref (cbdata->entry->material);
   cbdata->callback (cbdata->entry->material, cbdata->entry->error,
       cbdata->user_data);
   g_free (cbdata);
@@ -428,6 +429,7 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
   material = ges_material_cache_lookup (id);
   if (material != NULL && material->priv->state != MATERIAL_INITIALIZED) {
     if (material->priv->state == MATERIAL_INITIALIZED) {
+      gst_object_ref (material);
       callback (material, NULL, user_data);
 
       return TRUE;
