@@ -252,8 +252,7 @@ ges_material_set_loaded (GESMaterial * self)
 /**
  * ges_material_new:
  * @extractable_type: The #GType of the object that can be extracted from the new material.
- * The class must implement the #GESExtractable
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ *    The class must implement the #GESExtractable interface.
  * @callback: a #GAsyncReadyCallback to call when the initialization is finished
  * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
  *
@@ -265,8 +264,8 @@ ges_material_set_loaded (GESMaterial * self)
  */
 GESMaterial *
 ges_material_new (GType extractable_type,
-    GCancellable * cancellable, GESMaterialCallback callback,
-    gpointer user_data, const gchar * first_property_name, ...)
+    GESMaterialCallback callback, gpointer user_data,
+    const gchar * first_property_name, ...)
 {
   /*GESMaterial *object; */
   GESMaterial *material = NULL;
@@ -294,7 +293,6 @@ ges_material_new (GType extractable_type,
   }
 
   va_start (var_args, first_property_name);
-
   object_type = check_type_and_params (extractable_type,
       first_property_name, var_args);
   va_end (var_args);

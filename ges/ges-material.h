@@ -66,10 +66,9 @@ ges_material_get_extractable_type (GESMaterial * self);
 
 GESMaterial*
 ges_material_new            (GType extractable_type,
-                                   GCancellable * cancellable,
-                                   GESMaterialCallback callback,
-                                   gpointer user_data,
-                                   const gchar * first_property_name, ...);
+                             GESMaterialCallback callback,
+                             gpointer user_data,
+                             const gchar * first_property_name, ...);
 
 const gchar* ges_material_get_id(GESMaterial* self);
 
