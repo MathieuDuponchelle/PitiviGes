@@ -75,10 +75,7 @@ gboolean
 ges_material_cache_is_loaded(const gchar * id);
 
 gboolean
-ges_material_cache_set_loaded(const gchar * id);
-
-gboolean
-ges_material_cache_append_callback(const gchar * id, GESMaterialCallback callback);
+ges_material_cache_set_loaded(const gchar * id, GError *error);
 
 GESMaterial*
 ges_material_cache_lookup(const gchar * id);

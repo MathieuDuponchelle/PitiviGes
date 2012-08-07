@@ -40,6 +40,7 @@ typedef enum
 {
   MATERIAL_NOT_INITIALIZED,
   MATERIAL_INITIALIZING,
+  MATERIAL_INITIALIZED_WITH_ERROR,
   MATERIAL_INITIALIZED
 } GESMaterialState;
 
@@ -61,18 +62,23 @@ typedef struct
   GESMaterial *material;
   guint64 ref_counter;
 
+  GError *error;
+
   /* List off callbacks to call when  the material is finally ready */
   GList *callbacks;
 } GESMaterialCacheEntry;
 
 /**
  * Internal structure to store callbacks and corresponding user data pointers
-  in lists 
+  in lists
 */
 typedef struct
 {
-  GESMaterialCallback callback;
+  GESMaterialCacheEntry *entry;
+
+  GESMaterialCreatedCallback callback;
   gpointer user_data;
+
 } GESMaterialCallbackData;
 
 static GHashTable *material_cache = NULL;
@@ -283,8 +289,9 @@ ges_material_cache_lookup (const gchar * id)
   return material;
 }
 
-gboolean
-ges_material_cache_append_callback (const gchar * id, GESMaterialCallback cb)
+static gboolean
+ges_material_cache_append_callback (const gchar * id,
+    GESMaterialCreatedCallback cb)
 {
   GESMaterialCacheEntry *entry = NULL;
   gboolean result = FALSE;
@@ -293,6 +300,8 @@ ges_material_cache_append_callback (const gchar * id, GESMaterialCallback cb)
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
     GESMaterialCallbackData *cbdata = g_new (GESMaterialCallbackData, 1);
+
+    cbdata->entry = entry;
     cbdata->callback = cb;
     cbdata->user_data = NULL;
     entry->callbacks = g_list_append (entry->callbacks, cbdata);
@@ -303,50 +312,35 @@ ges_material_cache_append_callback (const gchar * id, GESMaterialCallback cb)
   return result;
 }
 
-static gboolean
-ges_material_cache_is_loaded (const gchar * id)
-{
-  GESMaterialCacheEntry *entry = NULL;
-  gboolean loaded = FALSE;
-
-  entry = ges_material_cache_get_entry (id);
-  g_static_mutex_lock (&material_cache_lock);
-  if (entry) {
-    if (ges_material_is_loaded (entry->material)) {
-      loaded = TRUE;
-    } else {
-      loaded = FALSE;
-    }
-  }
-
-  g_static_mutex_lock (&material_cache_lock);
-  return loaded;
-}
-
 static void
-execute_callback_func (GESMaterialCallbackData * cbdata, GESMaterial * material)
+execute_callback_func (GESMaterialCallbackData * cbdata)
 {
-  if (cbdata == NULL)
-    return;
-
-  (*cbdata->callback) (material, TRUE);
+  cbdata->callback (cbdata->entry->material, cbdata->entry->error,
+      cbdata->user_data);
   g_free (cbdata);
 }
 
-static gboolean
-ges_material_cache_set_loaded (const gchar * id)
+gboolean
+ges_material_cache_set_loaded (const gchar * id, GError * error)
 {
   GESMaterialCacheEntry *entry = NULL;
+  GESMaterial *material;
   gboolean loaded = FALSE;
 
   entry = ges_material_cache_get_entry (id);
   g_static_mutex_lock (&material_cache_lock);
   if (entry) {
-    ges_material_set_loaded (entry->material);
-    GST_DEBUG ("About to launch cb");
-    g_list_foreach (entry->callbacks, (GFunc) execute_callback_func,
-        entry->material);
-    g_list_free (entry->callbacks);
+    GST_DEBUG_OBJECT (entry->material, "loaded, calling callback: %s", error
+        ? error->message : "");
+
+    material = entry->material;
+    if (error) {
+      entry->error = error;
+      material->priv->state = MATERIAL_INITIALIZED_WITH_ERROR;
+    } else
+      material->priv->state = MATERIAL_INITIALIZED;
+
+    g_list_free_full (entry->callbacks, (GDestroyNotify) execute_callback_func);
     entry->callbacks = NULL;
 
     loaded = TRUE;
@@ -365,10 +359,13 @@ ges_material_cache_put (GESMaterial * material)
   g_static_mutex_lock (&material_cache_lock);
   if (!g_hash_table_contains (cache, material_id)) {
     GESMaterialCacheEntry *entry = g_new (GESMaterialCacheEntry, 1);
+
     entry->material = material;
     entry->callbacks = NULL;
     g_hash_table_insert (cache, (gpointer) g_strdup (material_id),
         (gpointer) entry);
+  } else {
+    GST_DEBUG ("%s alerady in cache, not adding it again", material_id);
   }
   g_static_mutex_unlock (&material_cache_lock);
 }
@@ -442,6 +439,8 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
       callback (material, NULL, user_data);
 
       return TRUE;
+    } else if (material->priv->state == MATERIAL_INITIALIZED_WITH_ERROR) {
+      goto initialize;
     } else {
       ges_material_cache_append_callback (id, callback);
 
@@ -468,13 +467,19 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
 
   GST_DEBUG_OBJECT (material, "In creation");
 
+initialize:
   material->priv->state = MATERIAL_INITIALIZING;
   ges_material_cache_put (material);
   ges_material_cache_append_callback (id, callback);
 
   if (GES_MATERIAL_GET_CLASS (material)->start_loading (material)
       == FALSE) {
+    GError *error = g_error_new (GES_ERROR_DOMAIN, 1,
+        "Could not start loading material");
 
+    /* FIXME Define error code */
+    ges_material_cache_set_loaded (id, error);
+    g_error_free (error);
 
     return FALSE;
   }

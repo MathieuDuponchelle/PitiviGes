@@ -202,5 +202,5 @@ discoverer_discovered_cb (GstDiscoverer * discoverer,
   GESMaterialFileSource *mfs =
       GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
   ges_material_filesource_set_info (mfs, info);
-  ges_material_cache_set_loaded (uri);
+  ges_material_cache_set_loaded (uri, err);
 }

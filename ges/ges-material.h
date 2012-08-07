@@ -36,8 +36,18 @@ G_BEGIN_DECLS
     (G_TYPE_CHECK_CLASS_TYPE ((klass), GES_TYPE_MATERIAL))
 #define GES_MATERIAL_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS ((obj), GES_TYPE_MATERIAL, GESMaterialClass))
+
+/**
+ * GESMaterialCreatedCallback:
+ * @material: the #newly created #GESMaterial or %NULL if something went wrong
+ * @error: The #GError filled if previsouly provided in the constructor or %NULL
+ * @user_data: The user data pointer
+ *
+ * A function that will be called when a #GESMaterial is ready to be used.
+ */
+typedef void (*GESMaterialCreatedCallback)(GESMaterial *material, GError *error, gpointer user_data);
+
 typedef struct _GESMaterialPrivate GESMaterialPrivate;
-typedef void (*GESMaterialCallback)(GESMaterial *material, gboolean loaded);
 
 GType ges_material_get_type (void);
 
@@ -66,7 +76,7 @@ ges_material_get_extractable_type (GESMaterial * self);
 
 gboolean
 ges_material_new            (GType extractable_type,
-                             GESMaterialCallback callback,
+                             GESMaterialCreatedCallback callback,
                              gpointer user_data,
                              const gchar * first_property_name, ...);
 
