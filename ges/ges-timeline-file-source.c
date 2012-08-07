@@ -178,11 +178,28 @@ extractable_get_id (GESTimelineFileSource * object)
   return object->priv->uri;
 }
 
+static const gchar *
+extractable_get_id_for_type (GType type, const gchar * first_property,
+    va_list var_args)
+{
+  const gchar *name = first_property;
+
+  while (name) {
+    if (g_strcmp0 (name, "uri") == 0)
+      return va_arg (var_args, gchar *);
+
+    name = va_arg (var_args, gchar *);
+  }
+
+  return NULL;
+}
+
 static void
 ges_extractable_interface_init (GESExtractableInterface * iface)
 {
   iface->material_type = GES_TYPE_MATERIAL_FILESOURCE;
   iface->get_id = (GESExtractableGetId) extractable_get_id;
+  iface->get_id_for_type = extractable_get_id_for_type;
 }
 
 static void

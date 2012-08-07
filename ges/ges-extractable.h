@@ -66,7 +66,6 @@ typedef void (*GESExtractableSetMaterial) (GESExtractable *self,
 
 typedef const gchar * (*GESExtractableGetId) (GESExtractable *self);
 
-typedef const gchar * (*GESExtractableGetIdForType) (GType type, va_list var_args);
 /**
  * GESExtractable:
  * @get_material: A #GESExtractableGetMaterial function
@@ -81,7 +80,8 @@ struct _GESExtractableInterface
   GESExtractableGetId get_id;
   GESExtractableGetMaterial get_material;
   GESExtractableSetMaterial set_material;
-  GESExtractableGetIdForType get_id_for_type;
+  const gchar *(*get_id_for_type) (GType type, const gchar *first_property,
+      va_list var_args);
 
   gpointer _ges_reserved[GES_PADDING];
 };

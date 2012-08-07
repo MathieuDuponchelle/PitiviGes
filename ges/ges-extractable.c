@@ -35,7 +35,8 @@ ges_extractable_get_default_get_id (GESExtractable * self)
 }
 
 static const gchar *
-ges_extractable_default_get_id_for_type (GType type, va_list var_args)
+ges_extractable_default_get_id_for_type (GType type,
+    const gchar * first_property, va_list var_args)
 {
   return g_type_name (type);
 }
@@ -53,7 +54,7 @@ ges_extractable_get_id_for_type (GType type, const gchar * first_property,
   iface = g_type_interface_peek (klass, GES_TYPE_EXTRACTABLE);
   g_type_class_unref (klass);
 
-  return (*iface->get_id_for_type) (type, var_args);
+  return iface->get_id_for_type (type, first_property, var_args);
 }
 
 static void
