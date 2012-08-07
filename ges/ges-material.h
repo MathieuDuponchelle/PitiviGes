@@ -40,11 +40,11 @@ typedef struct _GESMaterialPrivate GESMaterialPrivate;
 typedef void (*GESMaterialCallback)(GESMaterial *material, gboolean loaded);
 
 GType ges_material_get_type (void);
-/* Abstract type (for now) */
+
 struct _GESMaterial
 {
   GObject parent;
-  
+
   /* <private> */
   GESMaterialPrivate *priv;
 
@@ -71,9 +71,6 @@ ges_material_new            (GType extractable_type,
                              const gchar * first_property_name, ...);
 
 const gchar* ges_material_get_id(GESMaterial* self);
-
-gboolean ges_material_is_loaded(GESMaterial* self);
-void ges_material_set_loaded(GESMaterial* self);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */

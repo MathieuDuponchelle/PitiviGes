@@ -399,7 +399,7 @@ ges_material_cache_append_callback (const gchar * id, GESMaterialCallback cb)
   return result;
 }
 
-gboolean
+static gboolean
 ges_material_cache_is_loaded (const gchar * id)
 {
   GESMaterialCacheEntry *entry = NULL;
@@ -429,7 +429,7 @@ execute_callback_func (GESMaterialCallbackData * cbdata, GESMaterial * material)
   g_free (cbdata);
 }
 
-gboolean
+static gboolean
 ges_material_cache_set_loaded (const gchar * id)
 {
   GESMaterialCacheEntry *entry = NULL;
