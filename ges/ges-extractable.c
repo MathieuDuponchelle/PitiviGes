@@ -49,7 +49,9 @@ ges_extractable_get_id_for_type (GType type, const gchar * first_property,
 
   klass = g_type_class_ref (type);
   g_return_val_if_fail (G_IS_OBJECT_CLASS (klass), NULL);
+
   iface = g_type_interface_peek (klass, GES_TYPE_EXTRACTABLE);
+  g_type_class_unref (klass);
 
   return (*iface->get_id_for_type) (type, var_args);
 }
