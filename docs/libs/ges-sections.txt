@@ -909,6 +909,7 @@ ges_extractable_get_type
 <TITLE>GESMaterial</TITLE>
 GESMaterial
 ges_material_get_extractable_type
+ges_material_get_id
 ges_material_new
 <SUBSECTION Standard>
 GES_MATERIAL

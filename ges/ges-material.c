@@ -391,8 +391,6 @@ ges_material_set_loaded (GESMaterial * self)
   self->priv->state = MATERIAL_INITIALIZED;
 }
 
-
-
 /**
  * ges_material_new:
  * @extractable_type: The #GType of the object that can be extracted from the new material.
@@ -481,6 +479,14 @@ initialize:
   return TRUE;
 }
 
+/**
+ * ges_material_get_id:
+ * @self: The #GESMaterial to get ID from
+ *
+ * Gets the ID of a #GESMaterial
+ *
+ * Returns: The ID of @self
+ */
 const gchar *
 ges_material_get_id (GESMaterial * self)
 {
