@@ -77,7 +77,6 @@ ges_init (void)
   if (!ges_check_gnonlin_availability ())
     return FALSE;
 
-  ges_material_cache_init ();
   /* TODO: user-defined types? */
 
   GST_DEBUG ("GStreamer Editing Services initialized");

@@ -229,31 +229,25 @@ check_type_and_params (GType extractable_type,
 
 
 /* Cache routines */
-void
-ges_material_cache_init (void)
-{
-  g_static_mutex_lock (&material_cache_lock);
-  if (G_UNLIKELY (material_cache == NULL)) {
-    material_cache = g_hash_table_new (g_str_hash, g_str_equal);
-  }
-  g_static_mutex_unlock (&material_cache_lock);
-}
-
+/* WARNING: Must be called WITH material_cache_lock */
 static GHashTable *
 ges_material_cache_get (void)
 {
+  if (G_UNLIKELY (material_cache == NULL)) {
+    material_cache = g_hash_table_new (g_str_hash, g_str_equal);
+  }
+
   return material_cache;
 }
 
+/* WARNING: Must be called WITH material_cache_lock */
 static inline GESMaterialCacheEntry *
 ges_material_cache_get_entry (const gchar * uri)
 {
   GHashTable *cache = ges_material_cache_get ();
   GESMaterialCacheEntry *entry = NULL;
 
-  g_static_mutex_lock (&material_cache_lock);
   entry = g_hash_table_lookup (cache, uri);
-  g_static_mutex_unlock (&material_cache_lock);
 
   return entry;
 }
@@ -287,9 +281,10 @@ ges_material_cache_append_callback (const gchar * id,
 {
   GESMaterialCacheEntry *entry = NULL;
   gboolean result = FALSE;
-  entry = ges_material_cache_get_entry (id);
 
   g_static_mutex_lock (&material_cache_lock);
+  entry = ges_material_cache_get_entry (id);
+
   if (entry) {
     GESMaterialCallbackData *cbdata = g_new (GESMaterialCallbackData, 1);
 
@@ -319,8 +314,8 @@ ges_material_cache_set_loaded (const gchar * id, GError * error)
   GESMaterial *material;
   gboolean loaded = FALSE;
 
-  entry = ges_material_cache_get_entry (id);
   g_static_mutex_lock (&material_cache_lock);
+  entry = ges_material_cache_get_entry (id);
   if (entry) {
     GST_DEBUG_OBJECT (entry->material, "loaded, calling callback: %s", error
         ? error->message : "");
@@ -340,15 +335,22 @@ ges_material_cache_set_loaded (const gchar * id, GError * error)
     loaded = FALSE;
   }
   g_static_mutex_unlock (&material_cache_lock);
+
   return loaded;
 }
 
 void
 ges_material_cache_put (GESMaterial * material)
 {
-  GHashTable *cache = ges_material_cache_get ();
-  const gchar *material_id = ges_material_get_id (material);
+  GHashTable *cache;
+  const gchar *material_id;
+
+  /* Needing to work with the cache, taking the lock */
   g_static_mutex_lock (&material_cache_lock);
+
+  cache = ges_material_cache_get ();
+  material_id = ges_material_get_id (material);
+
   if (!g_hash_table_contains (cache, material_id)) {
     GESMaterialCacheEntry *entry = g_new (GESMaterialCacheEntry, 1);
 

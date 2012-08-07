@@ -66,9 +66,6 @@ gboolean
 timeline_context_to_layer      (GESTimeline *timeline, gint offset);
 
 void
-ges_material_cache_init (void);
-
-void
 ges_material_cache_put(GESMaterial* material);
 
 gboolean
