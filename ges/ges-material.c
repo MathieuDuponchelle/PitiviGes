@@ -227,14 +227,6 @@ check_type_and_params (GType extractable_type,
   return object_type;
 }
 
-const gchar *
-ges_material_get_id (GESMaterial * self)
-{
-  if (GES_MATERIAL_GET_CLASS (self)->get_id) {
-    return (*GES_MATERIAL_GET_CLASS (self)->get_id) (self);
-  } else
-    return NULL;
-}
 
 /* Cache routines */
 void
@@ -485,4 +477,13 @@ initialize:
   }
 
   return TRUE;
+}
+
+const gchar *
+ges_material_get_id (GESMaterial * self)
+{
+  if (GES_MATERIAL_GET_CLASS (self)->get_id) {
+    return (*GES_MATERIAL_GET_CLASS (self)->get_id) (self);
+  } else
+    return NULL;
 }
