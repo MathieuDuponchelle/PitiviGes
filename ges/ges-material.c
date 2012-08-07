@@ -220,103 +220,6 @@ check_type_and_params (GType extractable_type,
   return object_type;
 }
 
-/* API implementation */
-/**
- * ges_material_get_extractable_type:
- * @self: The #GESMaterial
- *
- * Gets the type of object that can be extracted from @self
- *
- * Returns: the type of object that can be extracted from @self
- */
-GType
-ges_material_get_extractable_type (GESMaterial * self)
-{
-  return self->priv->extractable_type;
-}
-
-gboolean
-ges_material_is_loaded (GESMaterial * self)
-{
-  return self->priv->state == MATERIAL_INITIALIZED;
-}
-
-void
-ges_material_set_loaded (GESMaterial * self)
-{
-  self->priv->state = MATERIAL_INITIALIZED;
-}
-
-
-
-/**
- * ges_material_new:
- * @extractable_type: The #GType of the object that can be extracted from the new material.
- *    The class must implement the #GESExtractable interface.
- * @callback: a #GAsyncReadyCallback to call when the initialization is finished
- * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
- *
- * Creates a new #GESMaterial asyncroniously, @error will be set if something went
- * wrong and the constructor will return %NULL in this case
- *
- * Returns: Created #GESMaterial or reference to existing one if it was created earlier
- * or %NULL on error
- */
-GESMaterial *
-ges_material_new (GType extractable_type,
-    GESMaterialCallback callback, gpointer user_data,
-    const gchar * first_property_name, ...)
-{
-  /*GESMaterial *object; */
-  GESMaterial *material = NULL;
-  va_list var_args;
-  GType object_type;
-
-  const gchar *id = NULL;
-
-  va_start (var_args, first_property_name);
-  id = ges_extractable_get_id_for_type (extractable_type, first_property_name,
-      var_args);
-  va_end (var_args);
-
-  if (id != NULL) {
-    material = ges_material_cache_lookup (id);
-    if (material != NULL) {
-      if (ges_material_is_loaded (material)) {
-        (*callback) (material, TRUE);
-      } else {
-        ges_material_cache_append_callback (id, callback);
-      }
-
-      return material;
-    }
-  }
-
-  va_start (var_args, first_property_name);
-  object_type = check_type_and_params (extractable_type,
-      first_property_name, var_args);
-  va_end (var_args);
-
-  if (object_type == G_TYPE_INVALID) {
-    GST_WARNING ("Could create material with %s as extractable_type,"
-        "wrong input parameters", g_type_name (extractable_type));
-    return NULL;
-  }
-
-  va_start (var_args, first_property_name);
-  material = (GESMaterial *) g_object_new_valist (object_type,
-      first_property_name, var_args);
-  va_end (var_args);
-
-  GST_DEBUG ("Pointer to material is %p", material);
-  material->priv->state = MATERIAL_INITIALIZING;
-  ges_material_cache_put (material);
-  ges_material_cache_append_callback (id, callback);
-  (*GES_MATERIAL_GET_CLASS (material)->load) (material, cancellable);
-
-  return material;
-}
-
 const gchar *
 ges_material_get_id (GESMaterial * self)
 {
@@ -467,4 +370,101 @@ ges_material_cache_put (GESMaterial * material)
         (gpointer) entry);
   }
   g_static_mutex_unlock (&material_cache_lock);
+}
+
+/* API implementation */
+/**
+ * ges_material_get_extractable_type:
+ * @self: The #GESMaterial
+ *
+ * Gets the type of object that can be extracted from @self
+ *
+ * Returns: the type of object that can be extracted from @self
+ */
+GType
+ges_material_get_extractable_type (GESMaterial * self)
+{
+  return self->priv->extractable_type;
+}
+
+gboolean
+ges_material_is_loaded (GESMaterial * self)
+{
+  return self->priv->state == MATERIAL_INITIALIZED;
+}
+
+void
+ges_material_set_loaded (GESMaterial * self)
+{
+  self->priv->state = MATERIAL_INITIALIZED;
+}
+
+
+
+/**
+ * ges_material_new:
+ * @extractable_type: The #GType of the object that can be extracted from the new material.
+ *    The class must implement the #GESExtractable interface.
+ * @callback: a #GAsyncReadyCallback to call when the initialization is finished
+ * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
+ *
+ * Creates a new #GESMaterial asyncroniously, @error will be set if something went
+ * wrong and the constructor will return %NULL in this case
+ *
+ * Returns: Created #GESMaterial or reference to existing one if it was created earlier
+ * or %NULL on error
+ */
+GESMaterial *
+ges_material_new (GType extractable_type,
+    GESMaterialCallback callback, gpointer user_data,
+    const gchar * first_property_name, ...)
+{
+  /*GESMaterial *object; */
+  GESMaterial *material = NULL;
+  va_list var_args;
+  GType object_type;
+
+  const gchar *id = NULL;
+
+  va_start (var_args, first_property_name);
+  id = ges_extractable_get_id_for_type (extractable_type, first_property_name,
+      var_args);
+  va_end (var_args);
+
+  if (id != NULL) {
+    material = ges_material_cache_lookup (id);
+    if (material != NULL) {
+      if (ges_material_is_loaded (material)) {
+        (*callback) (material, TRUE);
+      } else {
+        ges_material_cache_append_callback (id, callback);
+      }
+
+      return material;
+    }
+  }
+
+  va_start (var_args, first_property_name);
+  object_type = check_type_and_params (extractable_type,
+      first_property_name, var_args);
+  va_end (var_args);
+
+  if (object_type == G_TYPE_INVALID) {
+    GST_WARNING ("Could create material with %s as extractable_type,"
+        "wrong input parameters", g_type_name (extractable_type));
+    return NULL;
+  }
+
+  va_start (var_args, first_property_name);
+  material = (GESMaterial *) g_object_new_valist (object_type,
+      first_property_name, var_args);
+  va_end (var_args);
+
+  GST_DEBUG ("Pointer to material is %p", material);
+  material->priv->state = MATERIAL_INITIALIZING;
+  ges_material_cache_put (material);
+  ges_material_cache_append_callback (id, callback);
+  (*GES_MATERIAL_GET_CLASS (material)->load) (material, cancellable);
+
+  return material;
 }
