@@ -380,18 +380,6 @@ ges_material_get_extractable_type (GESMaterial * self)
   return self->priv->extractable_type;
 }
 
-gboolean
-ges_material_is_loaded (GESMaterial * self)
-{
-  return self->priv->state == MATERIAL_INITIALIZED;
-}
-
-void
-ges_material_set_loaded (GESMaterial * self)
-{
-  self->priv->state = MATERIAL_INITIALIZED;
-}
-
 /**
  * ges_material_new:
  * @extractable_type: The #GType of the object that can be extracted from the new material.

@@ -69,9 +69,6 @@ void
 ges_material_cache_put(GESMaterial* material);
 
 gboolean
-ges_material_cache_is_loaded(const gchar * id);
-
-gboolean
 ges_material_cache_set_loaded(const gchar * id, GError *error);
 
 GESMaterial*
