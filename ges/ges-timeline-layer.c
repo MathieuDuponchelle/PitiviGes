@@ -965,7 +965,7 @@ ges_timeline_layer_add_material (GESTimelineLayer * layer,
   GESMaterialClass *klass = GES_MATERIAL_GET_CLASS (material);
 
   GESTimelineObject *tlobj =
-      (*klass->build_object) (material, start, inpoint, duration, track_types);
+      (*klass->extract) (material, start, inpoint, duration, track_types);
 
   if (!ges_timeline_layer_add_object (layer, tlobj)) {
     tlobj = NULL;

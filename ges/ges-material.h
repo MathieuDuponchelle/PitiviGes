@@ -69,7 +69,7 @@ struct _GESMaterialClass
   const gchar* (*get_id)	(GESMaterial *self);
   gboolean (*start_loading) (GESMaterial *self);
   
-  GESTimelineObject* (*build_object)(GESMaterial *self, GstClockTime start,
+  GESTimelineObject* (*extract)(GESMaterial *self, GstClockTime start,
              GstClockTime inpoint, GstClockTime duration,
              GESTrackType track_types);
   
