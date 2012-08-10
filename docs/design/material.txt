@@ -173,21 +173,42 @@ A. Material And subclasses API draft
 a) GESMaterial
 |  ~~~~~~~~~~~
 |
-|  implements GInitable, GAsyncInitable and in the future, GESMetdata
+|  Will implement GESMetdata
 |
+|  Virtual method type:
+|  -------------------
+|
+|  /**
+|   * GESMaterialCreatedCallback:
+|   * @material: the #newly created #GESMaterial or %NULL if something went wrong
+|   * @error: The #GError filled if previsouly provided in the constructor or %NULL
+|   * @user_data: The user data pointer
+|   *
+|   * A function that will be called when a #GESMaterial is ready to be used.
+|   */
+|  typedef void (*GESMaterialCreatedCallback)(GESMaterial *material, GError *error, gpointer user_data);
+|
+|
+|  Methods prototypes:
+|  -------------------
 |  /**
 |   * ges_material_new:
 |   * @extractable_type: The #GType of the object that can be extracted from the new material.
-|   * The class must implement the #GESExtractable
-|   * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
-|   * @error: (allow-none): a #GError location to store the error occurring, or %NULL to ignore.
-|   * @...: the value if the first property, followed by and other property value pairs, and ended by NULL.
+|   *    The class must implement the #GESExtractable interface.
+|   * @callback: a #GAsyncReadyCallback to call when the initialization is finished
+|   * @id: The Identifier of the material we want to create. This identifier depends of the extractable
+|   * type you want. By default it is the name of the class itself (or %NULL), but for example for a
+|   * GESTrackParseLaunchEffect, it will be the pipeline description, for a GESTimelineFileSource it
+|   * will be the name of the file, etc... You should refer to the documentation of the #GESExtractable
+|   * type you want to create a #GESMaterial for.
 |   *
-|   * Returns: Created material or reference to existing one if it was created earlier or %NULL on error
+|   * Creates a new #GESMaterial asyncronously, @callback will be called when the materail is loaded
+|   *
+|   * Returns: %TRUE if the material could be loaded to load %FALSE otherwize
 |   */
-|  GESMaterial *
-|  ges_material_new (GType extractable_type, GCancellable *cancellable, GError **error,
-|    gchar *first_property, ...)
+|   gboolean
+|   ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
+|                     gpointer user_data, const gchar *id);
 |
 |->b) GESTimelineObjectMaterial
 |  |  ~~~~~~~~~~~~~~~~~~~~~~~~~
