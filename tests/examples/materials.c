@@ -56,7 +56,7 @@ main (int argc, gchar ** argv)
   mainloop = g_main_loop_new (NULL, FALSE);
 
   ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
-      material_loaded_cb, NULL, "uri", argv[1], NULL);
+      material_loaded_cb, argv[1]);
 
   g_main_loop_run (mainloop);
 

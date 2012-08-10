@@ -28,45 +28,60 @@
 
 G_DEFINE_INTERFACE (GESExtractable, ges_extractable, G_TYPE_OBJECT);
 
-static const gchar *
-ges_extractable_get_default_get_id (GESExtractable * self)
+static gchar *
+ges_extractable_check_id_default (GType type, const gchar * id)
 {
-  return g_type_name (G_OBJECT_TYPE (self));
+  return g_strdup (g_type_name (type));
 }
 
-static const gchar *
-ges_extractable_default_get_id_for_type (GType type,
-    const gchar * first_property, va_list var_args)
+static GParameter *
+extractable_get_parameters_from_id (const gchar * id, guint * n_params)
 {
-  return g_type_name (type);
-}
+  *n_params = 0;
 
-const gchar *
-ges_extractable_get_id_for_type (GType type, const gchar * first_property,
-    va_list var_args)
-{
-  GObjectClass *klass;
-  GESExtractableInterface *iface;
-
-  klass = g_type_class_ref (type);
-  g_return_val_if_fail (G_IS_OBJECT_CLASS (klass), NULL);
-
-  iface = g_type_interface_peek (klass, GES_TYPE_EXTRACTABLE);
-  g_type_class_unref (klass);
-
-  return iface->get_id_for_type (type, first_property, var_args);
+  return NULL;
 }
 
 static void
 ges_extractable_default_init (GESExtractableInterface * iface)
 {
   iface->material_type = GES_TYPE_MATERIAL;
-  iface->get_id = ges_extractable_get_default_get_id;
+  iface->check_id = ges_extractable_check_id_default;
+  iface->get_parameters_from_id = extractable_get_parameters_from_id;
   iface->get_material = NULL;
   iface->set_material = NULL;
-  iface->get_id_for_type = ges_extractable_default_get_id_for_type;
 }
 
+/* Internal methods */
+/**
+ * ges_extractable_type_check_id:
+ * @type: The #GType implementing #GESExtractable
+ * @id: The ID to check
+ *
+ * Check if @id is valid for @type and compute the ID to be used as Material ID
+ *
+ * Returns: The ID to use for the #GESMaterial or %NULL if @id is not valid
+ */
+gchar *
+ges_extractable_type_check_id (GType type, const gchar * id)
+{
+  GObjectClass *klass;
+  GESExtractableInterface *iface;
+
+  g_return_val_if_fail (g_type_is_a (type, G_TYPE_OBJECT), G_TYPE_INVALID);
+  g_return_val_if_fail (g_type_is_a (type, GES_TYPE_EXTRACTABLE),
+      G_TYPE_INVALID);
+
+  klass = g_type_class_ref (type);
+
+  iface = g_type_interface_peek (klass, GES_TYPE_EXTRACTABLE);
+
+  g_type_class_unref (klass);
+
+  return iface->check_id (type, id);
+}
+
+/* API implementation */
 /**
  * ges_extractable_object_get_material:
  * @object: Target object
@@ -143,51 +158,42 @@ ges_extractable_get_material_type (GESExtractable * self)
 const gchar *
 ges_extractable_get_id (GESExtractable * self)
 {
-  GESExtractableInterface *iface;
+  GESMaterial *material;
 
   g_return_val_if_fail (GES_IS_EXTRACTABLE (self), NULL);
 
-  iface = GES_EXTRACTABLE_GET_INTERFACE (self);
-  g_return_val_if_fail (iface->get_id, NULL);
+  material = ges_extractable_get_material (self);
 
-  return iface->get_id (self);
+  return ges_material_get_id (material);
 }
 
 /**
- * ges_extractable_type_mandatory_parameters:
+ * ges_extractable_type_get_parameters_for_id:
  * @type: The #GType implementing #GESExtractable
+ * @id: The ID of the Extractable
+ * @n_params: (out): Return location for the returned array length
  *
- * Lists all the properties that needs to be passed to #ges_material_new to
- * be able to instanciate a #GESMaterial for the #GType pass to that same
- * function
- *
- * Returns: (transfer container) (element-type GParamSpec): an #GSlist of
- * GParamSpec* which should be freed after use.
+ * Returns: (transfer full) (array length=n_params): an array of #GParameter
+ * needed to extract the #GESExtractable from a #GESMaterial with @id
  */
-GSList *
-ges_extractable_type_mandatory_parameters (GType type)
+GParameter *
+ges_extractable_type_get_parameters_from_id (GType type, const gchar * id,
+    guint * n_params)
 {
-  guint nb_props, i;
   GObjectClass *klass;
-  GParamSpec **all_specs;
+  GESExtractableInterface *iface;
 
-  GSList *ret = NULL;
+  GParameter *ret = NULL;
 
   g_return_val_if_fail (g_type_is_a (type, G_TYPE_OBJECT), NULL);
   g_return_val_if_fail (g_type_is_a (type, GES_TYPE_EXTRACTABLE), NULL);
 
   klass = g_type_class_ref (type);
-  g_return_val_if_fail (G_IS_OBJECT_CLASS (klass), NULL);
+  iface = g_type_interface_peek (klass, GES_TYPE_EXTRACTABLE);
 
-  all_specs = g_object_class_list_properties (klass, &nb_props);
-
-  for (i = 0; i < nb_props; i++) {
-    if (all_specs[i]->flags & GES_PARAM_CONSTRUCT_MANDATORY)
-      ret = g_slist_prepend (ret, all_specs[i]);
-  }
+  ret = iface->get_parameters_from_id (id, n_params);
 
   g_type_class_unref (klass);
-  g_free (all_specs);
 
   return ret;
 }

@@ -115,10 +115,6 @@ GST_START_TEST (test_object_properties)
   gnl_object_check (ges_track_object_get_gnlobject (trackobject), 400, 510, 120,
       510, 0, TRUE);
 
-  assert_equals_int (ges_extractable_get_material_type (GES_EXTRACTABLE
-          (object)), GES_TYPE_MATERIAL);
-  assert_equals_string (ges_extractable_get_id (GES_EXTRACTABLE (object)),
-      "GESCustomTimelineSource");
   ges_timeline_object_release_track_object (object, trackobject);
 
   g_object_unref (object);

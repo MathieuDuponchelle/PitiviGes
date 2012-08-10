@@ -58,13 +58,14 @@ typedef void (*GESExtractableSetMaterial) (GESExtractable *self,
                                            GESMaterial *material);
 
 /**
- * GESExtractableGetId:
+ * GESExtractableCheckId:
  * @self: The #GESExtractable
+ * @id: The id to check
  *
- * Returns: The #id of the associated #GESMaterial
+ * Returns: The ID to use for the #GESMaterial or %NULL if @id is not valid
  */
 
-typedef const gchar * (*GESExtractableGetId) (GESExtractable *self);
+typedef gchar* (*GESExtractableCheckId) (GType type, const gchar *id);
 
 /**
  * GESExtractable:
@@ -76,38 +77,25 @@ struct _GESExtractableInterface
 
   GType material_type;
 
-  /*<protected>*/
-  GESExtractableGetId get_id;
   GESExtractableGetMaterial get_material;
   GESExtractableSetMaterial set_material;
-  const gchar *(*get_id_for_type) (GType type, const gchar *first_property,
-      va_list var_args);
+
+  GESExtractableCheckId check_id;
+  GParameter *(*get_parameters_from_id) (const gchar *id, guint *n_params);
 
   gpointer _ges_reserved[GES_PADDING];
 };
 
 GType ges_extractable_get_material_type        (GESExtractable *self);
 GType ges_extractable_type_material_type       (GType type);
-const gchar* ges_extractable_get_id_for_type   (GType type, const gchar *first_property,
-  va_list va_args);
+gchar * ges_extractable_type_check_id          (GType type, const gchar *id);
 
-/**
- * GESExtractableGetMaterial
- * @self: The #GESExtractable
- *
- * Gets material that was used to create this extractable object
- *
- * Returns: (transfer:none) : The material that was used to create specified extractable object
- */
 GESMaterial* ges_extractable_get_material      (GESExtractable *self);
 
 void ges_extractable_set_material              (GESExtractable *self,
                                                 GESMaterial *material);
 
 const gchar * ges_extractable_get_id           (GESExtractable *self);
-
-GSList *
-ges_extractable_type_mandatory_parameters      (GType type);
 
 G_END_DECLS
 #endif /* _GES_EXTRACTABLE_ */

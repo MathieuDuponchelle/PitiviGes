@@ -142,8 +142,7 @@ ges_timeline_filesource_class_init (GESTimelineFileSourceClass * klass)
    */
   g_object_class_install_property (object_class, PROP_URI,
       g_param_spec_string ("uri", "URI", "uri of the resource", NULL,
-          G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
-          GES_PARAM_CONSTRUCT_MANDATORY));
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
   /**
    * GESTimelineFileSource:mute:
@@ -172,34 +171,33 @@ ges_timeline_filesource_class_init (GESTimelineFileSourceClass * klass)
 
 }
 
-static const gchar *
-extractable_get_id (GESTimelineFileSource * object)
+static gchar *
+extractable_check_id (GType type, const gchar * id)
 {
-  return object->priv->uri;
-}
-
-static const gchar *
-extractable_get_id_for_type (GType type, const gchar * first_property,
-    va_list var_args)
-{
-  const gchar *name = first_property;
-
-  while (name) {
-    if (g_strcmp0 (name, "uri") == 0)
-      return va_arg (var_args, gchar *);
-
-    name = va_arg (var_args, gchar *);
-  }
+  if (gst_uri_is_valid (id))
+    return g_strdup (id);
 
   return NULL;
+}
+
+static GParameter *
+extractable_get_parameters_from_id (const gchar * id, guint * n_params)
+{
+  GParameter *params = g_new0 (GParameter, 1);
+
+  params[0].name = g_strdup ("uri");
+  g_value_init (&params[0].value, G_TYPE_STRING);
+  g_value_set_string (&params[0].value, id);
+
+  return params;
 }
 
 static void
 ges_extractable_interface_init (GESExtractableInterface * iface)
 {
   iface->material_type = GES_TYPE_MATERIAL_FILESOURCE;
-  iface->get_id = (GESExtractableGetId) extractable_get_id;
-  iface->get_id_for_type = extractable_get_id_for_type;
+  iface->check_id = (GESExtractableCheckId) extractable_check_id;
+  iface->get_parameters_from_id = extractable_get_parameters_from_id;
 }
 
 static void

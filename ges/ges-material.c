@@ -33,6 +33,7 @@ enum
 {
   PROP_0,
   PROP_TYPE,
+  PROP_ID,
   PROP_LAST
 };
 
@@ -49,6 +50,7 @@ static GParamSpec *properties[PROP_LAST];
 struct _GESMaterialPrivate
 {
   GESMaterialState state;
+  gchar *id;
   GType extractable_type;
 };
 
@@ -84,15 +86,27 @@ typedef struct
 static GHashTable *material_cache = NULL;
 static GStaticMutex material_cache_lock = G_STATIC_MUTEX_INIT;
 
+/* GESMaterial virtual methods default implementation */
+static gboolean
+ges_material_start_loading_default (GESMaterial * material)
+{
+  return ges_material_cache_set_loaded (ges_material_get_id (material), NULL);
+}
 
 /* GObject virtual methods implementation */
 static void
 ges_material_get_property (GObject * object, guint property_id,
     GValue * value, GParamSpec * pspec)
 {
-  /*GESMaterial *material = GES_MATERIAL (object); */
+  GESMaterial *material = GES_MATERIAL (object);
 
   switch (property_id) {
+    case PROP_TYPE:
+      g_value_set_gtype (value, material->priv->extractable_type);
+      break;
+    case PROP_ID:
+      g_value_set_string (value, material->priv->id);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
@@ -108,23 +122,23 @@ ges_material_set_property (GObject * object, guint property_id,
     case PROP_TYPE:
       material->priv->extractable_type = g_value_get_gtype (value);
       break;
+    case PROP_ID:
+      material->priv->id = g_value_dup_string (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
 }
 
-static gboolean
-ges_material_start_loading_default (GESMaterial * material)
+static void
+ges_material_finalize (GObject * object)
 {
-  return ges_material_cache_set_loaded (ges_material_get_id (material), NULL);
-}
+  GESMaterialPrivate *priv = GES_MATERIAL (object)->priv;
 
-static const gchar *
-ges_material_get_id_default (GESMaterial * self)
-{
-  GString *id_str = g_string_new ("");
-  g_string_printf (id_str, "object#%p", self);
-  return g_string_free (id_str, FALSE);
+  if (priv->id)
+    g_free (priv->id);
+
+  G_OBJECT_CLASS (ges_material_parent_class)->finalize (object);
 }
 
 void
@@ -135,16 +149,22 @@ ges_material_class_init (GESMaterialClass * klass)
 
   object_class->get_property = ges_material_get_property;
   object_class->set_property = ges_material_set_property;
+  object_class->finalize = ges_material_finalize;
 
   properties[PROP_TYPE] =
       g_param_spec_gtype ("extractable-type", "Extractable type",
       "The type of the Object that can be extracted out of the material",
       G_TYPE_OBJECT, G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
 
+  properties[PROP_ID] =
+      g_param_spec_string ("id", "Identifier",
+      "The unic identifier of the material", NULL,
+      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
+
   g_object_class_install_properties (object_class, PROP_LAST, properties);
 
-  klass->get_id = ges_material_get_id_default;
   klass->start_loading = ges_material_start_loading_default;
+  /*klass->extract = ges_material_extract_default; */
 }
 
 void
@@ -157,77 +177,6 @@ ges_material_init (GESMaterial * self)
 }
 
 /* Some helper functions */
-static gint
-compare_gparamspec_str (GParamSpec * spec, const gchar * str)
-{
-  return g_strcmp0 (spec->name, str);
-}
-
-static GType
-check_type_and_params (GType extractable_type,
-    const gchar * first_property_name, va_list var_args)
-{
-  GType object_type;
-  const gchar *name;
-  GSList *tmp, *found, *params;
-
-  if (g_type_is_a (extractable_type, G_TYPE_OBJECT) == G_TYPE_INVALID) {
-    GST_WARNING ("%s not a GObject type", g_type_name (extractable_type));
-
-    return G_TYPE_INVALID;
-  }
-
-  if (g_type_is_a (extractable_type, GES_TYPE_EXTRACTABLE) == G_TYPE_INVALID) {
-    GST_WARNING ("%s not a GESExtractable type",
-        g_type_name (extractable_type));
-
-    return G_TYPE_INVALID;
-  }
-
-  object_type = ges_extractable_type_material_type (extractable_type);
-
-  if (g_type_is_a (object_type, GES_TYPE_MATERIAL) == G_TYPE_INVALID) {
-    GST_ERROR ("The extractable type %s is not an extractable_type",
-        g_type_name (object_type));
-
-    return G_TYPE_INVALID;
-  }
-
-  params = ges_extractable_type_mandatory_parameters (extractable_type);
-
-  if (params == NULL)
-    return object_type;
-
-  if (first_property_name == NULL)
-    return G_TYPE_INVALID;
-
-  /* Go over all params and remove the parameter that we found from
-   * the list of mandatory params */
-  name = first_property_name;
-  while (name) {
-    found = g_slist_find_custom (params, name,
-        (GCompareFunc) compare_gparamspec_str);
-
-    if (found) {
-      params = g_slist_delete_link (params, found);
-    }
-
-    name = va_arg (var_args, gchar *);
-  }
-
-  if (params) {
-    for (tmp = params; tmp; tmp = tmp->next) {
-      GST_WARNING ("Parameter %s missing to create material",
-          G_PARAM_SPEC (tmp->data)->name);
-      params = g_slist_delete_link (params, found);
-    }
-    return G_TYPE_INVALID;
-  }
-
-  return object_type;
-}
-
-
 /* Cache routines */
 /* WARNING: Must be called WITH material_cache_lock */
 static GHashTable *
@@ -385,7 +334,11 @@ ges_material_get_extractable_type (GESMaterial * self)
  * @extractable_type: The #GType of the object that can be extracted from the new material.
  *    The class must implement the #GESExtractable interface.
  * @callback: a #GAsyncReadyCallback to call when the initialization is finished
- * @...: the value if the first property, followed by and other property value pairs, and ended by %NULL.
+ * @id: The Identifier of the material we want to create. This identifier depends of the extractable
+ * type you want. By default it is the name of the class itself (or %NULL), but for example for a
+ * GESTrackParseLaunchEffect, it will be the pipeline description, for a GESTimelineFileSource it
+ * will be the name of the file, etc... You should refer to the documentation of the #GESExtractable
+ * type you want to create a #GESMaterial for.
  *
  * Creates a new #GESMaterial asyncronously, @callback will be called when the materail is loaded
  *
@@ -393,66 +346,46 @@ ges_material_get_extractable_type (GESMaterial * self)
  */
 gboolean
 ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
-    gpointer user_data, const gchar * first_property_name, ...)
+    gpointer user_data, const gchar * id)
 {
-  va_list var_args;
-  GType object_type;
-
-  const gchar *id = NULL;
-  GESMaterial *material = NULL;
+  GESMaterial *material;
+  gchar *real_id;
+  gboolean ret = FALSE;
 
   g_return_val_if_fail (callback, FALSE);
+  g_return_val_if_fail (g_type_is_a (extractable_type, G_TYPE_OBJECT), FALSE);
+  g_return_val_if_fail (g_type_is_a (extractable_type, GES_TYPE_EXTRACTABLE),
+      FALSE);
 
-  va_start (var_args, first_property_name);
-  id = ges_extractable_get_id_for_type (extractable_type, first_property_name,
-      var_args);
-  va_end (var_args);
+  /* Check if we already have a material for this ID */
+  real_id = ges_extractable_type_check_id (extractable_type, id);
+  material = ges_material_cache_lookup (real_id);
+  if (material != NULL) {
+    switch (material->priv->state) {
+      case MATERIAL_INITIALIZED:
+        gst_object_ref (material);
+        callback (material, NULL, user_data);
+        ret = TRUE;
 
-  if (id == NULL) {
-    GST_WARNING ("No ID found in arguments, can't create Material");
+        goto done;
+      case MATERIAL_INITIALIZING:
+        ges_material_cache_append_callback (real_id, callback);
+        ret = TRUE;
 
-    return FALSE;
-  }
-
-  material = ges_material_cache_lookup (id);
-  if (material != NULL && material->priv->state != MATERIAL_INITIALIZED) {
-    if (material->priv->state == MATERIAL_INITIALIZED) {
-      gst_object_ref (material);
-      callback (material, NULL, user_data);
-
-      return TRUE;
-    } else if (material->priv->state == MATERIAL_INITIALIZED_WITH_ERROR) {
-      goto initialize;
-    } else {
-      ges_material_cache_append_callback (id, callback);
-
-      return TRUE;
+        goto done;
+      default:
+        break;
     }
+  } else {
+    GType object_type = ges_extractable_type_material_type (extractable_type);
+    material = g_object_new (object_type, "extractable-type", extractable_type,
+        "id", real_id, NULL);
   }
 
-  va_start (var_args, first_property_name);
-  object_type = check_type_and_params (extractable_type,
-      first_property_name, var_args);
-  va_end (var_args);
-
-  if (object_type == G_TYPE_INVALID) {
-    GST_WARNING ("Could create material with %s as extractable_type,"
-        "wrong input parameters", g_type_name (extractable_type));
-
-    return FALSE;
-  }
-
-  va_start (var_args, first_property_name);
-  material = (GESMaterial *) g_object_new_valist (object_type,
-      first_property_name, var_args);
-  va_end (var_args);
-
-  GST_DEBUG_OBJECT (material, "In creation");
-
-initialize:
+  /* Now initialize the material */
   material->priv->state = MATERIAL_INITIALIZING;
   ges_material_cache_put (material);
-  ges_material_cache_append_callback (id, callback);
+  ges_material_cache_append_callback (real_id, callback);
 
   if (GES_MATERIAL_GET_CLASS (material)->start_loading (material)
       == FALSE) {
@@ -460,13 +393,19 @@ initialize:
         "Could not start loading material");
 
     /* FIXME Define error code */
-    ges_material_cache_set_loaded (id, error);
+    ges_material_cache_set_loaded (real_id, error);
     g_error_free (error);
+    ret = FALSE;
 
-    return FALSE;
+    goto done;
   }
 
-  return TRUE;
+  ret = TRUE;
+
+done:
+  g_free (real_id);
+
+  return ret;
 }
 
 /**
@@ -480,8 +419,7 @@ initialize:
 const gchar *
 ges_material_get_id (GESMaterial * self)
 {
-  if (GES_MATERIAL_GET_CLASS (self)->get_id) {
-    return (*GES_MATERIAL_GET_CLASS (self)->get_id) (self);
-  } else
-    return NULL;
+  g_return_val_if_fail (GES_IS_MATERIAL (self), NULL);
+
+  return self->priv->id;
 }

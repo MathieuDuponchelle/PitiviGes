@@ -30,10 +30,6 @@
 GST_DEBUG_CATEGORY_EXTERN (_ges_debug);
 #define GST_CAT_DEFAULT _ges_debug
 
-/* GParamFlags used to set an property as mandatory for building an
- * object, keep it private from now */
-#define GES_PARAM_CONSTRUCT_MANDATORY (1 << 10)
-
 gboolean
 timeline_ripple_object         (GESTimeline *timeline, GESTrackObject *obj,
                                     GList * layers, GESEdge edge,
@@ -73,5 +69,9 @@ ges_material_cache_set_loaded(const gchar * id, GError *error);
 
 GESMaterial*
 ges_material_cache_lookup(const gchar * id);
+
+GParameter *
+ges_extractable_type_get_parameters_from_id    (GType type, const gchar *id,
+                                                guint *n_params);
 
 #endif /* __GES_INTERNAL_H__ */

@@ -65,7 +65,7 @@ main (int argc, char **argv)
 
   for (i = 2; i < argc; i++) {
     ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE, NULL,
-        material_loaded_cb, NULL, "uri", argv[1], NULL);
+        material_loaded_cb, argv[1]);
   }
 
   /* In order to view our timeline, let's grab a convenience pipeline to put

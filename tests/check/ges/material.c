@@ -39,8 +39,7 @@ GST_START_TEST (test_basic)
 
   mainloop = g_main_loop_new (NULL, FALSE);
   fail_unless (ges_material_new (GES_TYPE_TIMELINE_FILE_SOURCE,
-          source_material_created, NULL, "uri",
-          "file:///this/is/not/for/real", NULL));
+          source_material_created, NULL, "file:///this/is/not/for/real"));
 
   g_main_loop_run (mainloop);
 

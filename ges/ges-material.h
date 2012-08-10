@@ -55,7 +55,7 @@ GType ges_material_get_type (void);
 struct _GESMaterial
 {
   GObject parent;
-  
+
   /* <private> */
   GESMaterialPrivate *priv;
 
@@ -66,7 +66,6 @@ struct _GESMaterial
 struct _GESMaterialClass
 {
   GObjectClass parent;
-  const gchar* (*get_id)	(GESMaterial *self);
   gboolean (*start_loading) (GESMaterial *self);
   
   GESTimelineObject* (*extract)(GESMaterial *self, GstClockTime start,
@@ -81,12 +80,12 @@ GType
 ges_material_get_extractable_type (GESMaterial * self);
 
 gboolean
-ges_material_new            (GType extractable_type,
-                             GESMaterialCreatedCallback callback,
-                             gpointer user_data,
-                             const gchar * first_property_name, ...);
+ges_material_new                  (GType extractable_type,
+                                   GESMaterialCreatedCallback callback,
+                                   gpointer user_data,
+                                   const gchar * id);
 
-const gchar* ges_material_get_id(GESMaterial* self);
+const gchar* ges_material_get_id  (GESMaterial* self);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */
