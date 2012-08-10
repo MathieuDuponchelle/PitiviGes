@@ -40,7 +40,7 @@ GType ges_extractable_get_type (void);
  * A function that return the #GESMaterial that instanciated the object that
  * implements that interface
  *
- * Returns: (transfer-mode none): The #GESMaterial from which @self has been
+ * Returns: (transfer none): The #GESMaterial from which @self has been
  * extracted
  */
 
@@ -59,10 +59,10 @@ typedef void (*GESExtractableSetMaterial) (GESExtractable *self,
 
 /**
  * GESExtractableCheckId:
- * @self: The #GESExtractable
+ * @type: The #GType to check @id for:
  * @id: The id to check
  *
- * Returns: The ID to use for the #GESMaterial or %NULL if @id is not valid
+ * Returns: The ID to use for the material or %NULL if @id is not valid
  */
 
 typedef gchar* (*GESExtractableCheckId) (GType type, const gchar *id);

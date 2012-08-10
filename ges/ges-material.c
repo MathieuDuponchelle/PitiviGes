@@ -54,8 +54,7 @@ struct _GESMaterialPrivate
   GType extractable_type;
 };
 
-/**
- * Internal structure to help avoid full loading
+/* Internal structure to help avoid full loading
  * of one material several times
  */
 typedef struct
@@ -70,8 +69,7 @@ typedef struct
   GList *callbacks;
 } GESMaterialCacheEntry;
 
-/**
- * Internal structure to store callbacks and corresponding user data pointers
+/* Internal structure to store callbacks and corresponding user data pointers
   in lists
 */
 typedef struct
@@ -202,12 +200,17 @@ ges_material_cache_get_entry (const gchar * uri)
 }
 
 /**
-* Looks for material with specified uri in cache and it's completely loaded.
-* @id String identifier of material
-* @lookup_callback Callback that will be called after lookup. Can be %NULL 
-* if lookup should be done synchronously. 
-* In other case returns NULL
-*/
+ * ges_material_cache_lookup:
+ *
+ * @id String identifier of material
+ * @lookup_callback Callback that will be called after lookup. Can be %NULL
+ * if lookup should be done synchronously.
+ * In other case returns NULL
+ *
+ * Looks for material with specified uri in cache and it's completely loaded.
+ *
+ * Returns: (transfer none): The #GESMaterial found or %NULL
+ */
 GESMaterial *
 ges_material_cache_lookup (const gchar * id)
 {
@@ -333,7 +336,7 @@ ges_material_get_extractable_type (GESMaterial * self)
  * ges_material_new:
  * @extractable_type: The #GType of the object that can be extracted from the new material.
  *    The class must implement the #GESExtractable interface.
- * @callback: a #GAsyncReadyCallback to call when the initialization is finished
+ * @callback: a #GESMaterialCreatedCallback to call when the initialization is finished
  * @id: The Identifier of the material we want to create. This identifier depends of the extractable
  * type you want. By default it is the name of the class itself (or %NULL), but for example for a
  * GESTrackParseLaunchEffect, it will be the pipeline description, for a GESTimelineFileSource it
@@ -377,9 +380,11 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
         break;
     }
   } else {
-    GType object_type = ges_extractable_type_material_type (extractable_type);
-    material = g_object_new (object_type, "extractable-type", extractable_type,
-        "id", real_id, NULL);
+    GType object_type =
+        ges_extractable_type_get_material_type (extractable_type);
+    material =
+        g_object_new (object_type, "extractable-type", extractable_type, "id",
+        real_id, NULL);
   }
 
   /* Now initialize the material */

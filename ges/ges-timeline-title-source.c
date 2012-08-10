@@ -264,7 +264,7 @@ ges_timeline_title_source_class_init (GESTimelineTitleSourceClass * klass)
           G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
   /**
-   * GESTimelineTitleSource:xpos
+   * GESTimelineTitleSource:xpos:
    *
    * The horizontal position of the text
    */

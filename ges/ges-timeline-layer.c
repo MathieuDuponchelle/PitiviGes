@@ -953,7 +953,7 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
 * Creates TimelineObject from material, adds it to layer and
 * returns reference to it.
 *
-* Returns: Created TimelineObject
+* Returns: Created #GESTimelineObject
 */
 GESTimelineObject *
 ges_timeline_layer_add_material (GESTimelineLayer * layer,

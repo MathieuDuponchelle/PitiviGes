@@ -67,11 +67,11 @@ struct _GESMaterialClass
 {
   GObjectClass parent;
   gboolean (*start_loading) (GESMaterial *self);
-  
+
   GESTimelineObject* (*extract)(GESMaterial *self, GstClockTime start,
              GstClockTime inpoint, GstClockTime duration,
              GESTrackType track_types);
-  
+
   gpointer _ges_reserved[GES_PADDING];
 };
 

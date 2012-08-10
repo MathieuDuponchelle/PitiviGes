@@ -171,10 +171,10 @@ ges_extractable_get_id (GESExtractable * self)
  * ges_extractable_type_get_parameters_for_id:
  * @type: The #GType implementing #GESExtractable
  * @id: The ID of the Extractable
- * @n_params: (out): Return location for the returned array length
+ * @n_params: (out): Return location for the returned array
  *
  * Returns: (transfer full) (array length=n_params): an array of #GParameter
- * needed to extract the #GESExtractable from a #GESMaterial with @id
+ * needed to extract the #GESExtractable from a #GESMaterial of @id
  */
 GParameter *
 ges_extractable_type_get_parameters_from_id (GType type, const gchar * id,
@@ -199,7 +199,7 @@ ges_extractable_type_get_parameters_from_id (GType type, const gchar * id,
 }
 
 /**
- * ges_extractable_type_material_type:
+ * ges_extractable_type_get_material_type:
  * @type: The #GType implementing #GESExtractable
  *
  * Get the #GType, subclass of #GES_TYPE_MATERIAL to instanciate
@@ -208,7 +208,7 @@ ges_extractable_type_get_parameters_from_id (GType type, const gchar * id,
  * Returns: the #GType to use to create a material to extract @type
  */
 GType
-ges_extractable_type_material_type (GType type)
+ges_extractable_type_get_material_type (GType type)
 {
   GObjectClass *klass;
   GESExtractableInterface *iface;
