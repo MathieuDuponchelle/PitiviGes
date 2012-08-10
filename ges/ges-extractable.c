@@ -52,36 +52,6 @@ ges_extractable_default_init (GESExtractableInterface * iface)
   iface->set_material = NULL;
 }
 
-/* Internal methods */
-/**
- * ges_extractable_type_check_id:
- * @type: The #GType implementing #GESExtractable
- * @id: The ID to check
- *
- * Check if @id is valid for @type and compute the ID to be used as Material ID
- *
- * Returns: The ID to use for the #GESMaterial or %NULL if @id is not valid
- */
-gchar *
-ges_extractable_type_check_id (GType type, const gchar * id)
-{
-  GObjectClass *klass;
-  GESExtractableInterface *iface;
-
-  g_return_val_if_fail (g_type_is_a (type, G_TYPE_OBJECT), G_TYPE_INVALID);
-  g_return_val_if_fail (g_type_is_a (type, GES_TYPE_EXTRACTABLE),
-      G_TYPE_INVALID);
-
-  klass = g_type_class_ref (type);
-
-  iface = g_type_interface_peek (klass, GES_TYPE_EXTRACTABLE);
-
-  g_type_class_unref (klass);
-
-  return iface->check_id (type, id);
-}
-
-/* API implementation */
 /**
  * ges_extractable_object_get_material:
  * @object: Target object
@@ -126,27 +96,6 @@ ges_extractable_set_material (GESExtractable * self, GESMaterial * material)
   }
 
   iface->set_material (self, material);
-}
-
-/**
- * ges_extractable_get_material_type:
- * @self: The #GESExtractable to retrive #GESMaterial type
- * to use.
- *
- * Lets user know the type of GESMaterial that should be used to extract the
- * object that implement that interface.
- */
-GType
-ges_extractable_get_material_type (GESExtractable * self)
-{
-  GESExtractableInterface *iface;
-
-  g_return_val_if_fail (GES_IS_EXTRACTABLE (self), G_TYPE_INVALID);
-
-  iface = GES_EXTRACTABLE_GET_INTERFACE (self);
-  g_return_val_if_fail (iface->get_material, G_TYPE_INVALID);
-
-  return iface->material_type;
 }
 
 /**
@@ -224,4 +173,32 @@ ges_extractable_type_get_material_type (GType type)
   g_type_class_unref (klass);
 
   return iface->material_type;
+}
+
+/**
+ * ges_extractable_type_check_id:
+ * @type: The #GType implementing #GESExtractable
+ * @id: The ID to check
+ *
+ * Check if @id is valid for @type
+ *
+ * Returns: Return %TRUE if @id is valid, %FALSE otherwise
+ */
+gchar *
+ges_extractable_type_check_id (GType type, const gchar * id)
+{
+  GObjectClass *klass;
+  GESExtractableInterface *iface;
+
+  g_return_val_if_fail (g_type_is_a (type, G_TYPE_OBJECT), G_TYPE_INVALID);
+  g_return_val_if_fail (g_type_is_a (type, GES_TYPE_EXTRACTABLE),
+      G_TYPE_INVALID);
+
+  klass = g_type_class_ref (type);
+
+  iface = g_type_interface_peek (klass, GES_TYPE_EXTRACTABLE);
+
+  g_type_class_unref (klass);
+
+  return iface->check_id (type, id);
 }

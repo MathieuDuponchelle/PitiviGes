@@ -86,10 +86,6 @@ struct _GESExtractableInterface
   gpointer _ges_reserved[GES_PADDING];
 };
 
-GType ges_extractable_get_material_type        (GESExtractable *self);
-GType ges_extractable_type_material_type       (GType type);
-gchar * ges_extractable_type_check_id          (GType type, const gchar *id);
-
 GESMaterial* ges_extractable_get_material      (GESExtractable *self);
 
 void ges_extractable_set_material              (GESExtractable *self,
