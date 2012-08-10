@@ -217,6 +217,8 @@ ges_material_cache_lookup (const gchar * id)
   GESMaterialCacheEntry *entry = NULL;
   GESMaterial *material = NULL;
 
+  g_return_val_if_fail (id, NULL);
+
   entry = ges_material_cache_get_entry (id);
 
   g_static_mutex_lock (&material_cache_lock);
@@ -336,7 +338,8 @@ ges_material_get_extractable_type (GESMaterial * self)
  * ges_material_new:
  * @extractable_type: The #GType of the object that can be extracted from the new material.
  *    The class must implement the #GESExtractable interface.
- * @callback: a #GESMaterialCreatedCallback to call when the initialization is finished
+ * @callback: (scope async): a #GESMaterialCreatedCallback to call when the initialization is finished
+ * @user_data: The user data to pass when @callback is called
  * @id: The Identifier of the material we want to create. This identifier depends of the extractable
  * type you want. By default it is the name of the class itself (or %NULL), but for example for a
  * GESTrackParseLaunchEffect, it will be the pipeline description, for a GESTimelineFileSource it
@@ -362,6 +365,12 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
 
   /* Check if we already have a material for this ID */
   real_id = ges_extractable_type_check_id (extractable_type, id);
+  if (real_id == NULL) {
+    GST_WARNING ("Wrong ID %s, can not create material", id);
+
+    return FALSE;
+  }
+
   material = ges_material_cache_lookup (real_id);
   if (material != NULL) {
     switch (material->priv->state) {
