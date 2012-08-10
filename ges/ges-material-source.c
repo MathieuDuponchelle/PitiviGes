@@ -133,21 +133,6 @@ ges_material_filesource_init (GESMaterialFileSource * self)
   self->priv->duration = GST_CLOCK_TIME_NONE;
 }
 
-
-/**
- * ges_material_filesource_get_info:
- * @self: Target material
- *
- * Gets GstDiscoverer information about specified object
- *
- * Returns: (transfer none): GstDiscovererInfo of specified material
- */
-GstDiscovererInfo *
-ges_material_filesource_get_info (const GESMaterialFileSource * self)
-{
-  return self->priv->info;
-}
-
 void
 ges_material_filesource_set_info (GESMaterialFileSource * self,
     GstDiscovererInfo * info)
@@ -173,4 +158,19 @@ discoverer_discovered_cb (GstDiscoverer * discoverer,
 
   ges_material_filesource_set_info (mfs, info);
   ges_material_cache_set_loaded (uri, err);
+}
+
+/* API implementation */
+/**
+ * ges_material_filesource_get_info:
+ * @self: Target material
+ *
+ * Gets GstDiscoverer information about specified object
+ *
+ * Returns: (transfer none): GstDiscovererInfo of specified material
+ */
+GstDiscovererInfo *
+ges_material_filesource_get_info (const GESMaterialFileSource * self)
+{
+  return self->priv->info;
 }
