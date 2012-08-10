@@ -71,19 +71,21 @@ ges_material_filesource_set_property (GObject * object, guint property_id,
   }
 }
 
+
+/* WARNING Call WITH discoverer_lock taken */
 static GstDiscoverer *
 ges_material_filesource_get_discoverer (void)
 {
-  g_static_mutex_lock (&discoverer_lock);
   if (discoverer == NULL) {
     discoverer = gst_discoverer_new (15 * GST_SECOND, NULL);
+    gst_discoverer_start (discoverer);
+
     g_signal_connect (discoverer, "finished",
         G_CALLBACK (discoverer_finished_cb), NULL);
     g_signal_connect (discoverer, "discovered",
         G_CALLBACK (discoverer_discovered_cb), NULL);
 
   }
-  g_static_mutex_unlock (&discoverer_lock);
 
   return discoverer;
 }
@@ -91,18 +93,20 @@ ges_material_filesource_get_discoverer (void)
 static gboolean
 ges_material_filesource_start_loading (GESMaterial * material)
 {
+  GstDiscoverer *disco;
   const gchar *uri;
-
+  gboolean ret;
 
   GST_DEBUG ("Started loading %p", material);
 
-  gst_discoverer_start (ges_material_filesource_get_discoverer ());
-
   uri = ges_material_get_id (material);
 
-  return
-      gst_discoverer_discover_uri_async (ges_material_filesource_get_discoverer
-      (), uri);
+  g_static_mutex_lock (&discoverer_lock);
+  disco = ges_material_filesource_get_discoverer ();
+  ret = gst_discoverer_discover_uri_async (disco, uri);
+  g_static_mutex_unlock (&discoverer_lock);
+
+  return ret;
 }
 
 
