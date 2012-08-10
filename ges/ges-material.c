@@ -91,6 +91,19 @@ ges_material_start_loading_default (GESMaterial * material)
   return ges_material_cache_set_loaded (ges_material_get_id (material), NULL);
 }
 
+static GObject *
+ges_material_extract_default (GESMaterial * material)
+{
+  guint n_params;
+  GParameter *params;
+  GESMaterialPrivate *priv = material->priv;
+
+  params = ges_extractable_type_get_parameters_from_id (priv->extractable_type,
+      priv->id, &n_params);
+
+  return g_object_newv (priv->extractable_type, n_params, params);
+}
+
 /* GObject virtual methods implementation */
 static void
 ges_material_get_property (GObject * object, guint property_id,
@@ -162,7 +175,7 @@ ges_material_class_init (GESMaterialClass * klass)
   g_object_class_install_properties (object_class, PROP_LAST, properties);
 
   klass->start_loading = ges_material_start_loading_default;
-  /*klass->extract = ges_material_extract_default; */
+  klass->extract = ges_material_extract_default;
 }
 
 void
@@ -436,4 +449,24 @@ ges_material_get_id (GESMaterial * self)
   g_return_val_if_fail (GES_IS_MATERIAL (self), NULL);
 
   return self->priv->id;
+}
+
+/**
+ * ges_material_extract:
+ * @self: The #GESMaterial to get extract an object from
+ *
+ * Extracts a new #GObject from @material. The type of the object is
+ * defined by the extractable-type of @material, you can check what
+ * type will be extracted from @material using
+ * #ges_material_get_extractable_type
+ *
+ * Returns: A newly created #GObject
+ */
+GObject *
+ges_material_extract (GESMaterial * material)
+{
+  g_return_val_if_fail (GES_IS_MATERIAL (material), NULL);
+  g_return_val_if_fail (GES_MATERIAL_GET_CLASS (material)->extract, NULL);
+
+  return GES_MATERIAL_GET_CLASS (material)->extract (material);
 }
