@@ -957,19 +957,33 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
 */
 GESTimelineObject *
 ges_timeline_layer_add_material (GESTimelineLayer * layer,
-    GESMaterial * material,
-    GstClockTime start,
-    GstClockTime inpoint, GstClockTime duration, GESTrackType track_types)
+    GESMaterial * material, GstClockTime start, GstClockTime inpoint,
+    GstClockTime duration, GESTrackType track_types)
 {
-  // TODO: Add actual implementation here
-  GESMaterialClass *klass = GES_MATERIAL_GET_CLASS (material);
+  GESTimelineObject *tlobj;
 
-  GESTimelineObject *tlobj =
-      (*klass->extract) (material, start, inpoint, duration, track_types);
+  g_return_val_if_fail (GES_IS_TIMELINE_LAYER (layer), NULL);
+  g_return_val_if_fail (GES_IS_MATERIAL (material), NULL);
+  g_return_val_if_fail (g_type_is_a (ges_material_get_extractable_type
+          (material), GES_TYPE_TIMELINE_OBJECT), NULL);
+
+
+  tlobj = GES_TIMELINE_OBJECT (ges_material_extract (material));
 
   if (!ges_timeline_layer_add_object (layer, tlobj)) {
-    tlobj = NULL;
+    gst_object_unref (tlobj);
+
+    return NULL;
   }
+
+  ges_timeline_object_set_start (tlobj, start);
+  ges_timeline_object_set_inpoint (tlobj, inpoint);
+  if (GST_CLOCK_TIME_IS_VALID (duration) == FALSE) {
+
+  }
+
+  ges_timeline_object_set_start (tlobj, start);
+  ges_timeline_object_set_start (tlobj, start);
 
   return tlobj;
 }
