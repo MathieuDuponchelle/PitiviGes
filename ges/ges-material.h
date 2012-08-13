@@ -68,7 +68,7 @@ struct _GESMaterialClass
   GObjectClass parent;
 
   gboolean (*start_loading) (GESMaterial *self);
-  GObject* (*extract)(GESMaterial *self);
+  GESExtractable* (*extract)(GESMaterial *self);
 
   gpointer _ges_reserved[GES_PADDING];
 };
@@ -85,7 +85,7 @@ ges_material_new                  (GType extractable_type,
 
 const gchar* ges_material_get_id  (GESMaterial* self);
 
-GObject * ges_material_extract (GESMaterial *material);
+GESExtractable * ges_material_extract (GESMaterial *material);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */

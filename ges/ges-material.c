@@ -91,7 +91,7 @@ ges_material_start_loading_default (GESMaterial * material)
   return ges_material_cache_set_loaded (ges_material_get_id (material), NULL);
 }
 
-static GObject *
+static GESExtractable *
 ges_material_extract_default (GESMaterial * material)
 {
   guint n_params;
@@ -460,9 +460,9 @@ ges_material_get_id (GESMaterial * self)
  * type will be extracted from @material using
  * #ges_material_get_extractable_type
  *
- * Returns: A newly created #GObject
+ * Returns: A newly created #GESExtractable
  */
-GObject *
+GESExtractable *
 ges_material_extract (GESMaterial * material)
 {
   g_return_val_if_fail (GES_IS_MATERIAL (material), NULL);

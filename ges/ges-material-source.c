@@ -110,6 +110,12 @@ ges_material_filesource_start_loading (GESMaterial * material)
 }
 
 
+static GESExtractable *
+ges_material_filesource_extract (GESMaterial * self)
+{
+  return NULL;
+}
+
 static void
 ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
 {
@@ -121,6 +127,8 @@ ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
 
   GES_MATERIAL_CLASS (klass)->start_loading =
       ges_material_filesource_start_loading;
+
+  GES_MATERIAL_CLASS (klass)->extract = ges_material_filesource_extract;
 }
 
 static void
