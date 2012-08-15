@@ -465,8 +465,12 @@ ges_material_get_id (GESMaterial * self)
 GESExtractable *
 ges_material_extract (GESMaterial * material)
 {
+  GESExtractable *extractable;
   g_return_val_if_fail (GES_IS_MATERIAL (material), NULL);
   g_return_val_if_fail (GES_MATERIAL_GET_CLASS (material)->extract, NULL);
 
-  return GES_MATERIAL_GET_CLASS (material)->extract (material);
+  extractable = GES_MATERIAL_GET_CLASS (material)->extract (material);
+  ges_extractable_set_material (extractable, material);
+
+  return extractable;
 }
