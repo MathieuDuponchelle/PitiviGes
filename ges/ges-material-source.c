@@ -113,7 +113,70 @@ ges_material_filesource_start_loading (GESMaterial * material)
 static GESExtractable *
 ges_material_filesource_extract (GESMaterial * self)
 {
-  return NULL;
+
+  const gchar *uri = ges_material_get_id (self);
+  GstDiscovererInfo *info =
+      ges_material_filesource_get_info (GES_MATERIAL_FILESOURCE (self));
+  GESTimelineFileSource *tfs = ges_timeline_filesource_new ((gchar *) uri);
+  GList *stream_list;
+  GList *tmp;
+  gboolean is_image = FALSE;
+  GESTrackType tfs_supportedformats;
+  GESTimelineObject *tlobj;
+  GST_DEBUG ("Extracting filesource with uri %s", uri);
+  ges_timeline_filesource_set_max_duration (tfs,
+      gst_discoverer_info_get_duration (info));
+  stream_list = gst_discoverer_info_get_stream_list (info);
+
+  tfs_supportedformats = ges_timeline_filesource_get_supported_formats (tfs);
+  if (tfs_supportedformats != GES_TRACK_TYPE_UNKNOWN)
+    goto check_image;
+
+  /* Update timelinefilesource properties based on info */
+  for (tmp = stream_list; tmp; tmp = tmp->next) {
+    GstDiscovererStreamInfo *sinf = (GstDiscovererStreamInfo *) tmp->data;
+
+    if (GST_IS_DISCOVERER_AUDIO_INFO (sinf)) {
+      tfs_supportedformats |= GES_TRACK_TYPE_AUDIO;
+      ges_timeline_filesource_set_supported_formats (tfs, tfs_supportedformats);
+    } else if (GST_IS_DISCOVERER_VIDEO_INFO (sinf)) {
+      tfs_supportedformats |= GES_TRACK_TYPE_VIDEO;
+      ges_timeline_filesource_set_supported_formats (tfs, tfs_supportedformats);
+      if (gst_discoverer_video_info_is_image ((GstDiscovererVideoInfo *)
+              sinf)) {
+        tfs_supportedformats |= GES_TRACK_TYPE_AUDIO;
+        ges_timeline_filesource_set_supported_formats (tfs,
+            tfs_supportedformats);
+        is_image = TRUE;
+      }
+    }
+  }
+
+  if (stream_list)
+    gst_discoverer_stream_info_list_free (stream_list);
+
+check_image:
+
+  tlobj = GES_TIMELINE_OBJECT (tfs);
+  if (is_image) {
+    /* don't set max-duration on still images */
+    g_object_set (tfs, "is_image", (gboolean) TRUE, NULL);
+  } else {
+    GstClockTime file_duration, tlobj_max_duration;
+
+    /* Properly set duration informations from the discovery */
+    file_duration = gst_discoverer_info_get_duration (info);
+    tlobj_max_duration = ges_timeline_object_get_max_duration (tlobj);
+
+    if (tlobj_max_duration == G_MAXUINT64)
+      ges_timeline_object_set_max_duration (tlobj, file_duration);
+
+    if (GST_CLOCK_TIME_IS_VALID (tlobj->duration) == FALSE)
+      ges_timeline_object_set_duration (tlobj, file_duration);
+  }
+
+  ges_extractable_set_material (GES_EXTRACTABLE (tfs), self);
+  return GES_EXTRACTABLE (tfs);
 }
 
 static void
