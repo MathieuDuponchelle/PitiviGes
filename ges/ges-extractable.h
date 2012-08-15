@@ -34,30 +34,6 @@ G_BEGIN_DECLS
 GType ges_extractable_get_type (void);
 
 /**
- * GESExtractableGetMaterial:
- * @self: The #GESExtractable
- *
- * A function that return the #GESMaterial that instanciated the object that
- * implements that interface
- *
- * Returns: (transfer none): The #GESMaterial from which @self has been
- * extracted
- */
-
-typedef GESMaterial* (*GESExtractableGetMaterial) (GESExtractable *self);
-
-/**
- * GESExtractableSetMaterial:
- * @self: The #GESExtractable
- * @material: The #GESMaterial to set as creator
- *
- * Sets the #GESMaterial responsible for object creation
- */
-
-typedef void (*GESExtractableSetMaterial) (GESExtractable *self,
-                                           GESMaterial *material);
-
-/**
  * GESExtractableCheckId:
  * @type: The #GType to check @id for:
  * @id: The id to check
@@ -77,10 +53,9 @@ struct _GESExtractableInterface
 
   GType material_type;
 
-  GESExtractableGetMaterial get_material;
-  GESExtractableSetMaterial set_material;
-
   GESExtractableCheckId check_id;
+
+  void (*set_material) (GESExtractable *self, GESMaterial *material);
   GParameter *(*get_parameters_from_id) (const gchar *id, guint *n_params);
 
   gpointer _ges_reserved[GES_PADDING];

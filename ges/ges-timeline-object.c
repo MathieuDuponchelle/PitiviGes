@@ -417,23 +417,16 @@ ges_timeline_object_init (GESTimelineObject * self)
   self->priv->maxduration = G_MAXUINT64;
 }
 
-static GESMaterial *
-extractable_get_material (GESTimelineObject * object)
-{
-  return object->priv->material;
-}
-
 static void
-extractable_set_material (GESTimelineObject * object, GESMaterial * material)
+extractable_set_material (GESExtractable * extractable, GESMaterial * material)
 {
-  object->priv->material = material;
+  GES_TIMELINE_OBJECT (extractable)->material = material;
 }
 
 static void
 ges_extractable_interface_init (GESExtractableInterface * iface)
 {
-  iface->get_material = (GESExtractableGetMaterial) extractable_get_material;
-  iface->set_material = (GESExtractableSetMaterial) extractable_set_material;
+  iface->set_material = extractable_set_material;
 }
 
 /**

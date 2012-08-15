@@ -26,7 +26,10 @@
 #include "ges-extractable.h"
 #include "ges-timeline-file-source.h"
 
-G_DEFINE_INTERFACE (GESExtractable, ges_extractable, G_TYPE_OBJECT);
+static GQuark ges_material_key;
+
+G_DEFINE_INTERFACE_WITH_CODE (GESExtractable, ges_extractable, G_TYPE_OBJECT,
+    ges_material_key = g_quark_from_static_string ("ges-extractable-data"));
 
 static gchar *
 ges_extractable_check_id_default (GType type, const gchar * id)
@@ -48,7 +51,6 @@ ges_extractable_default_init (GESExtractableInterface * iface)
   iface->material_type = GES_TYPE_MATERIAL;
   iface->check_id = ges_extractable_check_id_default;
   iface->get_parameters_from_id = extractable_get_parameters_from_id;
-  iface->get_material = NULL;
   iface->set_material = NULL;
 }
 
@@ -58,24 +60,20 @@ ges_extractable_default_init (GESExtractableInterface * iface)
  *
  * Method to get material which was used to instaniate specified object
  *
- * Returns: (transfer none) : origin material
+ * Returns: (transfer none): origin material
  */
 GESMaterial *
 ges_extractable_get_material (GESExtractable * self)
 {
-  GESExtractableInterface *iface;
   g_return_val_if_fail (GES_IS_EXTRACTABLE (self), NULL);
 
-  iface = GES_EXTRACTABLE_GET_INTERFACE (self);
-  g_return_val_if_fail (iface->get_material, NULL);
-
-  return iface->get_material (self);
+  return g_object_get_qdata (G_OBJECT (self), ges_material_key);
 }
 
 /**
  * ges_extractable_object_set_material:
  * @object: Target object
- * @material: The #GESMaterial to set
+ * @material: (transfer none): The #GESMaterial to set
  *
  * Method to set material which was used to instaniate specified object
  */
@@ -83,19 +81,22 @@ void
 ges_extractable_set_material (GESExtractable * self, GESMaterial * material)
 {
   GESExtractableInterface *iface;
+
   g_return_if_fail (GES_IS_EXTRACTABLE (self));
 
-  iface = GES_EXTRACTABLE_GET_INTERFACE (self);
-  g_return_if_fail (iface->set_material);
-  g_return_if_fail (iface->get_material);
-
-  if (iface->get_material (self)) {
+  if (g_object_get_qdata (G_OBJECT (self), ges_material_key)) {
     GST_WARNING_OBJECT (self, "Can not reset material on object");
 
     return;
   }
 
-  iface->set_material (self, material);
+  g_object_set_qdata_full (G_OBJECT (self), ges_material_key,
+      gst_object_ref (material), gst_object_unref);
+
+  /* Let classes that implement the interface know that a material has been set */
+  iface = GES_EXTRACTABLE_GET_INTERFACE (self);
+  if (iface->set_material)
+    iface->set_material (self, material);
 }
 
 /**
