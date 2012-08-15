@@ -183,7 +183,7 @@ extractable_check_id (GType type, const gchar * id)
 static GParameter *
 extractable_get_parameters_from_id (const gchar * id, guint * n_params)
 {
-  GParameter *params = g_new0 (GParameter, 1);
+  GParameter *params = g_new0 (GParameter, 2);
 
   params[0].name = g_strdup ("uri");
   g_value_init (&params[0].value, G_TYPE_STRING);
