@@ -85,7 +85,7 @@ ges_material_new                  (GType extractable_type,
 
 const gchar* ges_material_get_id  (GESMaterial* self);
 
-GESExtractable * ges_material_extract (GESMaterial *material);
+GESExtractable * ges_material_extract (GESMaterial *self);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL */
