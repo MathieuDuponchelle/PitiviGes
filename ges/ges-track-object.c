@@ -64,6 +64,17 @@ struct _GESTrackObjectPrivate
 
   gboolean locked;              /* If TRUE, then moves in sync with its controlling
                                  * GESTimelineObject */
+
+  /* If these are not NULL, then the track object has a transition on its edges */
+
+  GESTimelineStandardTransition *left_transition;
+  GESTimelineStandardTransition *right_transition;
+
+  /* The track object now keeps a reference to its iterator
+   * in the tracksources GSequence maintained by the timeline, to avoid lookups.
+   * TODO: Use it for timeline edition modes.
+   */
+  GSequenceIter *iter;
 };
 
 enum
@@ -369,6 +380,8 @@ ges_track_object_init (GESTrackObject * self)
   priv->locked = TRUE;
   priv->properties_hashtable = NULL;
   priv->maxduration = GST_CLOCK_TIME_NONE;
+  priv->left_transition = NULL;
+  priv->right_transition = NULL;
 }
 
 static inline gboolean
@@ -1673,4 +1686,34 @@ ges_track_object_edit (GESTrackObject * object,
   }
 
   return TRUE;
+}
+
+GESTimelineStandardTransition *
+ges_track_object_get_transition (GESTrackObject * object, GESEdge edge)
+{
+  return (edge ==
+      GES_EDGE_START ? object->priv->left_transition : object->
+      priv->right_transition);
+}
+
+void
+ges_track_object_set_transition (GESTrackObject * object,
+    GESTimelineStandardTransition * transition, GESEdge edge)
+{
+  if (edge == GES_EDGE_START)
+    object->priv->left_transition = transition;
+  else
+    object->priv->right_transition = transition;
+}
+
+void
+ges_track_object_set_iterator (GESTrackObject * object, GSequenceIter * iter)
+{
+  object->priv->iter = iter;
+}
+
+GSequenceIter *
+ges_track_object_get_iterator (GESTrackObject * object)
+{
+  return object->priv->iter;
 }

@@ -112,11 +112,6 @@ gboolean ges_timeline_layer_is_empty      (GESTimelineLayer * layer);
 
 guint   ges_timeline_layer_get_priority  (GESTimelineLayer * layer);
 
-gboolean ges_timeline_layer_get_auto_transition (GESTimelineLayer * layer);
-
-void ges_timeline_layer_set_auto_transition (GESTimelineLayer * layer,
-					     gboolean auto_transition);
-
 GList*   ges_timeline_layer_get_objects   (GESTimelineLayer * layer);
 
 G_END_DECLS

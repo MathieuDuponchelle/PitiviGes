@@ -42,6 +42,8 @@
 #include "ges-timeline-layer.h"
 #include "ges.h"
 
+#define LAYER_HEIGHT 1000
+
 typedef struct _MoveContext MoveContext;
 
 static inline void init_movecontext (MoveContext * mv_ctx);
@@ -129,6 +131,8 @@ struct _GESTimelinePrivate
   GSequence *tracksources;      /* TrackSource-s sorted by start/priorities */
 
   MoveContext movecontext;
+
+  gboolean auto_transitions;
 };
 
 /* private structure to contain our track-related information */
@@ -147,6 +151,7 @@ enum
   PROP_DURATION,
   PROP_SNAPPING_DISTANCE,
   PROP_UPDATE,
+  PROP_AUTO_TRANSITIONS,
   PROP_LAST
 };
 
@@ -176,6 +181,12 @@ discoverer_finished_cb (GstDiscoverer * discoverer, GESTimeline * timeline);
 static void
 discoverer_discovered_cb (GstDiscoverer * discoverer,
     GstDiscovererInfo * info, GError * err, GESTimeline * timeline);
+static void
+track_object_priority_changed (GESTrackObject * tck_obj, GParamSpec * arg,
+    GESTrackObject * neighbour);
+static void
+track_object_removed (GESTimelineObject * tl_obj, GESTrackObject * tck_obj,
+    GESTrackObject * neighbour);
 
 /* Internal methods */
 static gboolean
@@ -216,6 +227,9 @@ ges_timeline_get_property (GObject * object, guint property_id,
     case PROP_UPDATE:
       g_value_set_boolean (value, ges_timeline_is_updating (timeline));
       break;
+    case PROP_AUTO_TRANSITIONS:
+      g_value_set_boolean (value, timeline->priv->auto_transitions);
+      break;
   }
 }
 
@@ -232,6 +246,9 @@ ges_timeline_set_property (GObject * object, guint property_id,
     case PROP_UPDATE:
       ges_timeline_enable_update_internal (timeline,
           g_value_get_boolean (value));
+      break;
+    case PROP_AUTO_TRANSITIONS:
+      ges_timeline_set_auto_transitions (timeline, g_value_get_boolean (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -301,7 +318,7 @@ ges_timeline_class_init (GESTimelineClass * klass)
   object_class->finalize = ges_timeline_finalize;
 
   /**
-   * GESTimeline:duration
+   * GESTimeline:duration:
    *
    * Current duration (in nanoseconds) of the #GESTimeline
    */
@@ -313,7 +330,7 @@ ges_timeline_class_init (GESTimelineClass * klass)
       properties[PROP_DURATION]);
 
   /**
-   * GESTimeline:snapping-distance
+   * GESTimeline:snapping-distance:
    *
    * Distance (in nanoseconds) from which a moving object will snap
    * with it neighboors. 0 means no snapping.
@@ -345,6 +362,18 @@ ges_timeline_class_init (GESTimelineClass * klass)
       G_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_UPDATE,
       properties[PROP_UPDATE]);
+
+  /**
+   * GESTimeline:auto-transitions:
+   * Sets whether transitions are added automagically when timeline
+   * objects overlap.
+   */
+
+  properties[PROP_AUTO_TRANSITIONS] = g_param_spec_boolean ("auto-transitions",
+      "Auto-transitions", "Add and remove transitions automagically", TRUE,
+      G_PARAM_READWRITE);
+  g_object_class_install_property (object_class, PROP_AUTO_TRANSITIONS,
+      properties[PROP_AUTO_TRANSITIONS]);
 
   /**
    * GESTimeline::track-added
@@ -410,7 +439,7 @@ ges_timeline_class_init (GESTimelineClass * klass)
       G_TYPE_NONE, 2, GES_TYPE_TIMELINE_FILE_SOURCE, G_TYPE_ERROR);
 
   /**
-   * GESTimeline::track-objects-snapping:
+   * GESTimeline::snapping-started:
    * @timeline: the #GESTimeline
    * @obj1: the first #GESTrackObject that was snapping.
    * @obj2: the second #GESTrackObject that was snapping.
@@ -733,6 +762,7 @@ start_tracking_track_obj (GESTimeline * timeline, GESTrackObject * tckobj)
 {
   guint64 *pstart, *pend;
   GESTimelinePrivate *priv = timeline->priv;
+  GSequenceIter *iter;
 
   pstart = g_malloc (sizeof (guint64));
   pend = g_malloc (sizeof (guint64));
@@ -743,8 +773,10 @@ start_tracking_track_obj (GESTimeline * timeline, GESTrackObject * tckobj)
       (GCompareDataFunc) compare_uint64, NULL);
   g_sequence_insert_sorted (priv->starts_ends, pend,
       (GCompareDataFunc) compare_uint64, NULL);
-  g_sequence_insert_sorted (priv->tracksources, g_object_ref (tckobj),
+  iter = g_sequence_insert_sorted (priv->tracksources, g_object_ref (tckobj),
       (GCompareDataFunc) objects_start_compare, NULL);
+
+  ges_track_object_set_iterator (tckobj, iter);
 
   g_hash_table_insert (priv->by_start, tckobj, pstart);
   g_hash_table_insert (priv->by_object, pstart, tckobj);
@@ -1749,6 +1781,259 @@ layer_object_removed_cb (GESTimelineLayer * layer, GESTimelineObject * object,
   GST_DEBUG ("Done");
 }
 
+/*Gets the neighbour of a TrackObject, on the specified edge*/
+static GESTrackObject *
+get_neighbour (GESTimeline * timeline, GESTrackObject * tck_obj, GESEdge edge,
+    guint32 priority, GType track_type)
+{
+  GSequenceIter *iter, *prev;
+  GESTrackObject *neighbour;
+
+  iter = ges_track_object_get_iterator (tck_obj);
+  while (1) {
+    prev = iter;
+
+    if (edge == GES_EDGE_START)
+      iter = g_sequence_iter_prev (iter);
+    else if (edge == GES_EDGE_END)
+      iter = g_sequence_iter_next (iter);
+
+    if (iter == prev || g_sequence_iter_is_end (iter))
+      return NULL;
+
+    neighbour = g_sequence_get (iter);
+
+    if (neighbour->priority / LAYER_HEIGHT == priority) {
+      GESTrack *track;
+
+      track = ges_track_object_get_track (neighbour);
+      if (track->type == track_type)
+        return (neighbour);
+    }
+  }
+}
+
+static void
+remove_transition (GESTimelineLayer * layer, GESTrackObject * tck_obj,
+    GESTrackObject * neighbour, GESTimelineStandardTransition * transition,
+    GESEdge edge)
+{
+  GESEdge opposite;
+
+  opposite = edge == GES_EDGE_START ? GES_EDGE_END : GES_EDGE_START;
+
+  ges_timeline_layer_remove_object (layer, GES_TIMELINE_OBJECT (transition));
+  ges_track_object_set_transition (tck_obj, NULL, edge);
+  ges_track_object_set_transition (neighbour, NULL, opposite);
+}
+
+/* Remove shared transitions, either on the left or the right */
+static void
+possibly_remove_transitions (GESTrackObject * tck_obj,
+    GESTrackObject * neighbour, GESTimelineObject * tl_obj)
+{
+  GESTimelineStandardTransition *transition;
+  GESTimelineLayer *layer;
+
+  layer = ges_timeline_object_get_layer (tl_obj);
+  transition = ges_track_object_get_transition (tck_obj, GES_EDGE_START);
+  if (transition && ges_track_object_get_transition (neighbour, GES_EDGE_END) == transition)    /*Shared */
+    remove_transition (layer, tck_obj, neighbour, transition, GES_EDGE_START);
+  else {
+    transition = ges_track_object_get_transition (tck_obj, GES_EDGE_END);
+    if (transition && ges_track_object_get_transition (neighbour, GES_EDGE_START) == transition)        /*Shared */
+      remove_transition (layer, tck_obj, neighbour, transition, GES_EDGE_END);
+  }
+
+  g_signal_handlers_disconnect_by_func (tck_obj, track_object_priority_changed,
+      neighbour);
+  g_signal_handlers_disconnect_by_func (neighbour,
+      track_object_priority_changed, tck_obj);
+
+  g_object_unref (layer);
+}
+
+static void
+track_object_priority_changed (GESTrackObject * tck_obj, GParamSpec * arg,
+    GESTrackObject * neighbour)
+{
+  GESTimelineObject *tl_obj;
+
+  if (neighbour->priority / LAYER_HEIGHT == tck_obj->priority / LAYER_HEIGHT)
+    return;
+
+  tl_obj = ges_track_object_get_timeline_object (neighbour);
+
+  possibly_remove_transitions (tck_obj, neighbour, tl_obj);
+
+  tl_obj = ges_track_object_get_timeline_object (tck_obj);
+  g_signal_handlers_disconnect_by_func (tl_obj, track_object_removed,
+      neighbour);
+}
+
+static void
+track_object_removed (GESTimelineObject * tl_obj, GESTrackObject * tck_obj,
+    GESTrackObject * neighbour)
+{
+  possibly_remove_transitions (tck_obj, neighbour, tl_obj);
+}
+
+static void
+timeline_object_height_changed_cb (GESTimelineObject * obj,
+    GESTrackEffect * tr_eff, GESTimelineObject * second_obj)
+{
+  gint priority, height;
+  g_object_get (obj, "height", &height, "priority", &priority, NULL);
+  g_object_set (second_obj, "priority", priority + height, NULL);
+}
+
+static GESTimelineStandardTransition *
+create_transition (GESTrackObject * tck_obj,
+    GESTrackObject * neighbour,
+    GESEdge edge, guint64 duration, GESTimelineLayer * layer, guint64 start)
+{
+  GESTimelineObject *first_object, *second_object;
+  GESTimelineStandardTransition *transition;
+  GESTrack *track;
+  gint height, priority;
+
+  transition =
+      ges_timeline_standard_transition_new_for_nick ((gchar *) "crossfade");
+
+  track = ges_track_object_get_track (tck_obj);
+
+  ges_timeline_object_set_supported_formats (GES_TIMELINE_OBJECT (transition),
+      track->type);
+
+  ges_timeline_layer_add_object (layer, GES_TIMELINE_OBJECT (transition));
+
+  if (edge == GES_EDGE_START) {
+    first_object = ges_track_object_get_timeline_object (neighbour);
+    second_object = ges_track_object_get_timeline_object (tck_obj);
+    /* We want to be notified when the track object is removed */
+    g_signal_connect (first_object, "track-object-removed",
+        (GCallback) track_object_removed, tck_obj);
+    g_signal_connect (second_object, "track-object-removed",
+        (GCallback) track_object_removed, neighbour);
+  } else {
+    second_object = ges_track_object_get_timeline_object (neighbour);
+    first_object = ges_track_object_get_timeline_object (tck_obj);
+    g_signal_connect (first_object, "track-object-removed",
+        (GCallback) track_object_removed, neighbour);
+    g_signal_connect (second_object, "track-object-removed",
+        (GCallback) track_object_removed, tck_obj);
+  }
+
+  g_object_get (first_object, "priority", &priority, "height", &height, NULL);
+  g_object_set (second_object, "priority", priority + height, NULL);
+
+  /*We want to be notified when effects are added/removed */
+  g_signal_connect (first_object, "notify::height",
+      (GCallback) timeline_object_height_changed_cb, second_object);
+
+  /* We want to be notified when the object changed layers */
+  g_signal_connect (tck_obj, "notify::priority",
+      (GCallback) track_object_priority_changed, neighbour);
+  g_signal_connect (neighbour, "notify::priority",
+      (GCallback) track_object_priority_changed, tck_obj);
+
+  g_object_set (transition, "start", start, "duration", duration, NULL);
+
+  return transition;
+}
+
+static void
+update_transition (GESTimelineStandardTransition * transition,
+    guint64 start, guint64 duration)
+{
+  g_object_set (transition, "start", start, "duration", duration, NULL);
+}
+
+/* This checks if objects overlap.
+ * If so, they might already have a common transition which may need to be updated.
+ * If they overlap but don't have a transition yet, we create it.
+ * If they don't overlap and have a common transition, we remove it.
+ */
+static void
+check_overlapping_and_create_update_or_remove_transition (GESTrackObject *
+    tck_obj, GESTrackObject * neighbour, GESEdge edge, GESTimelineLayer * layer)
+{
+  GESTimelineStandardTransition *transition;
+  GESEdge opposite;
+  guint64 tck_obj_end, neighbour_end;
+  guint64 tck_obj_start, neighbour_start;
+  guint64 transition_duration = 0;
+
+  /*Check overlap */
+  tck_obj_start = ges_track_object_get_start (tck_obj);
+  neighbour_start = ges_track_object_get_start (neighbour);
+  tck_obj_end = tck_obj_start + ges_track_object_get_duration (tck_obj);
+  neighbour_end = neighbour_start + ges_track_object_get_duration (neighbour);
+
+  if (edge == GES_EDGE_START && neighbour_end > tck_obj_start)
+    transition_duration = neighbour_end - tck_obj_start;
+  else if (edge == GES_EDGE_END && tck_obj_end > neighbour_start)
+    transition_duration = tck_obj_end - neighbour_start;
+
+  opposite = edge == GES_EDGE_START ? GES_EDGE_END : GES_EDGE_START;
+
+  /* TODO : check "passover" */
+
+  transition = ges_track_object_get_transition (tck_obj, edge);
+
+  /* If they don't share the same transition, something messed up */
+  g_return_if_fail (ges_track_object_get_transition (neighbour,
+          opposite) == transition);
+
+  /*Objects overlap but there is no transition yet */
+  if (!transition && transition_duration) {
+    transition =
+        create_transition (tck_obj, neighbour, edge, transition_duration, layer,
+        edge == GES_EDGE_START ? tck_obj_start : neighbour_start);
+    ges_track_object_set_transition (tck_obj, transition, edge);
+    ges_track_object_set_transition (neighbour, transition, opposite);
+  }
+
+  /*Objects overlap and they have a common transition */
+  else if (transition && transition_duration) {
+    update_transition (transition,
+        edge == GES_EDGE_START ? tck_obj_start : neighbour_start,
+        transition_duration);
+  }
+
+  /*Objects don't overlap but they have a common transition */
+  else if (transition && !transition_duration) {
+    remove_transition (layer, tck_obj, neighbour, transition, edge);
+  }
+}
+
+/* This checks if transitions have to be added.
+ * There can never be more than one overlapping object on each side
+ */
+static void
+update_transitions (GESTimeline * timeline, GESTrackObject * tck_obj,
+    GESEdge edge)
+{
+  GESTrackObject *neighbour;
+  GESTimelineObject *object;
+  GESTimelineLayer *layer;
+  GESTrack *track;
+  guint32 layer_prio;
+
+  track = ges_track_object_get_track (tck_obj);
+  object = ges_track_object_get_timeline_object (tck_obj);
+  layer = ges_timeline_object_get_layer (object);
+  layer_prio = ges_timeline_layer_get_priority (layer);
+
+  neighbour = get_neighbour (timeline, tck_obj, edge, layer_prio, track->type);
+  if (neighbour) {
+    check_overlapping_and_create_update_or_remove_transition (tck_obj,
+        neighbour, edge, layer);
+  }
+
+  g_object_unref (layer);
+}
+
 static void
 trackobj_start_changed_cb (GESTrackObject * child,
     GParamSpec * arg G_GNUC_UNUSED, GESTimeline * timeline)
@@ -1764,6 +2049,11 @@ trackobj_start_changed_cb (GESTrackObject * child,
   if (timeline->priv->movecontext.ignore_needs_ctx &&
       timeline->priv->snapping_distance == 0)
     timeline->priv->movecontext.needs_move_ctx = TRUE;
+
+  if (timeline->priv->auto_transitions) {
+    update_transitions (timeline, child, GES_EDGE_START);
+    update_transitions (timeline, child, GES_EDGE_END);
+  }
 }
 
 static void
@@ -1786,13 +2076,19 @@ track_object_added_cb (GESTrack * track, GESTrackObject * object,
     GESTimeline * timeline)
 {
   /* We only work with sources */
-  if (GES_IS_TRACK_SOURCE (object)) {
-    start_tracking_track_obj (timeline, object);
+  if (!GES_IS_TRACK_SOURCE (object))
+    return;
 
-    g_signal_connect (GES_TRACK_OBJECT (object), "notify::start",
-        G_CALLBACK (trackobj_start_changed_cb), timeline);
-    g_signal_connect (GES_TRACK_OBJECT (object), "notify::duration",
-        G_CALLBACK (trackobj_duration_changed_cb), timeline);
+  start_tracking_track_obj (timeline, object);
+
+  g_signal_connect (GES_TRACK_OBJECT (object), "notify::start",
+      G_CALLBACK (trackobj_start_changed_cb), timeline);
+  g_signal_connect (GES_TRACK_OBJECT (object), "notify::duration",
+      G_CALLBACK (trackobj_duration_changed_cb), timeline);
+
+  if (timeline->priv->auto_transitions) {
+    update_transitions (timeline, object, GES_EDGE_START);
+    update_transitions (timeline, object, GES_EDGE_END);
   }
 }
 
@@ -2464,6 +2760,8 @@ ges_timeline_enable_update (GESTimeline * timeline, gboolean enabled)
   return FALSE;
 }
 
+
+
 /**
  * ges_timeline_get_duration
  * @timeline: a #GESTimeline
@@ -2478,4 +2776,22 @@ ges_timeline_get_duration (GESTimeline * timeline)
   g_return_val_if_fail (GES_IS_TIMELINE (timeline), GST_CLOCK_TIME_NONE);
 
   return timeline->priv->duration;
+}
+
+/**
+ * ges_timeline_set_auto_transitions:
+ * @timeline: a #GESTimeline
+ * @auto_transitions: whether the auto_transition is active
+ *
+ * Sets the layer to the given @auto_transition. See the documentation of the
+ * property auto_transition for more information.
+ */
+void
+ges_timeline_set_auto_transitions (GESTimeline * timeline,
+    gboolean auto_transitions)
+{
+
+  g_return_if_fail (GES_IS_TIMELINE (timeline));
+
+  timeline->priv->auto_transitions = auto_transitions;
 }

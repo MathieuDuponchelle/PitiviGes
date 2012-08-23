@@ -59,4 +59,20 @@ timeline_move_object           (GESTimeline *timeline, GESTrackObject * object,
 gboolean
 timeline_context_to_layer      (GESTimeline *timeline, gint offset);
 
+
+/*Auto transitions stuff */
+GESTimelineStandardTransition *
+ges_track_object_get_transition(GESTrackObject * object, GESEdge edge);
+
+void
+ges_track_object_set_transition(GESTrackObject * object,
+                                GESTimelineStandardTransition *transition,
+                                GESEdge edge);
+
+void
+ges_track_object_set_iterator(GESTrackObject * object, GSequenceIter *iter);
+
+GSequenceIter *
+ges_track_object_get_iterator(GESTrackObject * object);
+
 #endif /* __GES_INTERNAL_H__ */

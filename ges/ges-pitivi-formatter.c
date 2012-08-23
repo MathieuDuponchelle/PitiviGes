@@ -904,7 +904,6 @@ make_source (GESFormatter * self, GList * reflist, GHashTable * source_table)
     /* If we do not have any layer with this priority, create it */
     if (!(layer = g_hash_table_lookup (priv->layers_table, &prio))) {
       layer = ges_timeline_layer_new ();
-      g_object_set (layer, "auto-transition", TRUE, "priority", prio, NULL);
       ges_timeline_add_layer (self->timeline, layer);
       g_hash_table_insert (priv->layers_table, g_memdup (&prio,
               sizeof (guint64)), layer);
@@ -1061,7 +1060,6 @@ load_pitivi_file_from_uri (GESFormatter * self,
 
   *prio = 0;
   layer = ges_timeline_layer_new ();
-  g_object_set (layer, "auto-transition", TRUE, NULL);
 
   g_hash_table_insert (priv->layers_table, prio, layer);
   g_object_set (layer, "priority", (gint32) 0, NULL);
