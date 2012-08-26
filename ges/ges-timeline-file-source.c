@@ -30,7 +30,7 @@
 #include "ges-timeline-file-source.h"
 #include "ges-timeline-source.h"
 #include "ges-track-filesource.h"
-#include "ges-material-source.h"
+#include "ges-material-file-source.h"
 #include "ges-extractable.h"
 #include "ges-track-image-source.h"
 #include "ges-track-audio-test-source.h"

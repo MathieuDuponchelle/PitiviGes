@@ -18,7 +18,7 @@
  */
 
 #include <ges/ges.h>
-#include <ges/ges-material-source.h>
+#include <ges/ges-material-file-source.h>
 #include <gst/pbutils/encoding-profile.h>
 #include <gst/pbutils/gstdiscoverer.h>
 #include <ges/ges-internal.h>
