@@ -48,6 +48,8 @@ struct _GESMaterialFileSourcePrivate
 {
   GstDiscovererInfo *info;
   GstClockTime duration;
+  GESTrackType supportedformats;
+  gboolean is_image;
 };
 
 
@@ -115,67 +117,18 @@ ges_material_filesource_extract (GESMaterial * self)
 {
 
   const gchar *uri = ges_material_get_id (self);
-  GstDiscovererInfo *info =
-      ges_material_filesource_get_info (GES_MATERIAL_FILESOURCE (self));
+  GESMaterialFileSourcePrivate *priv = GES_MATERIAL_FILESOURCE (self)->priv;
+
   GESTimelineFileSource *tfs = ges_timeline_filesource_new ((gchar *) uri);
-  GList *stream_list;
-  GList *tmp;
-  gboolean is_image = FALSE;
-  GESTrackType tfs_supportedformats;
-  GESTimelineObject *tlobj;
-  GST_DEBUG ("Extracting filesource with uri %s", uri);
-  ges_timeline_filesource_set_max_duration (tfs,
-      gst_discoverer_info_get_duration (info));
-  stream_list = gst_discoverer_info_get_stream_list (info);
 
-  tfs_supportedformats = ges_timeline_filesource_get_supported_formats (tfs);
-  if (tfs_supportedformats != GES_TRACK_TYPE_UNKNOWN)
-    goto check_image;
+  GST_DEBUG_OBJECT (self, "Extracting filesource with uri %s", uri);
 
-  /* Update timelinefilesource properties based on info */
-  for (tmp = stream_list; tmp; tmp = tmp->next) {
-    GstDiscovererStreamInfo *sinf = (GstDiscovererStreamInfo *) tmp->data;
-
-    if (GST_IS_DISCOVERER_AUDIO_INFO (sinf)) {
-      tfs_supportedformats |= GES_TRACK_TYPE_AUDIO;
-      ges_timeline_filesource_set_supported_formats (tfs, tfs_supportedformats);
-    } else if (GST_IS_DISCOVERER_VIDEO_INFO (sinf)) {
-      tfs_supportedformats |= GES_TRACK_TYPE_VIDEO;
-      ges_timeline_filesource_set_supported_formats (tfs, tfs_supportedformats);
-      if (gst_discoverer_video_info_is_image ((GstDiscovererVideoInfo *)
-              sinf)) {
-        tfs_supportedformats |= GES_TRACK_TYPE_AUDIO;
-        ges_timeline_filesource_set_supported_formats (tfs,
-            tfs_supportedformats);
-        is_image = TRUE;
-      }
-    }
-  }
-
-  if (stream_list)
-    gst_discoverer_stream_info_list_free (stream_list);
-
-check_image:
-
-  tlobj = GES_TIMELINE_OBJECT (tfs);
-  if (is_image) {
-    /* don't set max-duration on still images */
-    g_object_set (tfs, "is_image", (gboolean) TRUE, NULL);
-  } else {
-    GstClockTime file_duration, tlobj_max_duration;
-
-    /* Properly set duration informations from the discovery */
-    file_duration = gst_discoverer_info_get_duration (info);
-    tlobj_max_duration = ges_timeline_object_get_max_duration (tlobj);
-
-    if (tlobj_max_duration == G_MAXUINT64)
-      ges_timeline_object_set_max_duration (tlobj, file_duration);
-
-    if (GST_CLOCK_TIME_IS_VALID (tlobj->duration) == FALSE)
-      ges_timeline_object_set_duration (tlobj, file_duration);
-  }
+  ges_timeline_filesource_set_max_duration (tfs, priv->duration);
+  ges_timeline_filesource_set_supported_formats (tfs, priv->supportedformats);
+  ges_timeline_filesource_set_is_image (tfs, priv->is_image);
 
   ges_extractable_set_material (GES_EXTRACTABLE (tfs), self);
+
   return GES_EXTRACTABLE (tfs);
 }
 
@@ -197,21 +150,49 @@ ges_material_filesource_class_init (GESMaterialFileSourceClass * klass)
 static void
 ges_material_filesource_init (GESMaterialFileSource * self)
 {
-  self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
+  GESMaterialFileSourcePrivate *priv;
+
+  priv = self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSourcePrivate);
 
-  self->priv->info = NULL;
-  self->priv->duration = GST_CLOCK_TIME_NONE;
+  priv->info = NULL;
+  priv->duration = GST_CLOCK_TIME_NONE;
+  priv->supportedformats = GES_TRACK_TYPE_UNKNOWN;
+  priv->is_image = FALSE;
 }
 
-void
+static void
 ges_material_filesource_set_info (GESMaterialFileSource * self,
     GstDiscovererInfo * info)
 {
-  if (self->priv->info != NULL) {
-    g_object_unref (self->priv->info);
+  GList *tmp, *stream_list;
+
+  GESMaterialFileSourcePrivate *priv = GES_MATERIAL_FILESOURCE (self)->priv;
+
+  /* Extract infos from the GstDiscovererInfo */
+  stream_list = gst_discoverer_info_get_stream_list (info);
+  for (tmp = stream_list; tmp; tmp = tmp->next) {
+    GstDiscovererStreamInfo *sinf = (GstDiscovererStreamInfo *) tmp->data;
+
+    if (GST_IS_DISCOVERER_AUDIO_INFO (sinf)) {
+      priv->supportedformats |= GES_TRACK_TYPE_AUDIO;
+    } else if (GST_IS_DISCOVERER_VIDEO_INFO (sinf)) {
+      priv->supportedformats |= GES_TRACK_TYPE_VIDEO;
+      if (gst_discoverer_video_info_is_image ((GstDiscovererVideoInfo *)
+              sinf)) {
+        priv->is_image = TRUE;
+      }
+    }
   }
-  self->priv->info = info;
+
+  if (stream_list)
+    gst_discoverer_stream_info_list_free (stream_list);
+
+  if (priv->is_image == FALSE)
+    priv->duration = gst_discoverer_info_get_duration (info);
+  /* else we keep #GST_CLOCK_TIME_NONE */
+
+  priv->info = info;
 }
 
 static void
@@ -228,6 +209,7 @@ discoverer_discovered_cb (GstDiscoverer * discoverer,
       GES_MATERIAL_FILESOURCE (ges_material_cache_lookup (uri));
 
   ges_material_filesource_set_info (mfs, info);
+
   ges_material_cache_set_loaded (uri, err);
 }
 

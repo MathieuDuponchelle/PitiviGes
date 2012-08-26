@@ -62,7 +62,5 @@ struct _GESMaterialFileSourceClass
 GstDiscovererInfo *ges_material_filesource_get_info (const GESMaterialFileSource
     * self);
 
-void ges_material_filesource_set_info(GESMaterialFileSource* self, 
-  GstDiscovererInfo *info);
 G_END_DECLS
 #endif /* _GES_MATERIAL_FILESOURCE */
