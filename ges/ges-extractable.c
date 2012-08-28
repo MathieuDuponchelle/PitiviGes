@@ -45,6 +45,13 @@ extractable_get_parameters_from_id (const gchar * id, guint * n_params)
   return NULL;
 }
 
+static const gchar *
+extractable_get_id (GESExtractable * self)
+{
+  return g_type_name (G_OBJECT_TYPE (self));
+
+}
+
 static void
 ges_extractable_default_init (GESExtractableInterface * iface)
 {
@@ -52,6 +59,7 @@ ges_extractable_default_init (GESExtractableInterface * iface)
   iface->check_id = ges_extractable_check_id_default;
   iface->get_parameters_from_id = extractable_get_parameters_from_id;
   iface->set_material = NULL;
+  iface->get_id = extractable_get_id;
 }
 
 /**
@@ -108,13 +116,9 @@ ges_extractable_set_material (GESExtractable * self, GESMaterial * material)
 const gchar *
 ges_extractable_get_id (GESExtractable * self)
 {
-  GESMaterial *material;
-
   g_return_val_if_fail (GES_IS_EXTRACTABLE (self), NULL);
 
-  material = ges_extractable_get_material (self);
-
-  return ges_material_get_id (material);
+  return GES_EXTRACTABLE_GET_INTERFACE (self)->get_id (self);
 }
 
 /**

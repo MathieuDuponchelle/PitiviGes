@@ -192,12 +192,19 @@ extractable_get_parameters_from_id (const gchar * id, guint * n_params)
   return params;
 }
 
+static const gchar *
+extractable_get_id (GESExtractable * self)
+{
+  return GES_TIMELINE_FILE_SOURCE (self)->priv->uri;
+}
+
 static void
 ges_extractable_interface_init (GESExtractableInterface * iface)
 {
   iface->material_type = GES_TYPE_MATERIAL_FILESOURCE;
   iface->check_id = (GESExtractableCheckId) extractable_check_id;
   iface->get_parameters_from_id = extractable_get_parameters_from_id;
+  iface->get_id = extractable_get_id;
 }
 
 static void

@@ -57,6 +57,7 @@ struct _GESExtractableInterface
 
   void (*set_material) (GESExtractable *self, GESMaterial *material);
   GParameter *(*get_parameters_from_id) (const gchar *id, guint *n_params);
+  const gchar * (*get_id) (GESExtractable *self);
 
   gpointer _ges_reserved[GES_PADDING];
 };
