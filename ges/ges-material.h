@@ -51,7 +51,7 @@ typedef void (*GESMaterialCreatedCallback)(GESMaterial *material, GError *error,
 typedef struct _GESMaterialPrivate GESMaterialPrivate;
 
 GType ges_material_get_type (void);
-/* Abstract type (for now) */
+
 struct _GESMaterial
 {
   GObject parent;

@@ -460,7 +460,7 @@ ges_material_get_id (GESMaterial * self)
  * type will be extracted from @material using
  * #ges_material_get_extractable_type
  *
- * Returns: A newly created #GESExtractable
+ * Returns: (transfer full): A newly created #GESExtractable
  */
 GESExtractable *
 ges_material_extract (GESMaterial * self)

@@ -75,7 +75,7 @@ ges_material_filesource_set_property (GObject * object, guint property_id,
 
 
 /* WARNING Call WITH discoverer_lock taken */
-static GstDiscoverer *
+static inline GstDiscoverer *
 ges_material_filesource_get_discoverer (void)
 {
   if (discoverer == NULL) {
