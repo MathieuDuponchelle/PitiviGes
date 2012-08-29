@@ -1506,12 +1506,8 @@ layer_object_added_cb (GESTimelineLayer * layer, GESTimelineObject * object,
   }
 
   GST_DEBUG ("New TimelineObject %p added to layer %p", object, layer);
+  add_object_to_tracks (timeline, object);
 
-  if (GES_IS_TIMELINE_FILE_SOURCE (object)) {
-    add_object_to_tracks (timeline, object);
-  }
-
-  GST_DEBUG ("done");
 }
 
 static void
