@@ -199,12 +199,31 @@ extractable_get_id (GESExtractable * self)
 }
 
 static void
+extractable_set_material (GESExtractable * self, GESMaterial * material)
+{
+  GESTimelineFileSource *tfs = GES_TIMELINE_FILE_SOURCE (self);
+  GESMaterialFileSource *mfs = GES_MATERIAL_FILESOURCE (material);
+
+  ges_timeline_filesource_set_max_duration (tfs,
+      ges_material_filesource_get_duration (mfs));
+  ges_timeline_filesource_set_is_image (tfs,
+      ges_material_filesource_is_image (mfs));
+
+  if (ges_timeline_object_get_supported_formats (GES_TIMELINE_OBJECT (self)) ==
+      GES_TRACK_TYPE_UNKNOWN) {
+    ges_timeline_filesource_set_supported_formats (tfs,
+        ges_material_filesource_get_supported_types (mfs));
+  }
+}
+
+static void
 ges_extractable_interface_init (GESExtractableInterface * iface)
 {
   iface->material_type = GES_TYPE_MATERIAL_FILESOURCE;
   iface->check_id = (GESExtractableCheckId) extractable_check_id;
   iface->get_parameters_from_id = extractable_get_parameters_from_id;
   iface->get_id = extractable_get_id;
+  iface->set_material = extractable_set_material;
 }
 
 static void
@@ -391,7 +410,8 @@ ges_timeline_filesource_create_track_object (GESTimelineObject * obj,
   GESTrackObject *res;
 
   if (!(ges_timeline_object_get_supported_formats (obj) & track->type)) {
-    GST_DEBUG ("We don't support this track format");
+    GST_DEBUG ("We don't support this track format (caps %" GST_PTR_FORMAT
+        ")", ges_track_get_caps (track));
     return NULL;
   }
 

@@ -115,17 +115,11 @@ ges_material_filesource_start_loading (GESMaterial * material)
 static GESExtractable *
 ges_material_filesource_extract (GESMaterial * self)
 {
-
   const gchar *uri = ges_material_get_id (self);
-  GESMaterialFileSourcePrivate *priv = GES_MATERIAL_FILESOURCE (self)->priv;
 
   GESTimelineFileSource *tfs = ges_timeline_filesource_new ((gchar *) uri);
 
   GST_DEBUG_OBJECT (self, "Extracting filesource with uri %s", uri);
-
-  ges_timeline_filesource_set_max_duration (tfs, priv->duration);
-  ges_timeline_filesource_set_supported_formats (tfs, priv->supportedformats);
-  ges_timeline_filesource_set_is_image (tfs, priv->is_image);
 
   ges_extractable_set_material (GES_EXTRACTABLE (tfs), self);
 
