@@ -244,7 +244,7 @@ ges_material_cache_lookup (const gchar * id)
 
 static gboolean
 ges_material_cache_append_callback (const gchar * id,
-    GESMaterialCreatedCallback cb)
+    GESMaterialCreatedCallback cb, gpointer user_data)
 {
   GESMaterialCacheEntry *entry = NULL;
   gboolean result = FALSE;
@@ -257,7 +257,7 @@ ges_material_cache_append_callback (const gchar * id,
 
     cbdata->entry = entry;
     cbdata->callback = cb;
-    cbdata->user_data = NULL;
+    cbdata->user_data = user_data;
     entry->callbacks = g_list_append (entry->callbacks, cbdata);
     result = TRUE;
   }
@@ -394,7 +394,7 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
 
         goto done;
       case MATERIAL_INITIALIZING:
-        ges_material_cache_append_callback (real_id, callback);
+        ges_material_cache_append_callback (real_id, callback, user_data);
         ret = TRUE;
 
         goto done;
@@ -412,7 +412,7 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
   /* Now initialize the material */
   material->priv->state = MATERIAL_INITIALIZING;
   ges_material_cache_put (material);
-  ges_material_cache_append_callback (real_id, callback);
+  ges_material_cache_append_callback (real_id, callback, user_data);
 
   if (GES_MATERIAL_GET_CLASS (material)->start_loading (material)
       == FALSE) {
