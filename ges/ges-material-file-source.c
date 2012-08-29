@@ -227,3 +227,53 @@ ges_material_filesource_get_info (const GESMaterialFileSource * self)
 {
   return self->priv->info;
 }
+
+/**
+ * ges_material_filesource_get_duration:
+ * @self: a #GESMaterialFileSource
+ *
+ * Gets duration of the file represented by @self
+ *
+ * Returns: The duration of @self
+ */
+GstClockTime
+ges_material_filesource_get_duration (GESMaterialFileSource * self)
+{
+  g_return_val_if_fail (GES_IS_MATERIAL_FILESOURCE (self), GST_CLOCK_TIME_NONE);
+
+  return self->priv->duration;
+}
+
+/**
+ * ges_material_filesource_get_supported_types:
+ * @self: a #GESMaterialFileSource
+ *
+ * Gets track types the file as
+ *
+ * Returns: The track types on which @self will creat TrackObject when added to
+ * a layer
+ */
+GESTrackType
+ges_material_filesource_get_supported_types (GESMaterialFileSource * self)
+{
+  g_return_val_if_fail (GES_IS_MATERIAL_FILESOURCE (self),
+      GES_TRACK_TYPE_UNKNOWN);
+
+  return self->priv->supportedformats;
+}
+
+/**
+ * ges_material_filesource_is_image:
+ * @self: a #GESMaterialFileSource
+ *
+ * Gets Whether the file represented by @self is an image or not
+ *
+ * Returns: Whether the file represented by @self is an image or not
+ */
+gboolean
+ges_material_filesource_is_image (GESMaterialFileSource * self)
+{
+  g_return_val_if_fail (GES_IS_MATERIAL_FILESOURCE (self), FALSE);
+
+  return self->priv->is_image;
+}

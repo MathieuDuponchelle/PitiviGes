@@ -29,9 +29,9 @@ G_BEGIN_DECLS
     (G_TYPE_CHECK_INSTANCE_CAST ((obj), GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSource))
 #define GES_MATERIAL_FILESOURCE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST ((klass), GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSourceClass))
-#define GES_IS_MATERIAL_SOURCE(obj) \
+#define GES_IS_MATERIAL_FILESOURCE(obj) \
     (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GES_TYPE_MATERIAL_FILESOURCE))
-#define GES_IS_MATERIAL_SOURCE_CLASS(klass) \
+#define GES_IS_MATERIAL_FILESOURCE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_TYPE ((klass), GES_TYPE_MATERIAL_FILESOURCE))
 #define GES_MATERIAL_FILESOURCE_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS ((obj), GES_TYPE_MATERIAL_FILESOURCE, GESMaterialFileSourceClass))
@@ -61,6 +61,11 @@ struct _GESMaterialFileSourceClass
 
 GstDiscovererInfo *ges_material_filesource_get_info (const GESMaterialFileSource
     * self);
+
+GstClockTime ges_material_filesource_get_duration   (GESMaterialFileSource *self);
+GESTrackType
+ges_material_filesource_get_supported_types         (GESMaterialFileSource *self);
+gboolean ges_material_filesource_is_image           (GESMaterialFileSource *self);
 
 G_END_DECLS
 #endif /* _GES_MATERIAL_FILESOURCE */
