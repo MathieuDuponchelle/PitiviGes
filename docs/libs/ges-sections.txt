@@ -886,3 +886,21 @@ GES_TRACK_PARSE_LAUNCH_EFFECT_GET_CLASS
 GES_TYPE_TRACK_PARSE_LAUNCH_EFFECT
 ges_track_parse_launch_effect_get_type
 </SECTION>
+
+<SECTION>
+<FILE>ges-material</FILE>
+<TITLE>GESMaterial</TITLE>
+GESMaterial
+ges_material_get_extractable_type
+ges_material_get_id
+ges_material_new
+ges_material_extract
+<SUBSECTION Standard>
+GES_MATERIAL
+GES_MATERIAL_CLASS
+GES_IS_MATERIAL
+GES_IS_MATERIAL_CLASS
+GES_MATERIAL_GET_CLASS
+ges_material_get_type
+</SECTION>
+

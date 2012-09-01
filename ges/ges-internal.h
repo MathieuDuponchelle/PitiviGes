@@ -24,6 +24,7 @@
 #include <gst/gst.h>
 #include "ges-timeline.h"
 #include "ges-track-object.h"
+#include "ges-material.h"
 
 GST_DEBUG_CATEGORY_EXTERN (_ges_debug);
 #define GST_CAT_DEFAULT _ges_debug
@@ -58,5 +59,14 @@ timeline_move_object           (GESTimeline *timeline, GESTrackObject * object,
 
 gboolean
 timeline_context_to_layer      (GESTimeline *timeline, gint offset);
+
+void
+ges_material_cache_put(GESMaterial* material);
+
+gboolean
+ges_material_cache_set_loaded(const gchar * id, GError *error);
+
+GESMaterial*
+ges_material_cache_lookup(const gchar * id);
 
 #endif /* __GES_INTERNAL_H__ */
