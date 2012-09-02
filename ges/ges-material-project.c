@@ -48,3 +48,22 @@ ges_material_project_init (GESMaterialProject * self)
 
   self->priv->materials = NULL;
 }
+
+void
+ges_material_project_add_material (GESMaterialProject * self,
+    GESMaterial * material)
+{
+  self->priv->materials = g_list_append (self->priv->materials, material);
+}
+
+void
+ges_material_project_remove_material (GESMaterialProject * self,
+    const gchar * id)
+{
+}
+
+GList *
+ges_material_project_get_materials (GESMaterialProject * self)
+{
+  return NULL;
+}

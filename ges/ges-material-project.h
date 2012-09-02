@@ -59,6 +59,15 @@ struct _GESMaterialProjectClass
   gpointer _ges_reserved[GES_PADDING];
 };
 
+void
+ges_material_project_add_material(GESMaterialProject* self,
+								  GESMaterial *material);
+void
+ges_material_project_remove_material(GESMaterialProject *self,
+									 const gchar *id);
+
+GList*
+ges_material_project_get_materials(GESMaterialProject *self);
 
 G_END_DECLS
 
