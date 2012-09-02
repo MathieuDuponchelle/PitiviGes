@@ -29,7 +29,7 @@ G_DEFINE_TYPE (GESMaterialProject, ges_material_project, GES_TYPE_MATERIAL);
 
 struct _GESMaterialProjectPrivate
 {
-  GList *materials;
+  GHashTable *materials;
 };
 
 
@@ -46,24 +46,26 @@ ges_material_project_init (GESMaterialProject * self)
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
       GES_TYPE_MATERIAL_PROJECT, GESMaterialProjectPrivate);
 
-  self->priv->materials = NULL;
+  self->priv->materials = g_hash_table_new (g_str_hash, g_str_equal);
 }
 
 void
 ges_material_project_add_material (GESMaterialProject * self,
     GESMaterial * material)
 {
-  self->priv->materials = g_list_append (self->priv->materials, material);
+  g_hash_table_insert (self->priv->materials,
+      (gpointer) ges_material_get_id (material), material);
 }
 
 void
 ges_material_project_remove_material (GESMaterialProject * self,
     const gchar * id)
 {
+  g_hash_table_remove (self->priv->materials, (gpointer) id);
 }
 
 GList *
 ges_material_project_get_materials (GESMaterialProject * self)
 {
-  return NULL;
+  return g_hash_table_get_values (self->priv->materials);
 }

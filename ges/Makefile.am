@@ -97,7 +97,8 @@ libges_@GST_API_VERSION@include_HEADERS = 	\
 	ges-pitivi-formatter.h			\
 	ges-utils.h \
 	ges-material.h \
-	ges-material-source.h \
+	ges-material-file-source.h \
+	ges-material-project.h \
 	ges-extractable.h
 
 noinst_HEADERS = \
