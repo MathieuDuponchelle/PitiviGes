@@ -476,7 +476,7 @@ wait_no_more_pads (GnlComposition * comp, gpointer object,
 }
 
 /* signal_duration_change
- * Creates a new GST_MESSAGE_DURATION with the currently configured
+ * Creates a new GST_MESSAGE_DURATION_CHANGED with the currently configured
  * composition duration and sends that on the bus.
  */
 
@@ -484,8 +484,7 @@ static inline void
 signal_duration_change (GnlComposition * comp)
 {
   gst_element_post_message (GST_ELEMENT_CAST (comp),
-      gst_message_new_duration (GST_OBJECT_CAST (comp),
-          GST_FORMAT_TIME, GNL_OBJECT_MEDIA_DURATION (comp)));
+      gst_message_new_duration_changed (GST_OBJECT_CAST (comp)));
 }
 
 static gboolean
