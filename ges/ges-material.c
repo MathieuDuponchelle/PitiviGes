@@ -289,10 +289,12 @@ ges_material_cache_set_loaded (const gchar * id, GError * error)
         ? error->message : "");
 
     material = entry->material;
-    if (error) {
-      entry->error = error;
+
+    entry->error = error;
+
+    if (error)
       material->priv->state = MATERIAL_INITIALIZED_WITH_ERROR;
-    } else
+    else
       material->priv->state = MATERIAL_INITIALIZED;
 
     g_list_free_full (entry->callbacks, (GDestroyNotify) execute_callback_func);
