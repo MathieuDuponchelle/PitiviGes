@@ -47,6 +47,9 @@ libges_@GST_API_VERSION@_la_SOURCES = 		\
 	ges-formatter.c				\
 	ges-keyfile-formatter.c			\
 	ges-pitivi-formatter.c			\
+	ges-material.c \
+	ges-material-file-source.c \
+	ges-extractable.c \
 	ges-utils.c
 
 libges_@GST_API_VERSION@includedir = $(includedir)/gstreamer-@GST_API_VERSION@/ges/
@@ -91,6 +94,9 @@ libges_@GST_API_VERSION@include_HEADERS = 	\
 	ges-formatter.h				\
 	ges-keyfile-formatter.h			\
 	ges-pitivi-formatter.h			\
+	ges-material.h \
+	ges-material-file-source.h \
+	ges-extractable.h \
 	ges-utils.h
 
 noinst_HEADERS = \

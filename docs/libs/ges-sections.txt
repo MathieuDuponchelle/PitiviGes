@@ -918,3 +918,18 @@ GES_MATERIAL_GET_CLASS
 ges_material_get_type
 </SECTION>
 
+<SECTION>
+<FILE>ges-material-file-source</FILE>
+<TITLE>GESMaterialFileSource</TITLE>
+GESMaterialFileSource
+ges_material_filesource_get_type
+ges_material_filesource_get_duration
+ges_material_filesource_get_supported_types
+ges_material_filesource_is_image
+<SUBSECTION Standard>
+GES_MATERIAL_FILESOURCE
+GES_MATERIAL_FILESOURCE_CLASS
+GES_IS_MATERIAL_FILESOURCE
+GES_IS_MATERIAL_FILESOURCE_CLASS
+GES_MATERIAL_FILESOURCE_GET_CLASS
+</SECTION>
