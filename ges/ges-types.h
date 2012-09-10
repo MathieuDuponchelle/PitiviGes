@@ -140,4 +140,7 @@ typedef struct _GESPitiviFormatterClass GESPitiviFormatterClass;
 typedef struct _GESMaterial GESMaterial;
 typedef struct _GESMaterialClass GESMaterialClass;
 
+typedef struct _GESExtractable GESExtractable;
+typedef struct _GESExtractableInterface GESExtractableInterface;
+
 #endif /* __GES_TYPES_H__ */

@@ -888,6 +888,20 @@ ges_track_parse_launch_effect_get_type
 </SECTION>
 
 <SECTION>
+<FILE>ges-extractable</FILE>
+<TITLE>GESExtractableInterface</TITLE>
+GESExtractableInterface
+ges_extractable_get_material
+ges_extractable_type_mandatory_parameters
+<SUBSECTION Standard>
+GES_IS_EXTRACTABLE
+GES_EXTRACTABLE
+GES_EXTRACTABLE_GET_INTERFACE
+GES_TYPE_EXTRACTABLE
+ges_extractable_get_type
+</SECTION>
+
+<SECTION>
 <FILE>ges-material</FILE>
 <TITLE>GESMaterial</TITLE>
 GESMaterial
