@@ -78,8 +78,12 @@ static gboolean ges_timeline_object_set_priority_internal (GESTimelineObject *
 static GESTimelineObject *ges_timeline_object_copy (GESTimelineObject * object,
     gboolean * deep);
 
-G_DEFINE_ABSTRACT_TYPE (GESTimelineObject, ges_timeline_object,
-    G_TYPE_INITIALLY_UNOWNED);
+static void ges_extractable_interface_init (GESExtractableInterface * iface);
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (GESTimelineObject, ges_timeline_object,
+    G_TYPE_INITIALLY_UNOWNED,
+    G_IMPLEMENT_INTERFACE (GES_TYPE_EXTRACTABLE,
+        ges_extractable_interface_init));
 
 /* Mapping of relationship between a TimelineObject and the TrackObjects
  * it controls
@@ -139,6 +143,8 @@ struct _GESTimelineObjectPrivate
 
   /* The formats supported by this TimelineObject */
   GESTrackType supportedformats;
+
+  GESMaterial *material;
 };
 
 enum
@@ -409,6 +415,18 @@ ges_timeline_object_init (GESTimelineObject * self)
   self->priv->nb_effects = 0;
   self->priv->is_moving = FALSE;
   self->priv->maxduration = G_MAXUINT64;
+}
+
+static void
+extractable_set_material (GESExtractable * extractable, GESMaterial * material)
+{
+  GES_TIMELINE_OBJECT (extractable)->material = material;
+}
+
+static void
+ges_extractable_interface_init (GESExtractableInterface * iface)
+{
+  iface->set_material = extractable_set_material;
 }
 
 /**
