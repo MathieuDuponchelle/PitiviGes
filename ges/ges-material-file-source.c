@@ -124,6 +124,9 @@ ges_material_filesource_extract (GESMaterial * self)
 
   GST_DEBUG_OBJECT (self, "Extracting filesource with uri %s", uri);
 
+  ges_timeline_object_set_supported_formats (GES_TIMELINE_OBJECT (tfs),
+      (GES_MATERIAL_FILESOURCE (self))->priv->supportedformats);
+
   gst_object_ref (tfs);
 
   return GES_EXTRACTABLE (tfs);
