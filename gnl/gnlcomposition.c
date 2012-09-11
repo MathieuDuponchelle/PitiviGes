@@ -26,7 +26,6 @@
 
 /**
  * SECTION:element-gnlcomposition
- * @short_description: Combines and controls GNonLin elements
  *
  * A GnlComposition contains GnlObjects such as GnlSources and GnlOperations,
  * and connects them dynamically to create a composition timeline.

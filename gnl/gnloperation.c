@@ -27,7 +27,6 @@
 
 /**
  * SECTION:element-gnloperation
- * @short_description: Encapsulates filters/effects for use with GnlObjects
  *
  * <refsect2>
  * <para>

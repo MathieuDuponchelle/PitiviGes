@@ -27,7 +27,6 @@
 
 /**
  * SECTION:element-gnlurisource
- * @short_description: GNonLin File Source
  *
  * GnlURISource is a #GnlSource which reads and decodes the contents
  * of a given file. The data in the file is decoded using any available

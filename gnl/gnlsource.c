@@ -27,7 +27,6 @@
 
 /**
  * SECTION:element-gnlsource
- * @short_description: GNonLin Source
  *
  * The GnlSource encapsulates a pipeline which produces data for processing
  * in a #GnlComposition.
