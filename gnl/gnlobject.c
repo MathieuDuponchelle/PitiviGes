@@ -359,7 +359,7 @@ gnl_object_to_media_time (GnlObject * object, GstClockTime otime,
 
 /**
  * gnl_media_to_object_time:
- * @object:
+ * @object: The #GnlObject
  * @mediatime: The #GstClockTime we want to convert
  * @objecttime: A pointer on a #GstClockTime to fill
  *
