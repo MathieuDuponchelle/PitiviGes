@@ -949,6 +949,44 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
 }
 
 /**
+ * ges_timeline_layer_add_material:
+ * @layer: a #GESTimelineLayer
+ * @material: The material to add to
+ * Creates TimelineObject from material, adds it to layer and
+ * returns reference to it.
+ *
+ * Returns: (transfer floating): Created #GESTimelineObject
+*/
+GESTimelineObject *
+ges_timeline_layer_add_material (GESTimelineLayer * layer,
+    GESMaterial * material, GstClockTime start, GstClockTime inpoint,
+    GstClockTime duration, gdouble rate, GESTrackType track_types)
+{
+  GESTimelineObject *tlobj;
+
+  g_return_val_if_fail (GES_IS_TIMELINE_LAYER (layer), NULL);
+  g_return_val_if_fail (GES_IS_MATERIAL (material), NULL);
+  g_return_val_if_fail (g_type_is_a (ges_material_get_extractable_type
+          (material), GES_TYPE_TIMELINE_OBJECT), NULL);
+
+
+  tlobj = GES_TIMELINE_OBJECT (ges_material_extract (material));
+  ges_timeline_object_set_start (tlobj, start);
+  ges_timeline_object_set_inpoint (tlobj, inpoint);
+  if (GST_CLOCK_TIME_IS_VALID (duration)) {
+    ges_timeline_object_set_duration (tlobj, duration);
+  }
+
+  if (!ges_timeline_layer_add_object (layer, tlobj)) {
+    gst_object_unref (tlobj);
+
+    return NULL;
+  }
+
+  return tlobj;
+}
+
+/**
  * ges_timeline_layer_new:
  *
  * Creates a new #GESTimelineLayer.

@@ -119,6 +119,11 @@ void ges_timeline_layer_set_auto_transition (GESTimelineLayer * layer,
 
 GList*   ges_timeline_layer_get_objects   (GESTimelineLayer * layer);
 
+GESTimelineObject *
+ges_timeline_layer_add_material (GESTimelineLayer * layer,
+    GESMaterial * material, GstClockTime start, GstClockTime inpoint,
+    GstClockTime duration, gdouble rate, GESTrackType track_types);
+
 G_END_DECLS
 
 #endif /* _GES_TIMELINE_LAYER */
