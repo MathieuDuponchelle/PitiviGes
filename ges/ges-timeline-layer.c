@@ -53,12 +53,6 @@ struct _GESTimelineLayerPrivate
   gboolean auto_transition;
 };
 
-typedef struct
-{
-  GESTimelineObject *object;
-  GESTimelineLayer *layer;
-} NewMaterialUData;
-
 enum
 {
   PROP_0,
@@ -689,15 +683,6 @@ start_calculating_transitions (GESTimelineLayer * layer)
   /* FIXME calculate all the transitions at that time */
 }
 
-static void
-new_material_cb (GESMaterial * material, GError * error,
-    NewMaterialUData * udata)
-{
-  ges_extractable_set_material (GES_EXTRACTABLE (udata->object), material);
-  ges_timeline_layer_add_object (udata->layer, udata->object);
-  g_slice_free (NewMaterialUData, udata);
-}
-
 /* Public methods */
 /**
  * ges_timeline_layer_remove_object:
@@ -716,7 +701,7 @@ gboolean
 ges_timeline_layer_remove_object (GESTimelineLayer * layer,
     GESTimelineObject * object)
 {
-  GESTimelineLayer *current_layer;
+  GESTimelineLayer *tl_obj_layer;
   GList *trackobjects, *tmp;
 
   g_return_val_if_fail (GES_IS_TIMELINE_LAYER (layer), FALSE);
@@ -724,16 +709,16 @@ ges_timeline_layer_remove_object (GESTimelineLayer * layer,
 
   GST_DEBUG ("layer:%p, object:%p", layer, object);
 
-  current_layer = ges_timeline_object_get_layer (object);
-  if (G_UNLIKELY (current_layer != layer)) {
+  tl_obj_layer = ges_timeline_object_get_layer (object);
+  if (G_UNLIKELY (tl_obj_layer != layer)) {
     GST_WARNING ("TimelineObject doesn't belong to this layer");
 
-    if (current_layer != NULL)
-      g_object_unref (current_layer);
+    if (tl_obj_layer != NULL)
+      g_object_unref (tl_obj_layer);
 
     return FALSE;
   }
-  g_object_unref (current_layer);
+  g_object_unref (tl_obj_layer);
 
   if (layer->priv->auto_transition && GES_IS_TIMELINE_SOURCE (object)) {
     trackobjects = ges_timeline_object_get_track_objects (object);
@@ -915,58 +900,24 @@ gboolean
 ges_timeline_layer_add_object (GESTimelineLayer * layer,
     GESTimelineObject * object)
 {
-  GESMaterial *material;
-  GESTimelineLayer *current_layer;
+  GESTimelineLayer *tl_obj_layer;
   guint32 maxprio, minprio, prio;
 
-  GESTimelineLayerPrivate *priv;
+  GST_DEBUG ("layer:%p, object:%p", layer, object);
 
-  g_return_val_if_fail (GES_IS_TIMELINE_LAYER (layer), FALSE);
-  g_return_val_if_fail (GES_IS_TIMELINE_OBJECT (object), FALSE);
+  tl_obj_layer = ges_timeline_object_get_layer (object);
 
-  GST_DEBUG_OBJECT (layer, "adding object:%p", object);
-
-  priv = layer->priv;
-  current_layer = ges_timeline_object_get_layer (object);
-
-  if (G_UNLIKELY (current_layer)) {
+  if (G_UNLIKELY (tl_obj_layer)) {
     GST_WARNING ("TimelineObject %p already belongs to another layer", object);
-    g_object_unref (current_layer);
-
+    g_object_unref (tl_obj_layer);
     return FALSE;
   }
-
-  material = ges_extractable_get_material (GES_EXTRACTABLE (object));
-  if (material == NULL) {
-    GESMaterial *material;
-    NewMaterialUData *mudata = g_slice_new (NewMaterialUData);
-
-    mudata->object = object;
-    mudata->layer = layer;
-
-    GST_DEBUG_OBJECT (layer, "No reference to any materials "
-        "creating a material");
-
-    material = ges_material_new (G_OBJECT_TYPE (object),
-        (GESMaterialCreatedCallback) new_material_cb, mudata,
-        ges_extractable_get_id (GES_EXTRACTABLE (object)));
-
-    if (material == NULL) {
-
-      GST_LOG_OBJECT (layer, "Object added async");
-      return TRUE;
-    }
-
-    ges_extractable_set_material (GES_EXTRACTABLE (object), material);
-
-    g_slice_free (NewMaterialUData, mudata);
-  }
-
 
   g_object_ref_sink (object);
 
   /* Take a reference to the object and store it stored by start/priority */
-  priv->objects_start = g_list_insert_sorted (priv->objects_start, object,
+  layer->priv->objects_start =
+      g_list_insert_sorted (layer->priv->objects_start, object,
       (GCompareFunc) objects_start_compare);
 
   /* Inform the object it's now in this layer */
@@ -980,61 +931,21 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
   maxprio = layer->max_gnl_priority;
   minprio = layer->min_gnl_priority;
   prio = GES_TIMELINE_OBJECT_PRIORITY (object);
-
   if (minprio + prio > (maxprio)) {
-    GST_WARNING_OBJECT (layer,
-        "%p is out of the layer space, setting its priority to "
-        "%d, setting it to the maximum priority of the layer: %d", object, prio,
-        maxprio - minprio);
+    GST_WARNING ("%p is out of the layer %p space, setting its priority to "
+        "setting its priority %d to failthe maximum priority of the layer %d",
+        object, layer, prio, maxprio - minprio);
     ges_timeline_object_set_priority (object, LAYER_HEIGHT - 1);
   }
-
   /* If the object has an acceptable priority, we just let it with its current
    * priority */
+
   ges_timeline_layer_resync_priorities (layer);
 
   /* emit 'object-added' */
   g_signal_emit (layer, ges_timeline_layer_signals[OBJECT_ADDED], 0, object);
 
   return TRUE;
-}
-
-/**
- * ges_timeline_layer_add_material:
- * @layer: a #GESTimelineLayer
- * @material: The material to add to 
- * Creates TimelineObject from material, adds it to layer and
- * returns reference to it.
- *
- * Returns: (transfer floating): Created #GESTimelineObject
-*/
-GESTimelineObject *
-ges_timeline_layer_add_material (GESTimelineLayer * layer,
-    GESMaterial * material, GstClockTime start, GstClockTime inpoint,
-    GstClockTime duration, gdouble rate, GESTrackType track_types)
-{
-  GESTimelineObject *tlobj;
-
-  g_return_val_if_fail (GES_IS_TIMELINE_LAYER (layer), NULL);
-  g_return_val_if_fail (GES_IS_MATERIAL (material), NULL);
-  g_return_val_if_fail (g_type_is_a (ges_material_get_extractable_type
-          (material), GES_TYPE_TIMELINE_OBJECT), NULL);
-
-
-  tlobj = GES_TIMELINE_OBJECT (ges_material_extract (material));
-  ges_timeline_object_set_start (tlobj, start);
-  ges_timeline_object_set_inpoint (tlobj, inpoint);
-  if (GST_CLOCK_TIME_IS_VALID (duration)) {
-    ges_timeline_object_set_duration (tlobj, inpoint);
-  }
-
-  if (!ges_timeline_layer_add_object (layer, tlobj)) {
-    gst_object_unref (tlobj);
-
-    return NULL;
-  }
-
-  return tlobj;
 }
 
 /**
