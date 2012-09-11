@@ -453,8 +453,11 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
       break;
     }
     case GES_MATERIAL_LOADING_ASYNC:
+    {
+      ret = material;
       GST_DEBUG_OBJECT (material, "Loading ASYNC");
       break;
+    }
   }
 
 done:
