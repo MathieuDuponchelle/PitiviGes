@@ -378,9 +378,8 @@ gnl_operation_add_element (GstBin * bin, GstElement * element)
           gnl_object_ghost_pad_set_target (GNL_OBJECT (operation),
               operation->ghostpad, srcpad);
         else
-          operation->ghostpad =
-              gnl_object_ghost_pad_full (GNL_OBJECT (operation),
-              GST_PAD_NAME (srcpad), srcpad, TRUE);
+          operation->ghostpad = gnl_object_ghost_pad (GNL_OBJECT (operation),
+              GST_PAD_NAME (srcpad), srcpad);
 
         /* Remove the reference get_src_pad gave us */
         gst_object_unref (srcpad);

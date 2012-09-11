@@ -658,16 +658,13 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
  *
  * Returns: The #GstPad if everything went correctly, else NULL.
  */
-
 GstPad *
-gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
-    GstPad * target, gboolean flush_hack)
+gnl_object_ghost_pad (GnlObject * object, const gchar * name, GstPad * target)
 {
   GstPadDirection dir = GST_PAD_DIRECTION (target);
   GstPad *ghost;
 
-  GST_DEBUG_OBJECT (object, "name:%s, target:%p, flush_hack:%d",
-      name, target, flush_hack);
+  GST_DEBUG_OBJECT (object, "name:%s, target:%p", name, target);
 
   g_return_val_if_fail (target, FALSE);
   g_return_val_if_fail ((dir != GST_PAD_UNKNOWN), FALSE);
@@ -695,12 +692,6 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
   }
 
   return ghost;
-}
-
-GstPad *
-gnl_object_ghost_pad (GnlObject * object, const gchar * name, GstPad * target)
-{
-  return gnl_object_ghost_pad_full (object, name, target, FALSE);
 }
 
 /*
