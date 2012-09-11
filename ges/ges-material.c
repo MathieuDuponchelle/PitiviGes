@@ -463,6 +463,8 @@ ges_material_new (GType extractable_type, GESMaterialCreatedCallback callback,
 done:
   g_free (real_id);
 
+  gst_object_ref (ret);
+
   return ret;
 }
 
