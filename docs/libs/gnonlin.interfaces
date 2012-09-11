@@ -3,6 +3,5 @@ GstPipeline GstChildProxy
 GnlObject GstChildProxy
 GnlSource GstChildProxy
 GnlURISource GstChildProxy
-GnlFileSource GstChildProxy
 GnlComposition GstChildProxy
 GnlOperation GstChildProxy

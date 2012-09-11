@@ -15,14 +15,6 @@ GnlCompositionClass
 </SECTION>
 
 <SECTION>
-<FILE>element-gnlfilesource</FILE>
-<TITLE>GnlFileSource</TITLE>
-GnlFileSource
-<SUBSECTION Standard>
-GnlFileSourceClass
-</SECTION>
-
-<SECTION>
 <FILE>element-gnlurisource</FILE>
 <TITLE>GnlURISource</TITLE>
 GnlURISource

@@ -9,7 +9,6 @@ GObject
           GnlOperation
           GnlSource
             GnlURISource
-              GnlFileSource
         GstPipeline
     GstPad
     GstPadTemplate

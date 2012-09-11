@@ -151,7 +151,7 @@ GstBin
        !
        +--- GnlSource
        !     !
-       !     +--- GnlFileSource
+       !     +--- GnlUriSource
        !
        +--- GnlOperation
        !

@@ -9,16 +9,6 @@
 </ARG>
 
 <ARG>
-<NAME>GnlFileSource::location</NAME>
-<TYPE>gchar*</TYPE>
-<RANGE></RANGE>
-<FLAGS>rw</FLAGS>
-<NICK>Location</NICK>
-<BLURB>Location of the file to use.</BLURB>
-<DEFAULT>NULL</DEFAULT>
-</ARG>
-
-<ARG>
 <NAME>GnlObject::active</NAME>
 <TYPE>gboolean</TYPE>
 <RANGE></RANGE>
