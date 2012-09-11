@@ -124,6 +124,8 @@ ges_material_filesource_extract (GESMaterial * self)
 
   GST_DEBUG_OBJECT (self, "Extracting filesource with uri %s", uri);
 
+  gst_object_ref (tfs);
+
   return GES_EXTRACTABLE (tfs);
 }
 
