@@ -68,6 +68,12 @@ enum
   LAST_SIGNAL
 };
 
+typedef struct
+{
+  GESTimelineObject *object;
+  GESTimelineLayer *layer;
+} NewMaterialUData;
+
 static guint ges_timeline_layer_signals[LAST_SIGNAL] = { 0 };
 
 /* GObject standard vmethods */
@@ -878,6 +884,15 @@ ges_timeline_layer_is_empty (GESTimelineLayer * layer)
   return (layer->priv->objects_start == NULL);
 }
 
+static void
+new_material_cb (GESMaterial * material, GError * error,
+    NewMaterialUData * udata)
+{
+  ges_extractable_set_material (GES_EXTRACTABLE (udata->object), material);
+  ges_timeline_layer_add_object (udata->layer, udata->object);
+  g_slice_free (NewMaterialUData, udata);
+}
+
 /**
  * ges_timeline_layer_add_object:
  * @layer: a #GESTimelineLayer
@@ -900,6 +915,7 @@ gboolean
 ges_timeline_layer_add_object (GESTimelineLayer * layer,
     GESTimelineObject * object)
 {
+  GESMaterial *material;
   GESTimelineLayer *tl_obj_layer;
   guint32 maxprio, minprio, prio;
 
@@ -912,6 +928,34 @@ ges_timeline_layer_add_object (GESTimelineLayer * layer,
     g_object_unref (tl_obj_layer);
     return FALSE;
   }
+
+  g_printerr ("hm sa race %p\n", object);
+
+  material = ges_extractable_get_material (GES_EXTRACTABLE (object));
+  if (material == NULL) {
+    NewMaterialUData *mudata = g_slice_new (NewMaterialUData);
+
+    mudata->object = object;
+    mudata->layer = layer;
+
+    GST_DEBUG_OBJECT (layer, "No reference to any materials "
+        "creating a material");
+
+    material = ges_material_new (G_OBJECT_TYPE (object),
+        (GESMaterialCreatedCallback) new_material_cb, mudata,
+        ges_extractable_get_id (GES_EXTRACTABLE (object)));
+
+    if (material == NULL) {
+
+      GST_LOG_OBJECT (layer, "Object added async");
+      return TRUE;
+    }
+
+    ges_extractable_set_material (GES_EXTRACTABLE (object), material);
+
+    g_slice_free (NewMaterialUData, mudata);
+  }
+
 
   g_object_ref_sink (object);
 
