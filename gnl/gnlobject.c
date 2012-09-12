@@ -67,16 +67,14 @@ static GParamSpec *properties[PROP_LAST];
 
 
 static void gnl_object_dispose (GObject * object);
-static void
-gnl_object_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec);
 
-static void
-gnl_object_get_property (GObject * object, guint prop_id,
+static void gnl_object_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec);
+static void gnl_object_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static GstStateChangeReturn
-gnl_object_change_state (GstElement * element, GstStateChange transition);
+static GstStateChangeReturn gnl_object_change_state (GstElement * element,
+    GstStateChange transition);
 
 static gboolean gnl_object_prepare_func (GnlObject * object);
 static gboolean gnl_object_cleanup_func (GnlObject * object);
