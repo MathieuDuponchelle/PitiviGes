@@ -839,17 +839,15 @@ static GstEvent *
 get_new_seek_event (GnlComposition * comp, gboolean initial,
     gboolean updatestoponly)
 {
-  GstSeekFlags flags;
+  GstSeekFlags flags = GST_SEEK_FLAG_ACCURATE | GST_SEEK_FLAG_FLUSH;
   gint64 start, stop;
   GstSeekType starttype = GST_SEEK_TYPE_SET;
   GnlCompositionPrivate *priv = comp->priv;
 
   GST_DEBUG_OBJECT (comp, "initial:%d", initial);
   /* remove the seek flag */
-  if (!(initial))
-    flags = (GstSeekFlags) priv->segment->flags;
-  else
-    flags = GST_SEEK_FLAG_ACCURATE | GST_SEEK_FLAG_FLUSH;
+  if (!initial)
+    flags |= (GstSeekFlags) priv->segment->flags;
 
   GST_DEBUG_OBJECT (comp,
       "private->segment->start:%" GST_TIME_FORMAT " segment_start%"
