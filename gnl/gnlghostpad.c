@@ -50,6 +50,7 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
   guint64 ncur;
   gint64 stop;
   guint64 nstop;
+  guint32 seqnum = GST_EVENT_SEQNUM (event);
 
   gst_event_parse_seek (event, &rate, &format, &flags,
       &curtype, &cur, &stoptype, &stop);
@@ -122,6 +123,7 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
 
   event2 = gst_event_new_seek (nrate, GST_FORMAT_TIME, flags,
       ncurtype, (gint64) ncur, GST_SEEK_TYPE_SET, (gint64) nstop);
+  GST_EVENT_SEQNUM (event2) = seqnum;
 
   gst_event_unref (event);
 
@@ -148,6 +150,7 @@ translate_outgoing_seek (GnlObject * object, GstEvent * event)
   guint64 ncur;
   gint64 stop;
   guint64 nstop;
+  guint32 seqnum = GST_EVENT_SEQNUM (event);
 
   gst_event_parse_seek (event, &rate, &format, &flags,
       &curtype, &cur, &stoptype, &stop);
@@ -208,6 +211,7 @@ translate_outgoing_seek (GnlObject * object, GstEvent * event)
 
   event2 = gst_event_new_seek (nrate, GST_FORMAT_TIME, flags,
       ncurtype, (gint64) ncur, GST_SEEK_TYPE_SET, (gint64) nstop);
+  GST_EVENT_SEQNUM (event2) = seqnum;
 
   gst_event_unref (event);
 
@@ -225,8 +229,9 @@ static GstEvent *
 translate_outgoing_segment (GnlObject * object, GstEvent * event)
 {
   const GstSegment *orig;
-  GstSegment *segment;
+  GstSegment segment;
   GstEvent *event2;
+  guint32 seqnum = GST_EVENT_SEQNUM (event);
 
   /* only modify the streamtime */
   gst_event_parse_segment (event, &orig);
@@ -242,19 +247,20 @@ translate_outgoing_segment (GnlObject * object, GstEvent * event)
     return event;
   }
 
-  segment = gst_segment_copy (orig);
+  gst_segment_copy_into (orig, &segment);
 
-  gnl_media_to_object_time (object, orig->time, &segment->time);
+  gnl_media_to_object_time (object, orig->time, &segment.time);
 
-  if (G_UNLIKELY (segment->time > G_MAXINT64))
+  if (G_UNLIKELY (segment.time > G_MAXINT64))
     GST_WARNING_OBJECT (object, "Return value too big...");
 
   GST_DEBUG_OBJECT (object,
       "Sending SEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
-      GST_TIME_FORMAT, GST_TIME_ARGS (segment->start),
-      GST_TIME_ARGS (segment->stop), GST_TIME_ARGS (segment->time));
+      GST_TIME_FORMAT, GST_TIME_ARGS (segment.start),
+      GST_TIME_ARGS (segment.stop), GST_TIME_ARGS (segment.time));
 
-  event2 = gst_event_new_segment (segment);
+  event2 = gst_event_new_segment (&segment);
+  GST_EVENT_SEQNUM (event2) = seqnum;
   gst_event_unref (event);
 
   return event2;
@@ -265,7 +271,8 @@ translate_incoming_segment (GnlObject * object, GstEvent * event)
 {
   GstEvent *event2;
   const GstSegment *orig;
-  GstSegment *segment;
+  GstSegment segment;
+  guint32 seqnum = GST_EVENT_SEQNUM (event);
 
   /* only modify the streamtime */
   gst_event_parse_segment (event, &orig);
@@ -281,22 +288,23 @@ translate_incoming_segment (GnlObject * object, GstEvent * event)
     return event;
   }
 
-  segment = gst_segment_copy (orig);
+  gst_segment_copy_into (orig, &segment);
 
-  if (!gnl_object_to_media_time (object, orig->time, &segment->time)) {
+  if (!gnl_object_to_media_time (object, orig->time, &segment.time)) {
     GST_DEBUG ("Can't convert media_time, using 0");
-    segment->time = 0;
+    segment.time = 0;
   };
 
-  if (G_UNLIKELY (segment->time > G_MAXINT64))
+  if (G_UNLIKELY (segment.time > G_MAXINT64))
     GST_WARNING_OBJECT (object, "Return value too big...");
 
   GST_DEBUG_OBJECT (object,
       "Sending SEGMENT %" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT " // %"
-      GST_TIME_FORMAT, GST_TIME_ARGS (segment->start),
-      GST_TIME_ARGS (segment->stop), GST_TIME_ARGS (segment->time));
+      GST_TIME_FORMAT, GST_TIME_ARGS (segment.start),
+      GST_TIME_ARGS (segment.stop), GST_TIME_ARGS (segment.time));
 
-  event2 = gst_event_new_segment (segment);
+  event2 = gst_event_new_segment (&segment);
+  GST_EVENT_SEQNUM (event2) = seqnum;
   gst_event_unref (event);
 
   return event2;
