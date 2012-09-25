@@ -417,6 +417,8 @@ gnl_composition_finalize (GObject * object)
   gst_segment_free (priv->segment);
   gst_segment_free (priv->outside_segment);
 
+  g_mutex_clear (&priv->objects_lock);
+  g_mutex_clear (&priv->flushing_lock);
 
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
