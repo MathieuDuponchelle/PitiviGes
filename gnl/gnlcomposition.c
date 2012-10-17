@@ -259,9 +259,8 @@ gnl_composition_class_init (GnlCompositionClass * klass)
 
   g_type_class_add_private (klass, sizeof (GnlCompositionPrivate));
 
-  gst_element_class_set_details_simple (gstelement_class, "GNonLin Composition",
-      "Filter/Editor",
-      "Combines GNL objects",
+  gst_element_class_set_static_metadata (gstelement_class,
+      "GNonLin Composition", "Filter/Editor", "Combines GNL objects",
       "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
 
   gobject_class->dispose = GST_DEBUG_FUNCPTR (gnl_composition_dispose);

@@ -77,7 +77,7 @@ gnl_urisource_class_init (GnlURISourceClass * klass)
   gnlobject_class = (GnlObjectClass *) klass;
   parent_class = g_type_class_ref (GNL_TYPE_SOURCE);
 
-  gst_element_class_set_details_simple (gstelement_class, "GNonLin URI Source",
+  gst_element_class_set_static_metadata (gstelement_class, "GNonLin URI Source",
       "Filter/Editor",
       "High-level URI Source element", "Edward Hervey <bilboed@bilboed.com>");
 

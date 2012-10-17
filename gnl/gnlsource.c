@@ -99,7 +99,7 @@ gnl_source_class_init (GnlSourceClass * klass)
 
   g_type_class_add_private (klass, sizeof (GnlSourcePrivate));
 
-  gst_element_class_set_details_simple (gstelement_class, "GNonLin Source",
+  gst_element_class_set_static_metadata (gstelement_class, "GNonLin Source",
       "Filter/Editor",
       "Manages source elements",
       "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");

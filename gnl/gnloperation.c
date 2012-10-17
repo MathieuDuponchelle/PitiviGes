@@ -103,7 +103,7 @@ gnl_operation_class_init (GnlOperationClass * klass)
   GstElementClass *gstelement_class = (GstElementClass *) klass;
   GnlObjectClass *gnlobject_class = (GnlObjectClass *) klass;
 
-  gst_element_class_set_details_simple (gstelement_class, "GNonLin Operation",
+  gst_element_class_set_static_metadata (gstelement_class, "GNonLin Operation",
       "Filter/Editor",
       "Encapsulates filters/effects for use with GNL Objects",
       "Wim Taymans <wim.taymans@gmail.com>, Edward Hervey <bilboed@bilboed.com>");
