@@ -27,7 +27,7 @@ typedef struct
 static int composition_pad_added;
 static int composition_pad_removed;
 static int seek_events;
-static gulong blockprobeid;
+static gulong blockprobeid = 0;
 
 static GstPadProbeReturn
 on_source1_pad_event_cb (GstPad * pad, GstPadProbeInfo * info,
@@ -238,14 +238,14 @@ pad_block (GstPad * pad, GstPadProbeInfo * info, gpointer user_data)
 
   bin = GST_BIN (user_data);
 
+  GST_DEBUG_OBJECT (pad, "probe type:0x%x", GST_PAD_PROBE_INFO_TYPE (info));
+
   ghost = gst_ghost_pad_new ("src", pad);
   gst_pad_set_active (ghost, TRUE);
 
   gst_element_add_pad (GST_ELEMENT (bin), ghost);
 
-  gst_pad_remove_probe (pad, blockprobeid);
-
-  return GST_PAD_PROBE_OK;
+  return GST_PAD_PROBE_REMOVE;
 }
 
 static void
@@ -328,7 +328,7 @@ GST_START_TEST (test_no_more_pads_race)
   videotestsrc2 = gst_element_factory_make ("videotestsrc", "videotestsrc2");
   pad = gst_element_get_static_pad (videotestsrc2, "src");
   blockprobeid =
-      gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCKING,
+      gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM,
       (GstPadProbeCallback) pad_block, bin, NULL);
   gst_bin_add (bin, videotestsrc2);
   gst_bin_add (GST_BIN (source2), GST_ELEMENT (bin));
