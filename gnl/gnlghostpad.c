@@ -577,12 +577,29 @@ internal_pad_finalizing (GnlPadPrivate * priv, GObject * pad G_GNUC_UNUSED)
   g_slice_free (GnlPadPrivate, priv);
 }
 
+static inline GstPad *
+get_proxy_pad (GstPad * ghostpad)
+{
+  GValue item = { 0, };
+  GstIterator *it;
+  GstPad *ret = NULL;
+
+  it = gst_pad_iterate_internal_links (ghostpad);
+  g_assert (it);
+  gst_iterator_next (it, &item);
+  ret = g_value_dup_object (&item);
+  g_value_unset (&item);
+  g_assert (ret);
+  gst_iterator_free (it);
+
+  return ret;
+}
+
 static void
 control_internal_pad (GstPad * ghostpad, GnlObject * object)
 {
   GnlPadPrivate *priv;
   GnlPadPrivate *privghost;
-  GstPad *target;
   GstPad *internal;
 
   if (!ghostpad) {
@@ -590,18 +607,10 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
     return;
   }
   privghost = gst_pad_get_element_private (ghostpad);
-  target = gst_ghost_pad_get_target (GST_GHOST_PAD (ghostpad));
-
-  if (!target) {
-    GST_DEBUG_OBJECT (ghostpad,
-        "ghostpad doesn't have a target, no need to control the internal pad");
-    return;
-  }
 
   GST_LOG_OBJECT (ghostpad, "overriding ghostpad's internal pad function");
 
-  internal = gst_pad_get_peer (target);
-  gst_object_unref (target);
+  internal = get_proxy_pad (ghostpad);
 
   if (G_UNLIKELY (!(priv = gst_pad_get_element_private (internal)))) {
     GST_DEBUG_OBJECT (internal,
@@ -629,7 +638,7 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
   gst_object_unref (internal);
 
   GST_DEBUG_OBJECT (ghostpad, "Done with pad %s:%s",
-      GST_DEBUG_PAD_NAME (target));
+      GST_DEBUG_PAD_NAME (ghostpad));
 }
 
 
@@ -678,7 +687,6 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
     GST_WARNING ("couldn't add newly created ghostpad");
     return NULL;
   }
-  control_internal_pad (ghost, object);
 
   return ghost;
 }
@@ -724,6 +732,7 @@ gnl_object_ghost_pad_no_target (GnlObject * object, const gchar * name,
       GST_DEBUG_FUNCPTR (ghostpad_query_function));
 
   gst_pad_set_element_private (ghost, priv);
+  control_internal_pad (ghost, object);
 
   return ghost;
 }
@@ -770,10 +779,6 @@ gnl_object_ghost_pad_set_target (GnlObject * object, GstPad * ghost,
       gst_caps_unref (current_caps);
     }
   }
-
-
-  if (!g_object_is_floating (ghost))
-    control_internal_pad (ghost, object);
 
   return TRUE;
 }
