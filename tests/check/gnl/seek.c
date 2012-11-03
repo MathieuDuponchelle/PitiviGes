@@ -727,12 +727,8 @@ gnonlin_suite (void)
   tcase_add_test (tc_chain, test_one_after_other);
   tcase_add_test (tc_chain, test_one_under_another);
   tcase_add_test (tc_chain, test_one_bin_after_other);
-  if (gst_registry_check_feature_version (gst_registry_get (), "videomixer", 0,
-          11, 0)) {
-    tcase_add_test (tc_chain, test_complex_operations);
-    tcase_add_test (tc_chain, test_complex_operations_bis);
-  } else
-    GST_WARNING ("videomixer element not available, skipping 1 test");
+  tcase_add_test (tc_chain, test_complex_operations);
+  tcase_add_test (tc_chain, test_complex_operations_bis);
 
   return s;
 }
