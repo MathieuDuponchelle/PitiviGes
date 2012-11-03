@@ -2644,16 +2644,18 @@ object_pad_removed (GnlObject * object, GstPad * pad, GnlComposition * comp)
 
   GST_DEBUG_OBJECT (comp, "pad %s:%s was removed", GST_DEBUG_PAD_NAME (pad));
 
-  /* remove ghostpad if it's the current top stack object */
-  if (GST_PAD_IS_SRC (pad) && priv->current &&
-      GNL_OBJECT (priv->current->data) == object && priv->ghostpad)
-    gnl_composition_remove_ghostpad (comp);
-  else {
-    GnlCompositionEntry *entry = COMP_ENTRY (comp, object);
+  if (GST_PAD_IS_SRC (pad)) {
+    /* remove ghostpad if it's the current top stack object */
+    if (priv->current && GNL_OBJECT (priv->current->data) == object
+        && priv->ghostpad)
+      gnl_composition_remove_ghostpad (comp);
+    else {
+      GnlCompositionEntry *entry = COMP_ENTRY (comp, object);
 
-    if (entry->probeid) {
-      gst_pad_remove_probe (pad, entry->probeid);
-      entry->probeid = 0;
+      if (entry->probeid) {
+        gst_pad_remove_probe (pad, entry->probeid);
+        entry->probeid = 0;
+      }
     }
   }
 }
