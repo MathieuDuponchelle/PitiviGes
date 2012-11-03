@@ -318,7 +318,8 @@ internalpad_event_function (GstPad * internal, GstObject * parent,
   GnlObject *object = priv->object;
   gboolean res;
 
-  GST_DEBUG_OBJECT (internal, "event:%s", GST_EVENT_TYPE_NAME (event));
+  GST_DEBUG_OBJECT (internal, "event:%s (seqnum::%d)",
+      GST_EVENT_TYPE_NAME (event), GST_EVENT_SEQNUM (event));
 
   if (G_UNLIKELY (!(priv->eventfunc))) {
     GST_WARNING_OBJECT (internal,

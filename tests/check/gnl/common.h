@@ -72,10 +72,13 @@ compare_segments (Segment * segment, GstEvent * event)
   gst_event_parse_segment (event, &orig);
 
   GST_DEBUG ("Got Segment rate:%f, format:%s, start:%"GST_TIME_FORMAT
-	     ", stop:%"GST_TIME_FORMAT", position:%"GST_TIME_FORMAT,
+	     ", stop:%"GST_TIME_FORMAT", position:%"GST_TIME_FORMAT
+	     ", base:%"GST_TIME_FORMAT", offset:%"GST_TIME_FORMAT,
 	     orig->rate, gst_format_get_name(orig->format), GST_TIME_ARGS (orig->start),
 	     GST_TIME_ARGS (orig->stop),
-	     GST_TIME_ARGS (orig->position));
+	     GST_TIME_ARGS (orig->position),
+	     GST_TIME_ARGS (orig->base),
+	     GST_TIME_ARGS (orig->offset));
 
   GST_DEBUG ("Expecting rate:%f, format:%s, start:%"GST_TIME_FORMAT
 	     ", stop:%"GST_TIME_FORMAT", position:%"GST_TIME_FORMAT,
@@ -100,7 +103,9 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
 {
   Segment * segment;
   
-  GST_DEBUG_OBJECT (sinkpad, "event:%p , collect:%p", event, collect);
+  GST_DEBUG_OBJECT (sinkpad, "event:%p (%s seqnum:%d) , collect:%p", event,
+		    GST_EVENT_TYPE_NAME (event), 
+		    GST_EVENT_SEQNUM (event), collect);
 
   if (GST_EVENT_TYPE (event) == GST_EVENT_SEGMENT) {
     fail_if (collect->expected_segments == NULL, "Received unexpected segment");
@@ -119,8 +124,9 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
 static GstPadProbeReturn
 sinkpad_buffer_probe (GstPad * sinkpad, GstBuffer * buffer, CollectStructure * collect)
 {
-  GST_DEBUG_OBJECT (sinkpad, "buffer:%p , collect:%p", buffer, collect);
-  fail_if(!collect->gotsegment);
+  GST_DEBUG_OBJECT (sinkpad, "buffer:%p (%"GST_TIME_FORMAT") , collect:%p", buffer,
+		    GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (buffer)), collect);
+  fail_if(!collect->gotsegment, "Received a buffer without a preceding segment");
   return GST_PAD_PROBE_OK;
 }
 
