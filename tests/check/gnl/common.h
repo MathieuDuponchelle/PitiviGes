@@ -43,6 +43,7 @@ typedef struct _CollectStructure {
   GstElement	*sink;
   guint64	last_time;
   gboolean	gotsegment;
+  GList         *seen_segments;
   GList		*expected_segments;
 }	CollectStructure;
 
@@ -109,6 +110,15 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
 
   if (GST_EVENT_TYPE (event) == GST_EVENT_SEGMENT) {
     fail_if (collect->expected_segments == NULL, "Received unexpected segment");
+
+    if (!collect->gotsegment)
+      collect->seen_segments = g_list_append(NULL, GINT_TO_POINTER(GST_EVENT_SEQNUM(event)));
+    else {
+      fail_if(g_list_find(collect->seen_segments, GINT_TO_POINTER(GST_EVENT_SEQNUM(event))),
+	      "Got a segment event we already saw before !");
+      collect->seen_segments = g_list_append(collect->seen_segments, GINT_TO_POINTER(GST_EVENT_SEQNUM(event)));
+    }
+
     segment = (Segment *) collect->expected_segments->data;
 
     if (compare_segments (segment, event)) {
