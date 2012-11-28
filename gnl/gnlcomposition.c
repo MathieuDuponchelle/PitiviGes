@@ -126,6 +126,8 @@ struct _GnlCompositionPrivate
 
   /* pending child seek */
   GstEvent *childseek;
+  /* TRUE if a user seek with the flush flag was received */
+  gboolean user_seek_flush;
 
   /* Seek segment handler */
   GstSegment *segment;
@@ -384,6 +386,7 @@ gnl_composition_dispose (GObject * object)
     gst_event_unref (priv->childseek);
     priv->childseek = NULL;
   }
+  comp->priv->user_seek_flush = FALSE;
 
   if (priv->current) {
     g_node_destroy (priv->current);
@@ -598,6 +601,7 @@ gnl_composition_reset (GnlComposition * comp)
     gst_event_unref (priv->childseek);
     priv->childseek = NULL;
   }
+  comp->priv->user_seek_flush = FALSE;
 
   reset_childs (comp);
 
@@ -992,7 +996,8 @@ handle_seek_event (GnlComposition * comp, GstEvent * event)
     priv->segment->start = MAX (priv->segment->start, GNL_OBJECT_START (comp));
   priv->segment->stop = MIN (priv->segment->stop, GNL_OBJECT_STOP (comp));
 
-  seek_handling (comp, TRUE, FALSE);
+  comp->priv->user_seek_flush = ! !(flags & GST_SEEK_FLAG_FLUSH);
+  seek_handling (comp, TRUE, TRUE);
 }
 
 static gboolean
@@ -1953,6 +1958,18 @@ no_more_pads_object_cb (GstElement * element, GnlComposition * comp)
 
       /* 3. unblock ghostpad */
       if (topentry->probeid) {
+        if (comp->priv->user_seek_flush) {
+          COMP_OBJECTS_UNLOCK (comp);
+          gst_pad_push_event (comp->priv->ghostpad,
+              gst_event_new_flush_start ());
+          GST_PAD_STREAM_LOCK (comp->priv->ghostpad);
+          GST_PAD_STREAM_UNLOCK (comp->priv->ghostpad);
+          gst_pad_push_event (comp->priv->ghostpad,
+              gst_event_new_flush_stop (TRUE));
+          COMP_OBJECTS_LOCK (comp);
+          comp->priv->user_seek_flush = FALSE;
+        }
+
         GST_LOG_OBJECT (comp, "About to unblock top-level pad : %s:%s",
             GST_DEBUG_PAD_NAME (tpad));
         gst_pad_remove_probe (tpad, topentry->probeid);
@@ -2519,10 +2536,10 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
               "We have a valid toplevel element pad %s:%s",
               GST_DEBUG_PAD_NAME (pad));
 
+          COMP_OBJECTS_UNLOCK (comp);
           /* Send seek event */
           GST_LOG_OBJECT (comp, "sending seek event");
           if (gst_pad_send_event (pad, event)) {
-
             /* Unconditionnaly set the ghostpad target to pad */
             GST_LOG_OBJECT (comp,
                 "Setting the composition's ghostpad target to %s:%s",
@@ -2530,14 +2547,25 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
             gnl_composition_ghost_pad_set_target (comp, pad, topentry);
 
             if (topentry->probeid) {
+              if (comp->priv->user_seek_flush) {
+                gst_pad_push_event (comp->priv->ghostpad,
+                    gst_event_new_flush_start ());
+                GST_PAD_STREAM_LOCK (comp->priv->ghostpad);
+                GST_PAD_STREAM_UNLOCK (comp->priv->ghostpad);
+                gst_pad_push_event (comp->priv->ghostpad,
+                    gst_event_new_flush_stop (TRUE));
+                comp->priv->user_seek_flush = FALSE;
+              }
+
               /* unblock top-level pad */
               GST_LOG_OBJECT (comp, "About to unblock top-level srcpad");
               gst_pad_remove_probe (pad, topentry->probeid);
               topentry->probeid = 0;
             }
-          } else
+          } else {
             ret = FALSE;
-
+          }
+          COMP_OBJECTS_LOCK (comp);
           gst_object_unref (pad);
 
         } else {
