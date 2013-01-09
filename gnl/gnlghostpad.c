@@ -673,7 +673,12 @@ gnl_object_ghost_pad_full (GnlObject * object, const gchar * name,
   g_return_val_if_fail ((dir != GST_PAD_UNKNOWN), FALSE);
 
   ghost = gnl_object_ghost_pad_no_target (object, name, dir);
-  if (ghost && (!(gnl_object_ghost_pad_set_target (object, ghost, target)))) {
+  if (!ghost) {
+    GST_WARNING_OBJECT (object, "Couldn't create ghostpad");
+    return NULL;
+  }
+
+  if (!(gnl_object_ghost_pad_set_target (object, ghost, target))) {
     GST_WARNING_OBJECT (object,
         "Couldn't set the target pad... removing ghostpad");
     gst_object_unref (ghost);
