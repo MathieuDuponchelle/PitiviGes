@@ -775,17 +775,6 @@ gnl_object_ghost_pad_set_target (GnlObject * object, GstPad * ghost,
   if (!(gst_ghost_pad_set_target (GST_GHOST_PAD (ghost), target)))
     return FALSE;
 
-  if (target) {
-    GstCaps *current_caps;
-
-    /* if the target has negotiated caps, forward them to the ghost */
-    /* FIXME : I'm not sure we need this anymore */
-    if ((current_caps = gst_pad_get_current_caps (target))) {
-      gst_pad_set_caps (ghost, current_caps);
-      gst_caps_unref (current_caps);
-    }
-  }
-
   return TRUE;
 }
 
