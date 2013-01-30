@@ -44,8 +44,8 @@ AC_SUBST(GST_API_VERSION)
 AS_LIBTOOL(GST, 0, 0, 0)
 
 dnl *** required versions of GStreamer stuff ***
-GST_REQ=0.11.2
-GSTPB_REQ=0.11.2
+GST_REQ=1.1.0
+GSTPB_REQ=1.1.0
 
 dnl *** autotools stuff ****
 
@@ -101,7 +101,7 @@ dnl *** checks for library functions ***
 dnl *** checks for dependancy libraries ***
 
 dnl GLib is required
-AG_GST_GLIB_CHECK([2.31])
+AG_GST_GLIB_CHECK([2.34])
 
 dnl checks for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
@@ -111,7 +111,7 @@ AG_GST_CHECK_GST_BASE($GST_API_VERSION, [$GST_REQ], [yes])
 AG_GST_CHECK_GST_PLUGINS_BASE($GST_API_VERSION, [$GSTPB_REQ], [yes])
 
 dnl check for uninstalled plugin directories for unit tests
-AG_GST_CHECK_GST_PLUGINS_GOOD($GST_API_VERSION, [0.11.0])
+AG_GST_CHECK_GST_PLUGINS_GOOD($GST_API_VERSION, [1.1.0])
 
 dnl There are paths for documentation xrefs
 GLIB_PREFIX="`$PKG_CONFIG --variable=prefix glib-2.0`"
