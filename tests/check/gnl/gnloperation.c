@@ -73,6 +73,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
 
   GST_DEBUG ("Resetted pipeline to READY");
 
+  collect->expected_base = 0;
   collect->expected_segments = listcopy;
   collect->gotsegment = FALSE;
 

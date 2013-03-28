@@ -45,6 +45,7 @@ typedef struct _CollectStructure {
   gboolean	gotsegment;
   GList         *seen_segments;
   GList		*expected_segments;
+  guint64	expected_base;
 }	CollectStructure;
 
 static GstElement *
@@ -66,33 +67,43 @@ composition_pad_added_cb (GstElement *composition, GstPad *pad, CollectStructure
 
 /* return TRUE to discard the Segment */
 static gboolean
-compare_segments (Segment * segment, GstEvent * event)
+compare_segments (CollectStructure *collect, Segment * segment, GstEvent * event)
 {
   const GstSegment *orig;
+  guint64 running_stop, running_start, running_duration;
 
   gst_event_parse_segment (event, &orig);
 
   GST_DEBUG ("Got Segment rate:%f, format:%s, start:%"GST_TIME_FORMAT
-	     ", stop:%"GST_TIME_FORMAT", position:%"GST_TIME_FORMAT
+	     ", stop:%"GST_TIME_FORMAT", time:%"GST_TIME_FORMAT
 	     ", base:%"GST_TIME_FORMAT", offset:%"GST_TIME_FORMAT,
 	     orig->rate, gst_format_get_name(orig->format), GST_TIME_ARGS (orig->start),
 	     GST_TIME_ARGS (orig->stop),
-	     GST_TIME_ARGS (orig->position),
+	     GST_TIME_ARGS (orig->time),
 	     GST_TIME_ARGS (orig->base),
 	     GST_TIME_ARGS (orig->offset));
+  GST_DEBUG ("[RUNNING] start:%"GST_TIME_FORMAT" [STREAM] start:%"GST_TIME_FORMAT,
+	     GST_TIME_ARGS (gst_segment_to_running_time (orig, GST_FORMAT_TIME, orig->start)),
+	     GST_TIME_ARGS (gst_segment_to_stream_time (orig, GST_FORMAT_TIME, orig->start)));
 
   GST_DEBUG ("Expecting rate:%f, format:%s, start:%"GST_TIME_FORMAT
-	     ", stop:%"GST_TIME_FORMAT", position:%"GST_TIME_FORMAT,
+	     ", stop:%"GST_TIME_FORMAT", position:%"GST_TIME_FORMAT", base:%"GST_TIME_FORMAT,
 	     segment->rate, gst_format_get_name (segment->format),
 	     GST_TIME_ARGS (segment->start),
 	     GST_TIME_ARGS (segment->stop),
-	     GST_TIME_ARGS (segment->position));
+	     GST_TIME_ARGS (segment->position),
+	     GST_TIME_ARGS (collect->expected_base));
 
+  running_start = gst_segment_to_running_time (orig, GST_FORMAT_TIME, orig->start);
+  running_stop = gst_segment_to_running_time (orig, GST_FORMAT_TIME, orig->stop);
+  running_duration = running_stop - running_start;
   fail_if (orig->rate != segment->rate);
   fail_if (orig->format != segment->format);
-  fail_unless_equals_uint64 (orig->start, segment->start);
-  fail_unless_equals_uint64 (orig->stop, segment->stop);
   fail_unless_equals_int64 (orig->time, segment->position);
+  fail_unless_equals_int64 (orig->base, collect->expected_base);
+  fail_unless_equals_uint64 (orig->stop - orig->start, segment->stop -segment->start);
+
+  collect->expected_base += running_duration;
 
   GST_DEBUG ("Segment was valid, discarding expected Segment");
 
@@ -121,7 +132,7 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
 
     segment = (Segment *) collect->expected_segments->data;
 
-    if (compare_segments (segment, event)) {
+    if (compare_segments (collect, segment, event)) {
       collect->expected_segments = g_list_remove (collect->expected_segments, segment);
       g_free (segment);
     }

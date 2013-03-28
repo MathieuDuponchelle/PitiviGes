@@ -75,6 +75,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
 
   collect->expected_segments = listcopy;
   collect->gotsegment = FALSE;
+  collect->expected_base = 0;
 
   GST_DEBUG ("Setting pipeline to PLAYING again");
 
@@ -582,7 +583,6 @@ GST_START_TEST (test_renegotiation)
   GST_DEBUG ("Resetted pipeline to READY");
 
   /* Expected segments */
-  /* Expected segments */
   collect->expected_segments = g_list_append (collect->expected_segments,
       segment_new (1.0, GST_FORMAT_TIME, 0, 1 * GST_SECOND, 0));
   collect->expected_segments = g_list_append (collect->expected_segments,
@@ -592,6 +592,7 @@ GST_START_TEST (test_renegotiation)
       segment_new (1.0, GST_FORMAT_TIME,
           2 * GST_SECOND, 3 * GST_SECOND, 2 * GST_SECOND));
   collect->gotsegment = FALSE;
+  collect->expected_base = 0;
 
 
   GST_DEBUG ("Setting pipeline to PLAYING again");

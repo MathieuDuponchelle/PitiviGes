@@ -133,6 +133,9 @@ struct _GnlCompositionPrivate
   GstSegment *segment;
   GstSegment *outside_segment;
 
+  /* Next running base_time to set on outgoing segment */
+  guint64 next_base_time;
+
   /* number of pads we are waiting to appear so be can do proper linking */
   guint waitingpads;
 
@@ -584,6 +587,7 @@ gnl_composition_reset (GnlComposition * comp)
 
   priv->segment_start = GST_CLOCK_TIME_NONE;
   priv->segment_stop = GST_CLOCK_TIME_NONE;
+  priv->next_base_time = 0;
 
   gst_segment_init (priv->segment, GST_FORMAT_TIME);
   gst_segment_init (priv->outside_segment, GST_FORMAT_TIME);
@@ -682,6 +686,12 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
   switch (GST_EVENT_TYPE (event)) {
     case GST_EVENT_SEGMENT:
     {
+      guint64 rstart, rstop;
+      const GstSegment *segment;
+      GstSegment copy;
+      GstEvent *event2;
+      /* next_base_time */
+
       COMP_FLUSHING_LOCK (comp);
       if (priv->pending_idle) {
         GST_DEBUG_OBJECT (comp, "removing pending seek for main thread");
@@ -690,6 +700,26 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
       priv->pending_idle = 0;
       priv->flushing = FALSE;
       COMP_FLUSHING_UNLOCK (comp);
+
+      gst_event_parse_segment (event, &segment);
+      gst_segment_copy_into (segment, &copy);
+
+      rstart =
+          gst_segment_to_running_time (segment, GST_FORMAT_TIME,
+          segment->start);
+      rstop =
+          gst_segment_to_running_time (segment, GST_FORMAT_TIME, segment->stop);
+      copy.base = comp->priv->next_base_time;
+      GST_DEBUG_OBJECT (comp,
+          "Updating base time to %" GST_TIME_FORMAT ", next:%" GST_TIME_FORMAT,
+          GST_TIME_ARGS (comp->priv->next_base_time),
+          GST_TIME_ARGS (comp->priv->next_base_time + rstop - rstart));
+      comp->priv->next_base_time += rstop - rstart;
+
+      event2 = gst_event_new_segment (&copy);
+      GST_EVENT_SEQNUM (event2) = GST_EVENT_SEQNUM (event);
+      GST_PAD_PROBE_INFO_DATA (info) = event2;
+      gst_event_unref (event);
     }
       break;
     case GST_EVENT_EOS:
@@ -1011,6 +1041,9 @@ handle_seek_event (GnlComposition * comp, GstEvent * event)
   priv->segment->stop = MIN (priv->segment->stop, GNL_OBJECT_STOP (comp));
 
   comp->priv->user_seek_flush = ! !(flags & GST_SEEK_FLAG_FLUSH);
+  if (comp->priv->user_seek_flush)
+    comp->priv->next_base_time = 0;
+
   seek_handling (comp, TRUE, FALSE);
 }
 

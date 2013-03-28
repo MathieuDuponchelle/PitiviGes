@@ -98,11 +98,14 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
 
             seeks = seeks->next;
 
-            if (!sinfo->expect_failure)
+            if (!sinfo->expect_failure) {
+              collect->gotsegment = FALSE;
+              collect->expected_base = 0;
               collect->expected_segments =
                   g_list_append (collect->expected_segments, segment_new (1.0,
                       GST_FORMAT_TIME, sinfo->start, sinfo->stop,
                       sinfo->position));
+            }
 
             /* Seek to 0.5s */
             GST_DEBUG ("Seeking to %" GST_TIME_FORMAT ", Expecting (%"
