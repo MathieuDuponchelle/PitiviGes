@@ -1011,7 +1011,7 @@ handle_seek_event (GnlComposition * comp, GstEvent * event)
   priv->segment->stop = MIN (priv->segment->stop, GNL_OBJECT_STOP (comp));
 
   comp->priv->user_seek_flush = ! !(flags & GST_SEEK_FLAG_FLUSH);
-  seek_handling (comp, TRUE, TRUE);
+  seek_handling (comp, TRUE, FALSE);
 }
 
 static gboolean
