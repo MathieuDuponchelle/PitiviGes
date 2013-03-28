@@ -2621,16 +2621,20 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
             GST_LOG_OBJECT (comp,
                 "Setting the composition's ghostpad target to %s:%s",
                 GST_DEBUG_PAD_NAME (pad));
+
+            COMP_OBJECTS_LOCK (comp);
             gnl_composition_ghost_pad_set_target (comp, pad, topentry);
 
             if (topentry->probeid) {
               if (comp->priv->user_seek_flush) {
+                COMP_OBJECTS_UNLOCK (comp);
                 gst_pad_push_event (comp->priv->ghostpad,
                     gst_event_new_flush_start ());
                 GST_PAD_STREAM_LOCK (comp->priv->ghostpad);
                 GST_PAD_STREAM_UNLOCK (comp->priv->ghostpad);
                 gst_pad_push_event (comp->priv->ghostpad,
                     gst_event_new_flush_stop (TRUE));
+                COMP_OBJECTS_LOCK (comp);
                 comp->priv->user_seek_flush = FALSE;
               }
 
@@ -2640,9 +2644,9 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
               topentry->probeid = 0;
             }
           } else {
+            COMP_OBJECTS_LOCK (comp);
             ret = FALSE;
           }
-          COMP_OBJECTS_LOCK (comp);
           gst_object_unref (pad);
 
         } else {
