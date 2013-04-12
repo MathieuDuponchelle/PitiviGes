@@ -395,6 +395,128 @@ GST_START_TEST (test_no_more_pads_race)
 
 GST_END_TEST;
 
+GST_START_TEST (test_simple_adder)
+{
+  GstBus *bus;
+  GstMessage *message;
+  GstElement *pipeline;
+  GstElement *gnl_adder;
+  GstElement *composition;
+  GstElement *adder, *fakesink;
+  GstClockTime start_playing_time;
+  GstElement *gnlsource1, *gnlsource2;
+  GstElement *audiotestsrc1, *audiotestsrc2;
+
+  gboolean carry_on = TRUE;
+  GstClockTime total_time = 10 * GST_SECOND;
+
+  pipeline = GST_ELEMENT (gst_pipeline_new (NULL));
+  bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
+
+  composition = gst_element_factory_make ("gnlcomposition", "composition");
+  fakesink = gst_element_factory_make ("fakesink", NULL);
+  g_object_set (fakesink, "sync", TRUE, NULL);
+
+  /* gnl_adder */
+  gnl_adder = gst_element_factory_make ("gnloperation", "gnl_adder");
+  adder = gst_element_factory_make ("adder", "adder");
+  fail_unless (adder != NULL);
+  gst_bin_add (GST_BIN (gnl_adder), adder);
+  g_object_set (gnl_adder, "start", 0 * GST_SECOND, "duration", total_time,
+      "media-start", 0 * GST_SECOND, "media-duration", total_time,
+      "priority", 0, NULL);
+  gst_bin_add (GST_BIN (composition), gnl_adder);
+
+  /* source 1 */
+  gnlsource1 = gst_element_factory_make ("gnlsource", "gnlsource1");
+  audiotestsrc1 = gst_element_factory_make ("audiotestsrc", "audiotestsrc1");
+  gst_bin_add (GST_BIN (gnlsource1), audiotestsrc1);
+  g_object_set (gnlsource1, "start", 0 * GST_SECOND, "duration",
+      total_time / 2, "media-start", 0 * GST_SECOND, "media-duration",
+      total_time / 2, "priority", 1, NULL);
+  fail_unless (gst_bin_add (GST_BIN (composition), gnlsource1));
+
+  /* gnlsource2 */
+  gnlsource2 = gst_element_factory_make ("gnlsource", "gnlsource2");
+  audiotestsrc2 = gst_element_factory_make ("audiotestsrc", "audiotestsrc2");
+  gst_bin_add (GST_BIN (gnlsource2), GST_ELEMENT (audiotestsrc2));
+  g_object_set (gnlsource2, "start", 0 * GST_SECOND, "duration", total_time,
+      "media-start", 0 * GST_SECOND, "media-duration", total_time,
+      "priority", 2, NULL);
+  fail_unless (gst_bin_add (GST_BIN (composition), gnlsource2));
+
+  /* Connecting signals */
+  g_object_connect (composition, "signal::pad-added",
+      on_composition_pad_added_cb, fakesink, NULL);
+  g_object_connect (composition, "signal::pad-removed",
+      on_composition_pad_removed_cb, NULL, NULL);
+
+
+  GST_DEBUG ("Adding composition to pipeline");
+
+  gst_bin_add_many (GST_BIN (pipeline), composition, fakesink, NULL);
+
+  GST_DEBUG ("Setting pipeline to PAUSED");
+
+  fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING)
+      == GST_STATE_CHANGE_FAILURE);
+
+  message = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE,
+      GST_MESSAGE_ASYNC_DONE | GST_MESSAGE_ERROR);
+
+  if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
+    fail_error_message (message);
+
+  GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
+      GST_DEBUG_GRAPH_SHOW_ALL, "gnl-simple-adder-test-play");
+
+  /* Now play the 10 second composition */
+  start_playing_time = gst_util_get_timestamp ();
+  while (carry_on) {
+
+    if (GST_CLOCK_DIFF (start_playing_time, gst_util_get_timestamp ()) >
+        total_time + GST_SECOND) {
+      GST_ERROR ("No EOS found after %i sec", (total_time / GST_SECOND) + 1);
+      GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
+          GST_DEBUG_GRAPH_SHOW_ALL, "gnl-simple-adder-test-fail");
+
+      fail_unless ("No EOS received" == NULL);
+
+      break;
+    }
+
+    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
+    GST_LOG ("poll: %" GST_PTR_FORMAT, message);
+    if (message) {
+      switch (GST_MESSAGE_TYPE (message)) {
+        case GST_MESSAGE_EOS:
+          /* we should check if we really finished here */
+          GST_WARNING ("Got an EOS");
+          carry_on = FALSE;
+          break;
+        case GST_MESSAGE_SEGMENT_START:
+        case GST_MESSAGE_SEGMENT_DONE:
+          /* We shouldn't see any segement messages, since we didn't do a segment seek */
+          GST_WARNING ("Saw a Segment start/stop");
+          fail_if (TRUE);
+          carry_on = FALSE;
+          break;
+        case GST_MESSAGE_ERROR:
+          fail_error_message (message);
+        default:
+          break;
+      }
+      gst_mini_object_unref (GST_MINI_OBJECT (message));
+    }
+  }
+
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
+  gst_object_unref (pipeline);
+  gst_object_unref (bus);
+}
+
+GST_END_TEST;
+
 static Suite *
 gnonlin_suite (void)
 {
@@ -410,6 +532,13 @@ gnonlin_suite (void)
     tcase_add_test (tc_chain, test_no_more_pads_race);
   } else {
     GST_WARNING ("videomixer element not available, skipping 1 test");
+  }
+
+  if (gst_registry_check_feature_version (gst_registry_get (), "adder", 1,
+          0, 0)) {
+    tcase_add_test (tc_chain, test_simple_adder);
+  } else {
+    GST_WARNING ("adder element not available, skipping 1 test");
   }
 
   return s;
