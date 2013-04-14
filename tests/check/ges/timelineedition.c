@@ -485,6 +485,100 @@ GST_START_TEST (test_snapping)
 
 GST_END_TEST;
 
+static void
+asset_added_cb (GESProject * project, GESAsset * asset, void *mainloop)
+{
+  GstDiscovererInfo *info;
+
+  info = ges_uri_clip_asset_get_info (GES_URI_CLIP_ASSET (asset));
+  fail_unless (GST_IS_DISCOVERER_INFO (info));
+
+  g_main_loop_quit ((GMainLoop *) mainloop);
+}
+
+static gboolean
+deep_check (GESTimelineElement * element, GstClockTime start,
+    GstClockTime inpoint, GstClockTime duration)
+{
+  GList *track_elements, *tmp;
+  GstClockTime rstart, rinpoint, rduration;
+
+  track_elements = GES_CONTAINER_CHILDREN (element);
+
+  for (tmp = track_elements; tmp; tmp = tmp->next) {
+    rstart = ges_timeline_element_get_start (GES_TIMELINE_ELEMENT (tmp->data));
+    rinpoint =
+        ges_timeline_element_get_inpoint (GES_TIMELINE_ELEMENT (tmp->data));
+    rduration =
+        ges_timeline_element_get_duration (GES_TIMELINE_ELEMENT (tmp->data));
+    if (rstart != start || rinpoint != inpoint || rduration != duration)
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+GST_START_TEST (test_real_life_edition)
+{
+  GESProject *project;
+  GESTimeline *timeline;
+  GESTimelineLayer *layer;
+  GMainLoop *mainloop;
+  GESClipAsset *asset;
+  GList *assets, *tmp;
+  GESTimelineElement *element;
+
+  ges_init ();
+
+  project = ges_project_new (NULL);
+
+  mainloop = g_main_loop_new (NULL, FALSE);
+
+  g_signal_connect (project, "asset-added", (GCallback) asset_added_cb,
+      mainloop);
+  ges_project_create_asset (project,
+      "file:///home/meh/devel/pitivi-git/gst-editing-services/tests/check/ges/marty.mp4",
+      GES_TYPE_URI_CLIP);
+
+  g_main_loop_run (mainloop);
+
+  /* the asset is now loaded */
+
+  timeline = ges_timeline_new_audio_video ();
+  assets = ges_project_list_assets (project, GES_TYPE_CLIP);
+
+  asset = NULL;
+
+  for (tmp = assets; tmp; tmp = tmp->next) {
+    if (GES_IS_CLIP_ASSET (tmp->data)) {
+      asset = tmp->data;
+      break;
+    }
+  }
+
+  layer = ges_timeline_layer_new ();
+  ges_timeline_add_layer (timeline, layer);
+
+  ges_timeline_layer_add_asset (layer, GES_ASSET (asset), 0 * GST_SECOND,
+      0 * GST_SECOND, 10 * GST_SECOND, 1.0,
+      ges_clip_asset_get_supported_formats (asset));
+
+  element = ges_timeline_layer_get_clips (layer)->data;
+
+  fail_if (!deep_check (element, 0 * GST_SECOND, 0 * GST_SECOND,
+          10 * GST_SECOND));
+
+  ges_timeline_enable_update (timeline, FALSE);
+
+  ges_clip_edit (GES_CLIP (element), NULL, -1, GES_EDIT_MODE_TRIM,
+      GES_EDGE_START, 5 * GST_SECOND);
+
+  fail_if (!deep_check (element, 5 * GST_SECOND, 5 * GST_SECOND,
+          5 * GST_SECOND));
+}
+
+GST_END_TEST;
+
 GST_START_TEST (test_timeline_edition_mode)
 {
   guint i;
@@ -946,6 +1040,7 @@ ges_suite (void)
   tcase_add_test (tc_chain, test_basic_timeline_edition);
   tcase_add_test (tc_chain, test_snapping);
   tcase_add_test (tc_chain, test_timeline_edition_mode);
+  tcase_add_test (tc_chain, test_real_life_edition);
 
   return s;
 }
