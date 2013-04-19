@@ -66,6 +66,61 @@ GST_START_TEST (test_transition_basic)
 
 GST_END_TEST;
 
+
+static void
+asset_added_cb (GESProject * project, GMainLoop * mainloop)
+{
+  g_main_loop_quit (mainloop);
+}
+
+GST_START_TEST (test_transition_audio)
+{
+  GESTrack *track;
+  GESTimeline *timeline;
+  GESTimelinePipeline *pipeline;
+  GESTimelineLayer *layer;
+  GESAsset *asset;
+  GESAsset *asset2;
+  GESProject *project;
+  GMainLoop *mainloop;
+
+  ges_init ();
+
+  mainloop = g_main_loop_new (NULL, FALSE);
+  project = GES_PROJECT (ges_asset_request (GES_TYPE_TIMELINE, NULL, NULL));
+  g_signal_connect (project, "asset-added", (GCallback) asset_added_cb,
+      mainloop);
+  ges_project_create_asset (project, NULL, GES_TYPE_AUDIO_TEST_SOURCE);
+
+  g_main_loop_run (mainloop);
+
+  asset = ges_project_list_assets (project, GES_TYPE_AUDIO_TEST_SOURCE)->data;
+  asset2 = ges_project_list_assets (project, GES_TYPE_AUDIO_TEST_SOURCE)->data;
+
+  track = ges_track_audio_raw_new ();
+  layer = ges_timeline_layer_new ();
+  timeline = ges_timeline_new ();
+  fail_unless (ges_timeline_add_layer (timeline, layer));
+  fail_unless (ges_timeline_add_track (timeline, track));
+
+  g_object_set (layer, "auto-transition", TRUE, NULL);
+
+  ges_timeline_layer_add_asset (layer, asset, 0, 0, 10 * GST_SECOND, 1.0,
+      GES_TRACK_TYPE_AUDIO);
+  ges_timeline_layer_add_asset (layer, asset2, 5 * GST_SECOND, 20 * GST_SECOND,
+      15 * GST_SECOND, 1.0, GES_TRACK_TYPE_AUDIO);
+
+  pipeline = ges_timeline_pipeline_new ();
+  ges_timeline_pipeline_add_timeline (pipeline, timeline);
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
+
+  g_main_loop_run (mainloop);
+
+  gst_object_unref (timeline);
+}
+
+GST_END_TEST;
+
 GST_START_TEST (test_transition_properties)
 {
   GESClip *clip;
@@ -181,6 +236,7 @@ ges_suite (void)
   suite_add_tcase (s, tc_chain);
 
   tcase_add_test (tc_chain, test_transition_basic);
+  tcase_add_test (tc_chain, test_transition_audio);
   tcase_add_test (tc_chain, test_transition_properties);
 
   return s;
