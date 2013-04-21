@@ -556,6 +556,9 @@ ges_project_create_asset (GESProject * project, const gchar * id,
   g_return_val_if_fail (g_type_is_a (extractable_type, GES_TYPE_EXTRACTABLE),
       FALSE);
 
+  if (id == NULL)
+    id = g_type_name (extractable_type);
+
   if (g_hash_table_lookup (project->priv->assets, id) ||
       g_hash_table_lookup (project->priv->loading_assets, id) ||
       g_hash_table_lookup (project->priv->loaded_with_error, id))
