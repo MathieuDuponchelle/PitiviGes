@@ -153,6 +153,76 @@ GST_START_TEST (test_transition_audio)
 
 GST_END_TEST;
 
+GST_START_TEST (test_transition_video)
+{
+  GESTrack *track;
+  GESTimeline *timeline;
+  GESTimelinePipeline *pipeline;
+  GESTimelineLayer *layer;
+  GESAsset *asset;
+  GESAsset *asset2;
+  GESProject *project;
+  GList *tmp;
+  gboolean change_wave = FALSE;
+
+  mainloop = g_main_loop_new (NULL, FALSE);
+
+  ges_init ();
+
+  project = GES_PROJECT (ges_asset_request (GES_TYPE_TIMELINE, NULL, NULL));
+  g_signal_connect (project, "asset-added", (GCallback) asset_added_cb,
+      mainloop);
+  ges_project_create_asset (project, NULL, GES_TYPE_TEST_CLIP);
+
+  g_main_loop_run (mainloop);
+
+  asset = ges_project_list_assets (project, GES_TYPE_TEST_CLIP)->data;
+  asset2 = ges_project_list_assets (project, GES_TYPE_TEST_CLIP)->data;
+
+  track = ges_track_video_raw_new ();
+  layer = ges_timeline_layer_new ();
+  timeline = ges_timeline_new ();
+  fail_unless (ges_timeline_add_layer (timeline, layer));
+  fail_unless (ges_timeline_add_track (timeline, track));
+
+  ges_timeline_layer_add_asset (layer, asset, 0, 0, 4 * GST_SECOND, 1.0,
+      GES_TRACK_TYPE_VIDEO);
+  ges_timeline_layer_add_asset (layer, asset2, 2 * GST_SECOND, 0 * GST_SECOND,
+      10 * GST_SECOND, 1.0, GES_TRACK_TYPE_VIDEO);
+
+  g_object_set (layer, "auto-transition", TRUE, NULL);
+
+  for (tmp = ges_timeline_layer_get_clips (layer); tmp; tmp = tmp->next) {
+    GESTimelineElement *element = tmp->data;
+
+    if (!GES_IS_TRANSITION_CLIP (element)) {
+      GESAudioTestSource *tck_element = GES_CONTAINER_CHILDREN (element)->data;
+      GstElement *element =
+          ges_track_element_get_element (GES_TRACK_ELEMENT (tck_element));
+
+      if (change_wave) {
+        g_object_set (element, "pattern", 1, NULL);
+      }
+      change_wave = TRUE;
+    }
+  }
+
+  pipeline = ges_timeline_pipeline_new ();
+  ges_timeline_pipeline_add_timeline (pipeline, timeline);
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
+  gst_element_get_state (GST_ELEMENT (pipeline), NULL, NULL, -1);
+  g_timeout_add (5000, (GSourceFunc) quit_mainloop, mainloop);
+
+  //  GST_DEBUG_BIN_TO_DOT_FILE (GST_BIN (pipeline), GST_DEBUG_GRAPH_SHOW_ALL, "/home/meh/herebitch.dot");
+  g_main_loop_run (mainloop);
+
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
+
+  //  gst_object_unref (timeline);
+}
+
+GST_END_TEST;
+
 GST_START_TEST (test_transition_properties)
 {
   GESClip *clip;
@@ -269,6 +339,7 @@ ges_suite (void)
 
   tcase_add_test (tc_chain, test_transition_basic);
   tcase_add_test (tc_chain, test_transition_audio);
+  tcase_add_test (tc_chain, test_transition_video);
   tcase_add_test (tc_chain, test_transition_properties);
 
   return s;
