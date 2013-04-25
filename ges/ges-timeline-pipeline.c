@@ -376,13 +376,16 @@ ges_timeline_pipeline_update_caps (GESTimelinePipeline * self)
           GstCaps *ocaps, *rcaps;
 
           GST_DEBUG ("Smart Render mode, setting input caps");
-          ocaps = gst_encoding_profile_get_input_caps (prof);
+          ocaps =
+              gst_caps_make_writable (gst_encoding_profile_get_input_caps
+              (prof));
           if (track->type == GES_TRACK_TYPE_AUDIO)
             rcaps = gst_caps_new_empty_simple ("audio/x-raw");
           else
             rcaps = gst_caps_new_empty_simple ("video/x-raw");
           gst_caps_append (ocaps, rcaps);
           ges_track_set_caps (track, ocaps);
+          gst_caps_unref (ocaps);
         } else {
           GstCaps *caps = NULL;
 
