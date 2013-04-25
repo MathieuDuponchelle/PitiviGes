@@ -111,6 +111,8 @@ ges_generate_test_file_audio_video (const gchar * filedest,
 
   pipeline = gst_parse_launch (pipeline_str, &error);
 
+  g_free (pipeline_str);
+
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
   gst_bus_add_signal_watch (bus);
 
