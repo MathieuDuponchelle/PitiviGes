@@ -480,11 +480,7 @@ update_values (GnlObject * object)
         "Updating stop value : %" GST_TIME_FORMAT " [start:%" GST_TIME_FORMAT
         ", duration:%" GST_TIME_FORMAT "]", GST_TIME_ARGS (object->stop),
         GST_TIME_ARGS (object->start), GST_TIME_ARGS (object->duration));
-#if GLIB_CHECK_VERSION(2,26,0)
     g_object_notify_by_pspec (G_OBJECT (object), properties[PROP_STOP]);
-#else
-    g_object_notify (G_OBJECT (object), "stop");
-#endif
   }
 
   /* check if media start/duration has changed */
@@ -497,11 +493,7 @@ update_values (GnlObject * object)
         GST_TIME_ARGS (object->media_stop),
         GST_TIME_ARGS (object->media_start),
         GST_TIME_ARGS (object->media_duration));
-#if GLIB_CHECK_VERSION(2,26,0)
     g_object_notify_by_pspec (G_OBJECT (object), properties[PROP_MEDIA_STOP]);
-#else
-    g_object_notify (G_OBJECT (object), "media_stop");
-#endif
   }
 
   /* check if rate has changed */
@@ -518,11 +510,7 @@ update_values (GnlObject * object)
         GST_TIME_FORMAT "] rate_1:%d", object->rate,
         GST_TIME_ARGS (object->media_duration),
         GST_TIME_ARGS (object->duration), object->rate_1);
-#if GLIB_CHECK_VERSION(2,26,0)
     g_object_notify_by_pspec (G_OBJECT (object), properties[PROP_RATE]);
-#else
-    g_object_notify (G_OBJECT (object), "rate");
-#endif
   }
 }
 
