@@ -356,8 +356,13 @@ remove_object_internal (GESTrack * track, GESTrackElement * object)
   }
 
   if ((gnlobject = ges_track_element_get_gnlobject (object))) {
+    gboolean updating = track->priv->updating;
+
     GST_DEBUG ("Removing GnlObject '%s' from composition '%s'",
         GST_ELEMENT_NAME (gnlobject), GST_ELEMENT_NAME (priv->composition));
+
+    /* FIXME : this is needed for https://github.com/pitivi/pitivi/issues/34 */
+    ges_track_enable_update (track, TRUE);
 
     if (!gst_bin_remove (GST_BIN (priv->composition), gnlobject)) {
       GST_WARNING ("Failed to remove gnlobject from composition");
@@ -365,6 +370,8 @@ remove_object_internal (GESTrack * track, GESTrackElement * object)
     }
 
     gst_element_set_state (gnlobject, GST_STATE_NULL);
+
+    ges_track_enable_update (track, updating);
   }
 
   g_signal_handlers_disconnect_by_func (object, sort_track_elements_cb, NULL);
