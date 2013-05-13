@@ -52,7 +52,7 @@ static gchar *testfilename1 = NULL;
 static gchar *testfilename2 = NULL;
 
 #define DEFAULT_PROFILE_TYPE PROFILE_MP4
-#define ACCEPTABILITY 0.1 * GST_SECOND
+#define DURATION_TOLERANCE 0.1 * GST_SECOND
 
 static GstEncodingProfile *
 create_profile (const char *container, const char *container_preset,
@@ -121,8 +121,6 @@ create_audio_video_profile (PROFILE_TYPE type)
       NULL, profile_specs[type][2], NULL);
 }
 
-#define ACCEPTABILITY 0.1 * GST_SECOND
-
 /* This is used to specify a dot dumping after the target element started outputting buffers */
 static gchar *target_element = NULL;
 
@@ -182,7 +180,7 @@ test_rendering_timeline_with_profile (GESTimeline * timeline,
   GstEncodingProfile *profile;
   GstBus *bus;
   static gboolean ret;
-  gchar *uri = ges_test_file_uri ("rendered.ogv");
+  gchar *uri = ges_test_file_name ("rendered.ogv");
 
   ret = FALSE;
 
@@ -227,7 +225,7 @@ check_rendered_file_properties (GstClockTime duration)
 
   /* TODO: extend these tests */
 
-  uri = ges_test_file_uri ("rendered.ogv");
+  uri = ges_test_file_name ("rendered.ogv");
   asset = ges_uri_clip_asset_request_sync (uri, &error);
   g_free (uri);
 
@@ -241,8 +239,8 @@ check_rendered_file_properties (GstClockTime duration)
 
   real_duration = gst_discoverer_info_get_duration (info);
 
-  if ((duration < real_duration - ACCEPTABILITY)
-      || (duration > real_duration + ACCEPTABILITY))
+  if ((duration < real_duration - DURATION_TOLERANCE)
+      || (duration > real_duration + DURATION_TOLERANCE))
     return FALSE;
 
   gst_object_unref (info);
@@ -250,7 +248,7 @@ check_rendered_file_properties (GstClockTime duration)
   return TRUE;
 }
 
-/* Test adding an effect [E] marks the effect (FIXME : disabled because "couldn't get a pad from encodebin" */
+/* Test adding an effect [E] marks the effect */
 GST_START_TEST (test_effect_rendering)
 {
   GESTimeline *timeline;
@@ -259,10 +257,12 @@ GST_START_TEST (test_effect_rendering)
   GESUriClipAsset *asset1;
   GESEffect *effect;
   GESClip *clip;
-  gchar *uri = ges_test_file_uri (testfilename1);
+  gchar *uri = ges_test_file_name (testfilename1);
 
   asset1 = ges_uri_clip_asset_request_sync (uri, &error);
   g_free (uri);
+
+  fail_unless (asset1 != NULL);
 
   layer = ges_layer_new ();
   timeline = ges_timeline_new_audio_video ();
@@ -279,8 +279,8 @@ GST_START_TEST (test_effect_rendering)
     /**
    * Our timeline
    *          [   E    ]
-   * inpoints 0--------0 
-   *          |  clip  | 
+   * inpoints 0--------0
+   *          |  clip  |
    * time     0--------1
    */
 
@@ -297,8 +297,8 @@ GST_START_TEST (test_transition)
   GError *error = NULL;
   GESUriClipAsset *asset1, *asset2;
   GESClip *clip;
-  gchar *uri1 = ges_test_file_uri (testfilename1);
-  gchar *uri2 = ges_test_file_uri (testfilename2);
+  gchar *uri1 = ges_test_file_name (testfilename1);
+  gchar *uri2 = ges_test_file_name (testfilename2);
 
   timeline = ges_timeline_new_audio_video ();
   layer = ges_layer_new ();
@@ -311,6 +311,8 @@ GST_START_TEST (test_transition)
 
   g_free (uri1);
   g_free (uri2);
+
+  fail_unless (asset1 != NULL && asset2 != NULL);
 
   clip =
       ges_layer_add_asset (layer, GES_ASSET (asset1), 0 * GST_SECOND,
@@ -345,10 +347,12 @@ GST_START_TEST (test_basic_render)
   GESLayer *layer;
   GESUriClipAsset *asset1;
   GError *error = NULL;
-  gchar *uri = ges_test_file_uri (testfilename1);
+  gchar *uri = ges_test_file_name (testfilename1);
 
   asset1 = ges_uri_clip_asset_request_sync (uri, &error);
   g_free (uri);
+
+  fail_unless (asset1 != NULL);
 
   layer = ges_layer_new ();
   timeline = ges_timeline_new_audio_video ();
@@ -393,17 +397,23 @@ ges_suite (void)
   return s;
 }
 
-static void
+static gboolean
 generate_all_files (void)
 {
-  ges_generate_test_file_audio_video ("ges/test1.webm", "vorbisenc", "vp8enc",
-      "webmmux", "18", "11");
-  ges_generate_test_file_audio_video ("ges/test2.webm", "vorbisenc", "vp8enc",
-      "webmmux", "0", "0");
-  ges_generate_test_file_audio_video ("ges/test1.ogv", "vorbisenc", "theoraenc",
-      "oggmux", "18", "11");
-  ges_generate_test_file_audio_video ("ges/test2.ogv", "vorbisenc", "theoraenc",
-      "oggmux", "0", "0");
+  if (!ges_generate_test_file_audio_video ("test1.webm", "vorbisenc", "vp8enc",
+          "webmmux", "18", "11"))
+    return FALSE;
+  if (!ges_generate_test_file_audio_video ("test2.webm", "vorbisenc", "vp8enc",
+          "webmmux", "0", "0"))
+    return FALSE;
+  if (!ges_generate_test_file_audio_video ("test1.ogv", "vorbisenc",
+          "theoraenc", "oggmux", "18", "11"))
+    return FALSE;
+  if (!ges_generate_test_file_audio_video ("test2.ogv", "vorbisenc",
+          "theoraenc", "oggmux", "0", "0"))
+    return FALSE;
+
+  return TRUE;
 }
 
 int
@@ -415,12 +425,14 @@ main (int argc, char **argv)
   SRunner *sr = srunner_create (s);
 
   gst_check_init (&argc, &argv);
+  ges_init ();
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  ges_init ();
-
-  generate_all_files ();
+  if (!generate_all_files ()) {
+    GST_ERROR ("error generating necessary test files in rendering test\n");
+    return 1;
+  }
 
   g_print ("Running suite with webm vorbis/vp8\n");
   testfilename1 = g_strdup ("test1.webm");
