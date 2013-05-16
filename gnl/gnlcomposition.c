@@ -144,7 +144,7 @@ struct _GnlCompositionPrivate
      We are called before gnl_object_sync_handler
    */
   GstPadEventFunction gnl_event_pad_func;
-
+  gboolean send_stream_start;
 };
 
 static GParamSpec *gnlobject_properties[GNLOBJECT_PROP_LAST];
@@ -619,6 +619,7 @@ gnl_composition_reset (GnlComposition * comp)
   COMP_FLUSHING_UNLOCK (comp);
 
   priv->update_required = FALSE;
+  priv->send_stream_start = TRUE;
 
   GST_DEBUG_OBJECT (comp, "Composition now resetted");
 }
@@ -684,6 +685,16 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
   GST_DEBUG_OBJECT (comp, "event: %s", GST_EVENT_TYPE_NAME (event));
 
   switch (GST_EVENT_TYPE (event)) {
+    case GST_EVENT_STREAM_START:
+      if (g_atomic_int_compare_and_exchange (&priv->send_stream_start, TRUE,
+              FALSE)) {
+        /* FIXME: Do we want to create a new stream ID here? */
+        GST_DEBUG_OBJECT (comp, "forward stream-start %p", event);
+      } else {
+        GST_DEBUG_OBJECT (comp, "droping stream-start %p", event);
+        retval = GST_PAD_PROBE_DROP;
+      }
+      break;
     case GST_EVENT_SEGMENT:
     {
       guint64 rstart, rstop;
