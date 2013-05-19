@@ -1,52 +1,52 @@
 
 #include <gst/check/gstcheck.h>
 
-#define fail_error_message(msg)			\
-  G_STMT_START {				\
-    GError *error;				\
-    gst_message_parse_error(msg, &error, NULL);				\
-    fail_unless(FALSE, "Error Message from %s : %s",			\
-		GST_OBJECT_NAME (GST_MESSAGE_SRC(msg)), error->message); \
-    g_error_free (error);						\
+#define fail_error_message(msg)     \
+  G_STMT_START {        \
+    GError *error;        \
+    gst_message_parse_error(msg, &error, NULL);       \
+    fail_unless(FALSE, "Error Message from %s : %s",      \
+    GST_OBJECT_NAME (GST_MESSAGE_SRC(msg)), error->message); \
+    g_error_free (error);           \
   } G_STMT_END;
 
-#define check_start_stop_duration(object, startval, stopval, durval)	\
-  G_STMT_START { guint64 start, stop;					\
-    gint64 duration;							\
-    GST_DEBUG_OBJECT (object, "Checking for valid start/stop/duration values");					\
-    g_object_get (object, "start", &start, "stop", &stop,		\
-		  "duration", &duration, NULL);				\
-    fail_unless_equals_uint64(start, startval);				\
-    fail_unless_equals_uint64(stop, stopval);				\
-    fail_unless_equals_int64(duration, durval);				\
-    GST_DEBUG_OBJECT (object, "start/stop/duration values valid");	\
+#define check_start_stop_duration(object, startval, stopval, durval)  \
+  G_STMT_START { guint64 start, stop;         \
+    gint64 duration;              \
+    GST_DEBUG_OBJECT (object, "Checking for valid start/stop/duration values");         \
+    g_object_get (object, "start", &start, "stop", &stop,   \
+      "duration", &duration, NULL);       \
+    fail_unless_equals_uint64(start, startval);       \
+    fail_unless_equals_uint64(stop, stopval);       \
+    fail_unless_equals_int64(duration, durval);       \
+    GST_DEBUG_OBJECT (object, "start/stop/duration values valid");  \
   } G_STMT_END;
 
-#define check_state_simple(object, expected_state)			\
-  G_STMT_START {							\
-    GstStateChangeReturn ret;						\
-    GstState state, pending;						\
+#define check_state_simple(object, expected_state)      \
+  G_STMT_START {              \
+    GstStateChangeReturn ret;           \
+    GstState state, pending;            \
     ret = gst_element_get_state(GST_ELEMENT_CAST(object), &state, &pending, 5 * GST_SECOND); \
-    fail_if (ret == GST_STATE_CHANGE_FAILURE);				\
+    fail_if (ret == GST_STATE_CHANGE_FAILURE);        \
     fail_unless (state == expected_state, "Element state (%s) is not the expected one (%s)", \
-		 gst_element_state_get_name(state), gst_element_state_get_name(expected_state)); \
+     gst_element_state_get_name(state), gst_element_state_get_name(expected_state)); \
   } G_STMT_END;
 
 typedef struct _Segment {
-  gdouble	rate;
-  GstFormat	format;
-  guint64	start, stop, position;
-}	Segment;
+  gdouble rate;
+  GstFormat format;
+  guint64 start, stop, position;
+} Segment;
 
 typedef struct _CollectStructure {
-  GstElement	*comp;
-  GstElement	*sink;
-  guint64	last_time;
-  gboolean	gotsegment;
+  GstElement  *comp;
+  GstElement  *sink;
+  guint64 last_time;
+  gboolean  gotsegment;
   GList         *seen_segments;
-  GList		*expected_segments;
-  guint64	expected_base;
-}	CollectStructure;
+  GList   *expected_segments;
+  guint64 expected_base;
+} CollectStructure;
 
 static GstElement *
 gst_element_factory_make_or_warn (const gchar * factoryname, const gchar * name)
@@ -62,7 +62,7 @@ static void
 composition_pad_added_cb (GstElement *composition, GstPad *pad, CollectStructure * collect)
 {
   fail_if (!(gst_element_link_pads_full (composition, GST_OBJECT_NAME (pad), collect->sink, "sink",
-					 GST_PAD_LINK_CHECK_NOTHING)));
+           GST_PAD_LINK_CHECK_NOTHING)));
 }
 
 /* return TRUE to discard the Segment */
@@ -75,24 +75,24 @@ compare_segments (CollectStructure *collect, Segment * segment, GstEvent * event
   gst_event_parse_segment (event, &orig);
 
   GST_DEBUG ("Got Segment rate:%f, format:%s, start:%"GST_TIME_FORMAT
-	     ", stop:%"GST_TIME_FORMAT", time:%"GST_TIME_FORMAT
-	     ", base:%"GST_TIME_FORMAT", offset:%"GST_TIME_FORMAT,
-	     orig->rate, gst_format_get_name(orig->format), GST_TIME_ARGS (orig->start),
-	     GST_TIME_ARGS (orig->stop),
-	     GST_TIME_ARGS (orig->time),
-	     GST_TIME_ARGS (orig->base),
-	     GST_TIME_ARGS (orig->offset));
+       ", stop:%"GST_TIME_FORMAT", time:%"GST_TIME_FORMAT
+       ", base:%"GST_TIME_FORMAT", offset:%"GST_TIME_FORMAT,
+       orig->rate, gst_format_get_name(orig->format), GST_TIME_ARGS (orig->start),
+       GST_TIME_ARGS (orig->stop),
+       GST_TIME_ARGS (orig->time),
+       GST_TIME_ARGS (orig->base),
+       GST_TIME_ARGS (orig->offset));
   GST_DEBUG ("[RUNNING] start:%"GST_TIME_FORMAT" [STREAM] start:%"GST_TIME_FORMAT,
-	     GST_TIME_ARGS (gst_segment_to_running_time (orig, GST_FORMAT_TIME, orig->start)),
-	     GST_TIME_ARGS (gst_segment_to_stream_time (orig, GST_FORMAT_TIME, orig->start)));
+       GST_TIME_ARGS (gst_segment_to_running_time (orig, GST_FORMAT_TIME, orig->start)),
+       GST_TIME_ARGS (gst_segment_to_stream_time (orig, GST_FORMAT_TIME, orig->start)));
 
   GST_DEBUG ("Expecting rate:%f, format:%s, start:%"GST_TIME_FORMAT
-	     ", stop:%"GST_TIME_FORMAT", position:%"GST_TIME_FORMAT", base:%"GST_TIME_FORMAT,
-	     segment->rate, gst_format_get_name (segment->format),
-	     GST_TIME_ARGS (segment->start),
-	     GST_TIME_ARGS (segment->stop),
-	     GST_TIME_ARGS (segment->position),
-	     GST_TIME_ARGS (collect->expected_base));
+       ", stop:%"GST_TIME_FORMAT", position:%"GST_TIME_FORMAT", base:%"GST_TIME_FORMAT,
+       segment->rate, gst_format_get_name (segment->format),
+       GST_TIME_ARGS (segment->start),
+       GST_TIME_ARGS (segment->stop),
+       GST_TIME_ARGS (segment->position),
+       GST_TIME_ARGS (collect->expected_base));
 
   running_start = gst_segment_to_running_time (orig, GST_FORMAT_TIME, orig->start);
   running_stop = gst_segment_to_running_time (orig, GST_FORMAT_TIME, orig->stop);
@@ -114,10 +114,10 @@ static GstPadProbeReturn
 sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * collect)
 {
   Segment * segment;
-  
+
   GST_DEBUG_OBJECT (sinkpad, "event:%p (%s seqnum:%d) , collect:%p", event,
-		    GST_EVENT_TYPE_NAME (event), 
-		    GST_EVENT_SEQNUM (event), collect);
+        GST_EVENT_TYPE_NAME (event),
+        GST_EVENT_SEQNUM (event), collect);
 
   if (GST_EVENT_TYPE (event) == GST_EVENT_SEGMENT) {
     fail_if (collect->expected_segments == NULL, "Received unexpected segment");
@@ -126,7 +126,7 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event, CollectStructure * coll
       collect->seen_segments = g_list_append(NULL, GINT_TO_POINTER(GST_EVENT_SEQNUM(event)));
     else {
       fail_if(g_list_find(collect->seen_segments, GINT_TO_POINTER(GST_EVENT_SEQNUM(event))),
-	      "Got a segment event we already saw before !");
+        "Got a segment event we already saw before !");
       collect->seen_segments = g_list_append(collect->seen_segments, GINT_TO_POINTER(GST_EVENT_SEQNUM(event)));
     }
 
@@ -146,7 +146,7 @@ static GstPadProbeReturn
 sinkpad_buffer_probe (GstPad * sinkpad, GstBuffer * buffer, CollectStructure * collect)
 {
   GST_DEBUG_OBJECT (sinkpad, "buffer:%p (%"GST_TIME_FORMAT") , collect:%p", buffer,
-		    GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (buffer)), collect);
+        GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (buffer)), collect);
   fail_if(!collect->gotsegment, "Received a buffer without a preceding segment");
   return GST_PAD_PROBE_OK;
 }
@@ -170,19 +170,19 @@ new_gnl_src (const gchar * name, guint64 start, gint64 duration, gint priority)
   fail_if (gnlsource == NULL);
 
   g_object_set (G_OBJECT (gnlsource),
-		"start", start,
-		"duration", duration,
-		"media-start", start,
-		"media-duration", duration,
-		"priority", priority,
-		NULL);
+    "start", start,
+    "duration", duration,
+    "media-start", start,
+    "media-duration", duration,
+    "priority", priority,
+    NULL);
 
   return gnlsource;
 }
 
 static GstElement *
 videotest_gnl_src (const gchar * name, guint64 start, gint64 duration,
-		   gint pattern, guint priority)
+       gint pattern, guint priority)
 {
   GstElement * gnlsource = NULL;
   GstElement * videotestsrc = NULL;
@@ -198,23 +198,23 @@ videotest_gnl_src (const gchar * name, guint64 start, gint64 duration,
   gst_caps_unref(caps);
 
   gst_bin_add (GST_BIN (gnlsource), videotestsrc);
-  
+
   return gnlsource;
 }
 
 static GstElement *
 videotest_gnl_src_full (const gchar * name, guint64 start, gint64 duration,
-			guint64 mediastart, gint64 mediaduration,
-			gint pattern, guint priority)
+      guint64 mediastart, gint64 mediaduration,
+      gint pattern, guint priority)
 {
   GstElement * gnls;
 
   gnls = videotest_gnl_src (name, start, duration, pattern, priority);
   if (gnls) {
     g_object_set (G_OBJECT (gnls),
-		  "media-start", mediastart,
-		  "media-duration", mediaduration,
-		  NULL);
+      "media-start", mediastart,
+      "media-duration", mediaduration,
+      NULL);
   }
 
   return gnls;
@@ -243,10 +243,10 @@ videotest_in_bin_gnl_src (const gchar * name, guint64 start, gint64 duration, gi
   gst_bin_add (GST_BIN (bin), alpha);
 
   gst_element_link_pads_full (videotestsrc, "src", alpha, "sink",
-			      GST_PAD_LINK_CHECK_NOTHING);
+            GST_PAD_LINK_CHECK_NOTHING);
 
   gst_bin_add (GST_BIN (gnlsource), bin);
-  
+
   srcpad = gst_element_get_static_pad (alpha, "src");
 
   gst_element_add_pad (bin, gst_ghost_pad_new ("src", srcpad));
@@ -258,7 +258,7 @@ videotest_in_bin_gnl_src (const gchar * name, guint64 start, gint64 duration, gi
 
 static GstElement *
 audiotest_bin_src (const gchar * name, guint64 start,
-		   gint64 duration, guint priority, gboolean intaudio)
+       gint64 duration, guint priority, gboolean intaudio)
 {
   GstElement * source = NULL;
   GstElement * identity = NULL;
@@ -273,7 +273,7 @@ audiotest_bin_src (const gchar * name, guint64 start,
   bin = gst_bin_new (NULL);
   source = new_gnl_src (name, start, duration, priority);
   audioconvert = gst_element_factory_make_or_warn ("audioconvert", NULL);
-  
+
   if (intaudio)
     caps = gst_caps_from_string ("audio/x-raw,format=(string)S16LE");
   else
@@ -281,7 +281,7 @@ audiotest_bin_src (const gchar * name, guint64 start,
 
   gst_bin_add_many (GST_BIN (bin), audiotestsrc, audioconvert, identity, NULL);
   gst_element_link_pads_full (audiotestsrc, "src", audioconvert, "sink",
-			      GST_PAD_LINK_CHECK_NOTHING);
+            GST_PAD_LINK_CHECK_NOTHING);
   fail_if ((gst_element_link_filtered (audioconvert, identity, caps)) != TRUE);
 
   gst_caps_unref (caps);
@@ -307,10 +307,10 @@ new_operation (const gchar * name, const gchar * factory, guint64 start, gint64 
   gnloperation = gst_element_factory_make_or_warn ("gnloperation", name);
 
   g_object_set (G_OBJECT (gnloperation),
-		"start", start,
-		"duration", duration,
-		"priority", priority,
-		NULL);
+    "start", start,
+    "duration", duration,
+    "priority", priority,
+    NULL);
 
   gst_bin_add (GST_BIN (gnloperation), operation);
 
