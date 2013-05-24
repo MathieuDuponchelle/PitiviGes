@@ -735,6 +735,8 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
       break;
     case GST_EVENT_EOS:
     {
+      GstClockTime duration, curpos;
+
       COMP_FLUSHING_LOCK (comp);
       if (priv->flushing) {
         GST_DEBUG_OBJECT (comp, "flushing, bailing out");
@@ -751,13 +753,26 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
         g_source_remove (priv->pending_idle);
       }
 
-      /* FIXME : This should be switched to using a g_thread_create() instead
-       * of a g_idle_add(). EXTENSIVE TESTING AND ANALYSIS REQUIRED BEFORE
-       * DOING THE SWITCH !!! */
-      priv->pending_idle =
-          g_idle_add ((GSourceFunc) eos_main_thread, (gpointer) comp);
+      /* Get current position */
+      if ((curpos = get_current_position (comp)) != GST_CLOCK_TIME_NONE) {
 
-      retval = GST_PAD_PROBE_DROP;
+        if (comp->priv->segment->rate >= 0.0)
+          duration = GNL_OBJECT (comp)->duration;
+        else
+          duration = 0;
+
+        if (curpos != duration) {
+          /* FIXME : This should be switched to using a g_thread_create() instead
+           * of a g_idle_add(). EXTENSIVE TESTING AND ANALYSIS REQUIRED BEFORE
+           * DOING THE SWITCH !!! */
+          priv->pending_idle =
+              g_idle_add ((GSourceFunc) eos_main_thread, (gpointer) comp);
+
+          retval = GST_PAD_PROBE_DROP;
+        }
+      }
+      GST_DEBUG_OBJECT (comp, "Got EOS for real, fowarding it");
+      /* Else if it is real eos... send it downstream */
     }
       break;
     default:
