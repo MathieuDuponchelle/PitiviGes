@@ -651,7 +651,8 @@ eos_main_thread (GnlComposition * comp)
 
     if (!(priv->segment->flags & GST_SEEK_FLAG_SEGMENT)
         && priv->ghostpad) {
-      GST_LOG_OBJECT (comp, "Pushing out EOS");
+      GST_ERROR_OBJECT (comp,
+          "Pushing out EOS in eos_main_thread, should not happen");
       gst_pad_push_event (priv->ghostpad, gst_event_new_eos ());
     } else if (priv->segment->flags & GST_SEEK_FLAG_SEGMENT) {
       gint64 epos;
@@ -680,6 +681,7 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
   GstPadProbeReturn retval = GST_PAD_PROBE_OK;
   GnlCompositionPrivate *priv = comp->priv;
   GstEvent *event = GST_PAD_PROBE_INFO_EVENT (info);
+  GList *tmp;
 
   GST_DEBUG_OBJECT (comp, "event: %s", GST_EVENT_TYPE_NAME (event));
 
@@ -734,6 +736,9 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
       break;
     case GST_EVENT_EOS:
     {
+      gboolean reverse = (comp->priv->segment->rate < 0);
+      gboolean should_check_objects = FALSE;
+
       COMP_FLUSHING_LOCK (comp);
       if (priv->flushing) {
         GST_DEBUG_OBJECT (comp, "flushing, bailing out");
@@ -750,13 +755,34 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
         g_source_remove (priv->pending_idle);
       }
 
-      /* FIXME : This should be switched to using a g_thread_create() instead
-       * of a g_idle_add(). EXTENSIVE TESTING AND ANALYSIS REQUIRED BEFORE
-       * DOING THE SWITCH !!! */
-      priv->pending_idle =
-          g_idle_add ((GSourceFunc) eos_main_thread, (gpointer) comp);
+      if (reverse && GST_CLOCK_TIME_IS_VALID (comp->priv->segment_start))
+        should_check_objects = TRUE;
+      else if (!reverse && GST_CLOCK_TIME_IS_VALID (comp->priv->segment_stop))
+        should_check_objects = TRUE;
 
-      retval = GST_PAD_PROBE_DROP;
+      if (should_check_objects) {
+        retval = GST_PAD_PROBE_OK;
+        for (tmp = comp->priv->objects_stop; tmp; tmp = g_list_next (tmp)) {
+          GnlObject *object = (GnlObject *) tmp->data;
+
+          if (!GNL_IS_SOURCE (object))
+            continue;
+
+          if ((!reverse && comp->priv->segment_stop < object->stop) ||
+              (reverse && comp->priv->segment_start > object->start)) {
+            retval = GST_PAD_PROBE_DROP;
+            /* FIXME : This should be switched to using a g_thread_create() instead
+             * of a g_idle_add(). EXTENSIVE TESTING AND ANALYSIS REQUIRED BEFORE
+             * DOING THE SWITCH !!! */
+            priv->pending_idle =
+                g_idle_add ((GSourceFunc) eos_main_thread, (gpointer) comp);
+            break;
+          }
+        }
+      }
+
+      if (retval == GST_PAD_PROBE_OK)
+        GST_DEBUG_OBJECT (comp, "Got EOS for real, fowarding it");
     }
       break;
     default:
