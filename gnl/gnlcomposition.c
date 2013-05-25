@@ -1182,9 +1182,17 @@ gnl_composition_remove_ghostpad (GnlComposition * comp)
 
   GST_DEBUG_OBJECT (comp, "Removing ghostpad");
 
+  if (priv->ghosteventprobe) {
+    GstPad *target;
+
+    target = gst_ghost_pad_get_target ((GstGhostPad *) priv->ghostpad);
+    if (target)
+      gst_pad_remove_probe (target, priv->ghosteventprobe);
+    priv->ghosteventprobe = 0;
+  }
+
   gnl_object_remove_ghost_pad (GNL_OBJECT (comp), priv->ghostpad);
   priv->ghostpad = NULL;
-  priv->ghosteventprobe = 0;
   priv->toplevelentry = NULL;
 }
 
