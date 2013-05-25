@@ -40,6 +40,7 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GNL_TYPE_COMPOSITION))
 #define GNL_IS_COMPOSITION_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GNL_TYPE_COMPOSITION))
+
 typedef struct _GnlCompositionPrivate GnlCompositionPrivate;
 
 struct _GnlComposition
