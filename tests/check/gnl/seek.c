@@ -718,7 +718,7 @@ GST_START_TEST (test_one_bin_after_other)
 GST_END_TEST;
 
 
-Suite *
+static Suite *
 gnonlin_suite (void)
 {
   Suite *s = suite_create ("gnonlin-seek");

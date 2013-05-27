@@ -476,7 +476,8 @@ GST_START_TEST (test_simple_adder)
 
     if (GST_CLOCK_DIFF (start_playing_time, gst_util_get_timestamp ()) >
         total_time + GST_SECOND) {
-      GST_ERROR ("No EOS found after %i sec", (total_time / GST_SECOND) + 1);
+      GST_ERROR ("No EOS found after %" GST_TIME_FORMAT " sec",
+          GST_TIME_ARGS ((total_time / GST_SECOND) + 1));
       GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
           GST_DEBUG_GRAPH_SHOW_ALL, "gnl-simple-adder-test-fail");
 

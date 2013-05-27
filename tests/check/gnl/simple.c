@@ -1,6 +1,5 @@
 #include "common.h"
 
-
 /* macros for 'update' property enabling */
 #define DISABLE_ASYNC_UPDATE { if (async) g_object_set(comp, "update", FALSE, NULL); }
 #define ENABLE_ASYNC_UPDATE { if (async) g_object_set(comp, "update", TRUE, NULL); }
@@ -12,8 +11,6 @@ test_simplest_full (gboolean async)
   GstElement *comp, *sink, *source1;
   CollectStructure *collect;
   GstBus *bus;
-  GstMessage *message;
-  gboolean carry_on = TRUE;
   GstPad *sinkpad;
 
   pipeline = gst_pipeline_new ("test_pipeline");
@@ -75,29 +72,7 @@ test_simplest_full (gboolean async)
 
   GST_DEBUG ("Let's poll the bus");
 
-  while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
-    if (message) {
-      switch (GST_MESSAGE_TYPE (message)) {
-        case GST_MESSAGE_EOS:
-          /* we should check if we really finished here */
-          GST_WARNING ("Got an EOS");
-          carry_on = FALSE;
-          break;
-        case GST_MESSAGE_SEGMENT_START:
-        case GST_MESSAGE_SEGMENT_DONE:
-          /* We shouldn't see any segement messages, since we didn't do a segment seek */
-          GST_WARNING ("Saw a Segment start/stop");
-          fail_if (TRUE);
-          break;
-        case GST_MESSAGE_ERROR:
-          fail_error_message (message);
-        default:
-          break;
-      }
-      gst_mini_object_unref (GST_MINI_OBJECT (message));
-    }
-  }
+  poll_the_bus (bus);
 
   GST_DEBUG ("Setting pipeline to NULL");
 
@@ -119,34 +94,9 @@ test_simplest_full (gboolean async)
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline),
           GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE);
 
-  carry_on = TRUE;
-
   GST_DEBUG ("Let's poll the bus AGAIN");
 
-  while (carry_on) {
-    message = gst_bus_poll (bus, GST_MESSAGE_ANY, GST_SECOND / 10);
-    if (message) {
-      switch (GST_MESSAGE_TYPE (message)) {
-        case GST_MESSAGE_EOS:
-          /* we should check if we really finished here */
-          carry_on = FALSE;
-          break;
-        case GST_MESSAGE_SEGMENT_START:
-        case GST_MESSAGE_SEGMENT_DONE:
-          /* We shouldn't see any segement messages, since we didn't do a segment seek */
-          GST_WARNING ("Saw a Segment start/stop");
-          fail_if (TRUE);
-          break;
-        case GST_MESSAGE_ERROR:
-          fail_error_message (message);
-        default:
-          break;
-      }
-      gst_mini_object_unref (GST_MINI_OBJECT (message));
-    } else {
-      GST_DEBUG ("bus_poll responded, but there wasn't any message...");
-    }
-  }
+  poll_the_bus (bus);
 
   fail_if (collect->expected_segments != NULL);
 
@@ -851,16 +801,7 @@ GST_START_TEST (test_one_bin_after_other)
 
 GST_END_TEST;
 
-GST_START_TEST (test_one_bin_after_other_async)
-{
-  test_one_bin_after_other_full (TRUE);
-}
-
-GST_END_TEST;
-
-
-
-Suite *
+static Suite *
 gnonlin_suite (void)
 {
   Suite *s = suite_create ("gnonlin-simple");

@@ -203,7 +203,7 @@ GST_START_TEST (test_videotestsrc_in_bin)
 
 GST_END_TEST;
 
-Suite *
+static Suite *
 gnonlin_suite (void)
 {
   Suite *s = suite_create ("gnlsource");
