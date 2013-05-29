@@ -22,7 +22,6 @@
 #include "ges-types.h"
 #include "ges-internal.h"
 #include "ges-smart-adder.h"
-#include "ges-meta-container.h"
 
 G_DEFINE_TYPE (GESSmartAdder, ges_smart_adder, GST_TYPE_BIN);
 
