@@ -49,7 +49,7 @@
 </ARG>
 
 <ARG>
-<NAME>GnlObject::media-start</NAME>
+<NAME>GnlObject::inpoint</NAME>
 <TYPE>guint64</TYPE>
 <RANGE></RANGE>
 <FLAGS>rw</FLAGS>

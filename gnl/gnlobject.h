@@ -72,7 +72,7 @@ typedef enum
 #define GNL_OBJECT_START(obj) (GNL_OBJECT_CAST (obj)->start)
 #define GNL_OBJECT_STOP(obj) (GNL_OBJECT_CAST (obj)->stop)
 #define GNL_OBJECT_DURATION(obj) (GNL_OBJECT_CAST (obj)->duration)
-#define GNL_OBJECT_MEDIA_START(obj) (GNL_OBJECT_CAST (obj)->media_start)
+#define GNL_OBJECT_INPOINT(obj) (GNL_OBJECT_CAST (obj)->inpoint)
 #define GNL_OBJECT_MEDIA_STOP(obj) (GNL_OBJECT_CAST (obj)->media_stop)
 #define GNL_OBJECT_MEDIA_DURATION(obj) (GNL_OBJECT_CAST (obj)->media_duration)
 #define GNL_OBJECT_PRIORITY(obj) (GNL_OBJECT_CAST (obj)->priority)
@@ -88,7 +88,7 @@ struct _GnlObject
   /* read-only */
   GstClockTime stop;
 
-  GstClockTime media_start;
+  GstClockTime inpoint;
   GstClockTimeDiff media_duration;
 
   /* read-only */

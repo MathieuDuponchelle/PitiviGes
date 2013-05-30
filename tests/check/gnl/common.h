@@ -54,7 +54,7 @@ GstPadProbeReturn sinkpad_probe (GstPad *sinkpad, GstPadProbeInfo * info, Collec
 GstElement *videotest_gnl_src (const gchar * name, guint64 start, gint64 duration,
 			       gint pattern, guint priority);
 GstElement * videotest_gnl_src_full (const gchar * name, guint64 start, gint64 duration,
-				     guint64 mediastart, gint64 mediaduration,
+				     guint64 inpoint, gint64 mediaduration,
 				     gint pattern, guint priority);
 GstElement *
 videotest_in_bin_gnl_src (const gchar * name, guint64 start, gint64 duration, gint pattern, guint priority);

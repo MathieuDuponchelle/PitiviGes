@@ -80,8 +80,8 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
     GST_LOG_OBJECT (object, "Setting cur to %" GST_TIME_FORMAT,
         GST_TIME_ARGS (ncur));
   } else if ((curtype != GST_SEEK_TYPE_NONE)) {
-    GST_DEBUG_OBJECT (object, "Limiting seek start to media_start");
-    ncur = object->media_start;
+    GST_DEBUG_OBJECT (object, "Limiting seek start to inpoint");
+    ncur = object->inpoint;
   } else {
     GST_DEBUG_OBJECT (object, "leaving GST_SEEK_TYPE_NONE");
     ncur = cur;

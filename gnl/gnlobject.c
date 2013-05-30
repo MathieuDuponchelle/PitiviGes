@@ -52,7 +52,7 @@ enum
   PROP_START,
   PROP_DURATION,
   PROP_STOP,
-  PROP_MEDIA_START,
+  PROP_INPOINT,
   PROP_MEDIA_DURATION,
   PROP_MEDIA_STOP,
   PROP_RATE,
@@ -137,19 +137,19 @@ gnl_object_class_init (GnlObjectClass * klass)
       properties[PROP_STOP]);
 
   /**
-   * GnlObject:media_start
+   * GnlObject:inpoint
    *
    * The media start position in nanoseconds.
    *
    * Also called 'in-point' in video-editing, this corresponds to
    * what position in the 'contained' object we should start outputting from.
    */
-  properties[PROP_MEDIA_START] =
-      g_param_spec_uint64 ("media_start", "Media start",
+  properties[PROP_INPOINT] =
+      g_param_spec_uint64 ("inpoint", "Media start",
       "The media start position (in nanoseconds)", 0, G_MAXUINT64,
       GST_CLOCK_TIME_NONE, G_PARAM_READWRITE);
-  g_object_class_install_property (gobject_class, PROP_MEDIA_START,
-      properties[PROP_MEDIA_START]);
+  g_object_class_install_property (gobject_class, PROP_INPOINT,
+      properties[PROP_INPOINT]);
 
   /**
    * GnlObject:media_duration
@@ -174,7 +174,7 @@ gnl_object_class_init (GnlObjectClass * klass)
    * Also called 'out-point' in video-editing, this corresponds to the
    * position in the 'contained' object we should output until.
    *
-   * This value is read-only, and is computed from the media_start and
+   * This value is read-only, and is computed from the inpoint and
    * media_duration property.
    */
   properties[PROP_MEDIA_STOP] = g_param_spec_uint64 ("media_stop", "Media stop",
@@ -265,7 +265,7 @@ gnl_object_init (GnlObject * object)
   object->duration = 0;
   object->stop = 0;
 
-  object->media_start = GST_CLOCK_TIME_NONE;
+  object->inpoint = GST_CLOCK_TIME_NONE;
   object->media_duration = 0;
   object->media_stop = GST_CLOCK_TIME_NONE;
 
@@ -319,13 +319,12 @@ gnl_object_to_media_time (GnlObject * object, GstClockTime otime,
       "Media [%" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT "]",
       GST_TIME_ARGS (object->start),
       GST_TIME_ARGS (object->stop),
-      GST_TIME_ARGS (object->media_start), GST_TIME_ARGS (object->media_stop));
+      GST_TIME_ARGS (object->inpoint), GST_TIME_ARGS (object->media_stop));
 
   /* limit check */
   if (G_UNLIKELY ((otime < object->start))) {
     GST_DEBUG_OBJECT (object, "ObjectTime is before start");
-    *mtime =
-        (object->media_start == GST_CLOCK_TIME_NONE) ? 0 : object->media_start;
+    *mtime = (object->inpoint == GST_CLOCK_TIME_NONE) ? 0 : object->inpoint;
     return FALSE;
   }
 
@@ -333,20 +332,20 @@ gnl_object_to_media_time (GnlObject * object, GstClockTime otime,
     GST_DEBUG_OBJECT (object, "ObjectTime is after stop");
     if (G_LIKELY (GST_CLOCK_TIME_IS_VALID (object->media_stop)))
       *mtime = object->media_stop;
-    else if (GST_CLOCK_TIME_IS_VALID (object->media_start))
-      *mtime = object->media_start + object->duration;
+    else if (GST_CLOCK_TIME_IS_VALID (object->inpoint))
+      *mtime = object->inpoint + object->duration;
     else
       *mtime = object->stop - object->start;
     return FALSE;
   }
 
-  if (G_UNLIKELY (object->media_start == GST_CLOCK_TIME_NONE)) {
+  if (G_UNLIKELY (object->inpoint == GST_CLOCK_TIME_NONE)) {
     /* no time shifting, for live sources ? */
     *mtime = otime - object->start;
   } else if (G_LIKELY (object->rate_1)) {
-    *mtime = otime - object->start + object->media_start;
+    *mtime = otime - object->start + object->inpoint;
   } else {
-    *mtime = (otime - object->start) * object->rate + object->media_start;
+    *mtime = (otime - object->start) * object->rate + object->inpoint;
   }
 
   GST_DEBUG_OBJECT (object, "Returning MediaTime : %" GST_TIME_FORMAT,
@@ -381,14 +380,13 @@ gnl_media_to_object_time (GnlObject * object, GstClockTime mtime,
       "Media [%" GST_TIME_FORMAT " -- %" GST_TIME_FORMAT "]",
       GST_TIME_ARGS (object->start),
       GST_TIME_ARGS (object->stop),
-      GST_TIME_ARGS (object->media_start), GST_TIME_ARGS (object->media_stop));
+      GST_TIME_ARGS (object->inpoint), GST_TIME_ARGS (object->media_stop));
 
 
   /* limit check */
-  if (G_UNLIKELY ((object->media_start != GST_CLOCK_TIME_NONE)
-          && (mtime < object->media_start))) {
-    GST_DEBUG_OBJECT (object,
-        "media time is before media_start, forcing to start");
+  if (G_UNLIKELY ((object->inpoint != GST_CLOCK_TIME_NONE)
+          && (mtime < object->inpoint))) {
+    GST_DEBUG_OBJECT (object, "media time is before inpoint, forcing to start");
     *otime = object->start;
     return FALSE;
   }
@@ -401,12 +399,12 @@ gnl_media_to_object_time (GnlObject * object, GstClockTime mtime,
     return FALSE;
   }
 
-  if (G_LIKELY (object->rate_1 && (object->media_start != GST_CLOCK_TIME_NONE))) {
-    *otime = mtime - object->media_start + object->start;
-  } else if (object->media_start == GST_CLOCK_TIME_NONE)
+  if (G_LIKELY (object->rate_1 && (object->inpoint != GST_CLOCK_TIME_NONE))) {
+    *otime = mtime - object->inpoint + object->start;
+  } else if (object->inpoint == GST_CLOCK_TIME_NONE)
     *otime = mtime + object->start;
   else
-    *otime = (mtime - object->media_start) / object->rate + object->start;
+    *otime = (mtime - object->inpoint) / object->rate + object->start;
 
   GST_DEBUG_OBJECT (object, "Returning ObjectTime : %" GST_TIME_FORMAT,
       GST_TIME_ARGS (*otime));
@@ -482,14 +480,14 @@ update_values (GnlObject * object)
   }
 
   /* check if media start/duration has changed */
-  if ((object->media_start != GST_CLOCK_TIME_NONE)
-      && ((object->media_start + object->media_duration) != object->media_stop)) {
-    object->media_stop = object->media_start + object->media_duration;
+  if ((object->inpoint != GST_CLOCK_TIME_NONE)
+      && ((object->inpoint + object->media_duration) != object->media_stop)) {
+    object->media_stop = object->inpoint + object->media_duration;
     GST_LOG_OBJECT (object,
         "Updated media_stop value : %" GST_TIME_FORMAT
         " [mstart:%" GST_TIME_FORMAT ", mduration:%" GST_TIME_FORMAT "]",
         GST_TIME_ARGS (object->media_stop),
-        GST_TIME_ARGS (object->media_start),
+        GST_TIME_ARGS (object->inpoint),
         GST_TIME_ARGS (object->media_duration));
     g_object_notify_by_pspec (G_OBJECT (object), properties[PROP_MEDIA_STOP]);
   }
@@ -529,8 +527,8 @@ gnl_object_set_property (GObject * object, guint prop_id,
       gnlobject->duration = g_value_get_int64 (value);
       update_values (gnlobject);
       break;
-    case PROP_MEDIA_START:
-      gnlobject->media_start = g_value_get_uint64 (value);
+    case PROP_INPOINT:
+      gnlobject->inpoint = g_value_get_uint64 (value);
       break;
     case PROP_MEDIA_DURATION:
       gnlobject->media_duration = g_value_get_int64 (value);
@@ -573,8 +571,8 @@ gnl_object_get_property (GObject * object, guint prop_id,
     case PROP_STOP:
       g_value_set_uint64 (value, gnlobject->stop);
       break;
-    case PROP_MEDIA_START:
-      g_value_set_uint64 (value, gnlobject->media_start);
+    case PROP_INPOINT:
+      g_value_set_uint64 (value, gnlobject->inpoint);
       break;
     case PROP_MEDIA_DURATION:
       g_value_set_int64 (value, gnlobject->media_duration);

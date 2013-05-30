@@ -2516,7 +2516,7 @@ are_same_stacks (GNode * stack1, GNode * stack2)
 {
   gboolean res = FALSE;
 
-  /* TODO : FIXME : we should also compare start/media-start */
+  /* TODO : FIXME : we should also compare start/inpoint */
   /* stacks are not equal if one of them is NULL but not the other */
   if ((!stack1 && stack2) || (stack1 && !stack2))
     goto beach;
@@ -2949,7 +2949,7 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
     /* We set the default source start/stop values to 0 and composition-stop */
     g_object_set (element,
         "start", (GstClockTime) 0,
-        "media-start", (GstClockTime) 0,
+        "inpoint", (GstClockTime) 0,
         "duration", (GstClockTimeDiff) GNL_OBJECT_STOP (comp),
         "media-duration", (GstClockTimeDiff) GNL_OBJECT_STOP (comp), NULL);
   }
