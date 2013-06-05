@@ -514,20 +514,20 @@ unblock_child_pads (GValue * item, GValue * ret G_GNUC_UNUSED,
 }
 
 static void
-unblock_childs (GnlComposition * comp)
+unblock_children (GnlComposition * comp)
 {
-  GstIterator *childs;
+  GstIterator *children;
 
-  childs = gst_bin_iterate_elements (GST_BIN (comp));
+  children = gst_bin_iterate_elements (GST_BIN (comp));
 
 retry:
-  if (G_UNLIKELY (gst_iterator_fold (childs,
+  if (G_UNLIKELY (gst_iterator_fold (children,
               (GstIteratorFoldFunction) unblock_child_pads, NULL,
               comp) == GST_ITERATOR_RESYNC)) {
-    gst_iterator_resync (childs);
+    gst_iterator_resync (children);
     goto retry;
   }
-  gst_iterator_free (childs);
+  gst_iterator_free (children);
 }
 
 
@@ -561,19 +561,19 @@ lock_child_state (GValue * item, GValue * ret G_GNUC_UNUSED,
 }
 
 static void
-reset_childs (GnlComposition * comp)
+reset_children (GnlComposition * comp)
 {
-  GstIterator *childs;
+  GstIterator *children;
 
-  childs = gst_bin_iterate_elements (GST_BIN (comp));
+  children = gst_bin_iterate_elements (GST_BIN (comp));
 retry:
-  if (G_UNLIKELY (gst_iterator_fold (childs,
+  if (G_UNLIKELY (gst_iterator_fold (children,
               (GstIteratorFoldFunction) reset_child, NULL,
               comp) == GST_ITERATOR_RESYNC)) {
-    gst_iterator_resync (childs);
+    gst_iterator_resync (children);
     goto retry;
   }
-  gst_iterator_free (childs);
+  gst_iterator_free (children);
 }
 
 static void
@@ -604,7 +604,7 @@ gnl_composition_reset (GnlComposition * comp)
     priv->childseek = NULL;
   }
 
-  reset_childs (comp);
+  reset_children (comp);
 
   COMP_FLUSHING_LOCK (comp);
 
@@ -1097,7 +1097,7 @@ gnl_composition_event_handler (GstPad * ghostpad, GstObject * parent,
       handle_seek_event (comp, event);
 
       /* the incoming event might not be quite correct, we get a new proper
-       * event to pass on to the childs. */
+       * event to pass on to the children. */
       COMP_OBJECTS_LOCK (comp);
       nevent = get_new_seek_event (comp, FALSE, FALSE);
       COMP_OBJECTS_UNLOCK (comp);
@@ -1820,38 +1820,38 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
       break;
     case GST_STATE_CHANGE_READY_TO_PAUSED:
     {
-      GstIterator *childs;
+      GstIterator *children;
 
       gnl_composition_reset (comp);
 
       /* state-lock all elements */
       GST_DEBUG_OBJECT (comp,
-          "Setting all childs to READY and locking their state");
+          "Setting all children to READY and locking their state");
 
-      childs = gst_bin_iterate_elements (GST_BIN (comp));
+      children = gst_bin_iterate_elements (GST_BIN (comp));
 
     retry_lock:
-      if (G_UNLIKELY (gst_iterator_fold (childs,
+      if (G_UNLIKELY (gst_iterator_fold (children,
                   (GstIteratorFoldFunction) lock_child_state, NULL,
                   NULL) == GST_ITERATOR_RESYNC)) {
-        gst_iterator_resync (childs);
+        gst_iterator_resync (children);
         goto retry_lock;
       }
 
-      gst_iterator_free (childs);
+      gst_iterator_free (children);
 
       /* Set caps on all objects */
       if (G_UNLIKELY (!gst_caps_is_any (GNL_OBJECT (comp)->caps))) {
-        childs = gst_bin_iterate_elements (GST_BIN (comp));
+        children = gst_bin_iterate_elements (GST_BIN (comp));
 
       retry_caps:
-        if (G_UNLIKELY (gst_iterator_fold (childs,
+        if (G_UNLIKELY (gst_iterator_fold (children,
                     (GstIteratorFoldFunction) set_child_caps, NULL,
                     comp) == GST_ITERATOR_RESYNC)) {
-          gst_iterator_resync (childs);
+          gst_iterator_resync (children);
           goto retry_caps;
         }
-        gst_iterator_free (childs);
+        gst_iterator_free (children);
       }
 
 
@@ -1887,7 +1887,7 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
   switch (transition) {
     case GST_STATE_CHANGE_PAUSED_TO_READY:
     case GST_STATE_CHANGE_READY_TO_NULL:
-      unblock_childs (comp);
+      unblock_children (comp);
       break;
     default:
       break;
@@ -2270,23 +2270,23 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
     wait_no_more_pads (comp, newobj, entry, TRUE);
   }
 
-  /* 3. Handle childs */
+  /* 3. Handle children */
   if (GNL_IS_OPERATION (newobj)) {
-    guint nbchilds = g_node_n_children (node);
+    guint nbchildren = g_node_n_children (node);
     GnlOperation *oper = (GnlOperation *) newobj;
-    GST_LOG_OBJECT (newobj, "is a %s operation, analyzing the %d childs",
-        oper->dynamicsinks ? "dynamic" : "regular", nbchilds);
+    GST_LOG_OBJECT (newobj, "is a %s operation, analyzing the %d children",
+        oper->dynamicsinks ? "dynamic" : "regular", nbchildren);
     /* Update the operation's number of sinks, that will make it have the proper
-     * number of sink pads to connect the childs to. */
+     * number of sink pads to connect the children to. */
     if (oper->dynamicsinks)
-      g_object_set (G_OBJECT (newobj), "sinks", nbchilds, NULL);
+      g_object_set (G_OBJECT (newobj), "sinks", nbchildren, NULL);
     for (child = node->children; child; child = child->next)
       compare_relink_single_node (comp, child, oldstack);
-    if (G_UNLIKELY (nbchilds < oper->num_sinks))
+    if (G_UNLIKELY (nbchildren < oper->num_sinks))
       GST_ERROR
           ("Not enough sinkpads to link all objects to the operation ! %d / %d",
-          oper->num_sinks, nbchilds);
-    if (G_UNLIKELY (nbchilds == 0))
+          oper->num_sinks, nbchildren);
+    if (G_UNLIKELY (nbchildren == 0))
       GST_ERROR ("Operation has no child objects to be connected to !!!");
     /* Make sure we have enough sinkpads */
   } else {
@@ -2425,7 +2425,7 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
   /* 4. If we're dealing with an operation, call this method recursively on it */
   if (G_UNLIKELY (GNL_IS_OPERATION (oldobj))) {
     GST_LOG_OBJECT (comp,
-        "Object is an operation, recursively calling on childs");
+        "Object is an operation, recursively calling on children");
     for (child = node->children; child; child = child->next) {
       GList *newdeac =
           compare_deactivate_single_node (comp, child, newstack, modify);
@@ -2512,7 +2512,7 @@ are_same_stacks (GNode * stack1, GNode * stack2)
     if (!(stack1->data == stack2->data))
       goto beach;
 
-    /* if they don't have the same number of childs, not equal */
+    /* if they don't have the same number of children, not equal */
     if (!(g_node_n_children (stack1) == g_node_n_children (stack2)))
       goto beach;
 
