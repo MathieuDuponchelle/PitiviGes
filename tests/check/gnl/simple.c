@@ -27,8 +27,8 @@ test_simplest_full (gboolean async)
      Priority : 1
    */
   source1 =
-      videotest_gnl_src_full ("source1", 0, 1 * GST_SECOND, 5 * GST_SECOND,
-      1 * GST_SECOND, 3, 1);
+      videotest_gnl_src_full ("source1", 0, 1 * GST_SECOND, 5 * GST_SECOND, 3,
+      1);
   fail_if (source1 == NULL);
   check_start_stop_duration (source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
@@ -211,8 +211,8 @@ test_one_after_other_full (gboolean async)
      Priority : 1
    */
   source1 =
-      videotest_gnl_src_full ("source1", 0, 1 * GST_SECOND, 5 * GST_SECOND,
-      1 * GST_SECOND, 3, 1);
+      videotest_gnl_src_full ("source1", 0, 1 * GST_SECOND, 5 * GST_SECOND, 3,
+      1);
   fail_if (source1 == NULL);
   check_start_stop_duration (source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
@@ -221,11 +221,10 @@ test_one_after_other_full (gboolean async)
      Start : 1s
      Duration : 1s
      Media start : 2s
-     Media Duration : 1s
      Priority : 1
    */
   source2 = videotest_gnl_src_full ("source2", 1 * GST_SECOND, 1 * GST_SECOND,
-      2 * GST_SECOND, 1 * GST_SECOND, 2, 1);
+      2 * GST_SECOND, 2, 1);
   fail_if (source2 == NULL);
   check_start_stop_duration (source2, 1 * GST_SECOND, 2 * GST_SECOND,
       1 * GST_SECOND);

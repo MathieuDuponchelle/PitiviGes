@@ -167,8 +167,7 @@ new_gnl_src (const gchar * name, guint64 start, gint64 duration, gint priority)
 
   g_object_set (G_OBJECT (gnlsource),
       "start", start,
-      "duration", duration,
-      "inpoint", start, "media-duration", duration, "priority", priority, NULL);
+      "duration", duration, "inpoint", start, "priority", priority, NULL);
 
   return gnlsource;
 }
@@ -199,14 +198,13 @@ videotest_gnl_src (const gchar * name, guint64 start, gint64 duration,
 
 GstElement *
 videotest_gnl_src_full (const gchar * name, guint64 start, gint64 duration,
-    guint64 inpoint, gint64 mediaduration, gint pattern, guint priority)
+    guint64 inpoint, gint pattern, guint priority)
 {
   GstElement *gnls;
 
   gnls = videotest_gnl_src (name, start, duration, pattern, priority);
   if (gnls) {
-    g_object_set (G_OBJECT (gnls),
-        "inpoint", inpoint, "media-duration", mediaduration, NULL);
+    g_object_set (G_OBJECT (gnls), "inpoint", inpoint, NULL);
   }
 
   return gnls;

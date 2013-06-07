@@ -42,7 +42,7 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
 {
   GstEvent *event2;
   GstFormat format;
-  gdouble rate, nrate;
+  gdouble rate;
   GstSeekFlags flags;
   GstSeekType curtype, stoptype;
   GstSeekType ncurtype;
@@ -62,13 +62,6 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
 
   if (G_UNLIKELY (format != GST_FORMAT_TIME))
     goto invalid_format;
-
-  /* convert rate */
-  if (G_LIKELY (object->rate_1))
-    nrate = rate;
-  else
-    nrate = rate * object->rate;
-  GST_DEBUG ("nrate:%f , rate:%f, object->rate:%f", nrate, rate, object->rate);
 
   /* convert cur */
   ncurtype = GST_SEEK_TYPE_SET;
@@ -118,10 +111,10 @@ translate_incoming_seek (GnlObject * object, GstEvent * event)
 
   GST_DEBUG_OBJECT (object,
       "SENDING SEEK rate:%f, format:TIME, flags:%d, curtype:%d, stoptype:SET, %"
-      GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, nrate, flags, ncurtype,
+      GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, rate, flags, ncurtype,
       GST_TIME_ARGS (ncur), GST_TIME_ARGS (nstop));
 
-  event2 = gst_event_new_seek (nrate, GST_FORMAT_TIME, flags,
+  event2 = gst_event_new_seek (rate, GST_FORMAT_TIME, flags,
       ncurtype, (gint64) ncur, GST_SEEK_TYPE_SET, (gint64) nstop);
   GST_EVENT_SEQNUM (event2) = seqnum;
 
@@ -142,7 +135,7 @@ translate_outgoing_seek (GnlObject * object, GstEvent * event)
 {
   GstEvent *event2;
   GstFormat format;
-  gdouble rate, nrate;
+  gdouble rate;
   GstSeekFlags flags;
   GstSeekType curtype, stoptype;
   GstSeekType ncurtype;
@@ -162,13 +155,6 @@ translate_outgoing_seek (GnlObject * object, GstEvent * event)
 
   if (G_UNLIKELY (format != GST_FORMAT_TIME))
     goto invalid_format;
-
-  /* convert rate */
-  if (G_LIKELY (object->rate_1))
-    nrate = rate;
-  else
-    nrate = rate / object->rate;
-  GST_DEBUG ("nrate:%f , rate:%f, object->rate:%f", nrate, rate, object->rate);
 
   /* convert cur */
   ncurtype = GST_SEEK_TYPE_SET;
@@ -206,10 +192,10 @@ translate_outgoing_seek (GnlObject * object, GstEvent * event)
 
   GST_DEBUG_OBJECT (object,
       "SENDING SEEK rate:%f, format:TIME, flags:%d, curtype:%d, stoptype:SET, %"
-      GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, nrate, flags, ncurtype,
+      GST_TIME_FORMAT " -- %" GST_TIME_FORMAT, rate, flags, ncurtype,
       GST_TIME_ARGS (ncur), GST_TIME_ARGS (nstop));
 
-  event2 = gst_event_new_seek (nrate, GST_FORMAT_TIME, flags,
+  event2 = gst_event_new_seek (rate, GST_FORMAT_TIME, flags,
       ncurtype, (gint64) ncur, GST_SEEK_TYPE_SET, (gint64) nstop);
   GST_EVENT_SEQNUM (event2) = seqnum;
 

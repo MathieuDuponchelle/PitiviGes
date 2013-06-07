@@ -2018,7 +2018,6 @@ update_start_stop_duration (GnlComposition * comp)
 
       for (tmp = priv->expandables; tmp; tmp = tmp->next) {
         g_object_set (tmp->data, "duration", obj->stop, NULL);
-        g_object_set (tmp->data, "media-duration", obj->stop, NULL);
       }
     }
 
@@ -2950,8 +2949,7 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
     g_object_set (element,
         "start", (GstClockTime) 0,
         "inpoint", (GstClockTime) 0,
-        "duration", (GstClockTimeDiff) GNL_OBJECT_STOP (comp),
-        "media-duration", (GstClockTimeDiff) GNL_OBJECT_STOP (comp), NULL);
+        "duration", (GstClockTimeDiff) GNL_OBJECT_STOP (comp), NULL);
   }
 
   entry->activehandler = g_signal_connect (G_OBJECT (element),
