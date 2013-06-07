@@ -40,7 +40,7 @@ GST_STATIC_PAD_TEMPLATE ("src",
 GST_DEBUG_CATEGORY_STATIC (gnlcomposition_debug);
 #define GST_CAT_DEFAULT gnlcomposition_debug
 
-#define _do_init							\
+#define _do_init              \
   GST_DEBUG_CATEGORY_INIT (gnlcomposition_debug,"gnlcomposition", GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Composition");
 #define gnl_composition_parent_class parent_class
 G_DEFINE_TYPE_WITH_CODE (GnlComposition, gnl_composition, GNL_TYPE_OBJECT,
@@ -68,8 +68,8 @@ struct _GnlCompositionPrivate
 {
   gboolean dispose_has_run;
 
-  /* 
-     Sorted List of GnlObjects , ThreadSafe 
+  /*
+     Sorted List of GnlObjects , ThreadSafe
      objects_start : sorted by start-time then priority
      objects_stop : sorted by stop-time then priority
      objects_hash : contains signal handlers id for controlled objects
@@ -82,7 +82,7 @@ struct _GnlCompositionPrivate
 
   /* Update properties
    * can_update: If True, updates should be taken into account immediatly, else
-   *   they should be postponed until it is set to True again. 
+   *   they should be postponed until it is set to True again.
    * update_required: Set to True if an update is required when the
    *   can_update property just above is set back to True. */
   gboolean can_update;
@@ -91,7 +91,7 @@ struct _GnlCompositionPrivate
   /*
      thread-safe Seek handling.
      flushing_lock : mutex to access flushing and pending_idle
-     flushing : 
+     flushing :
    */
   GMutex flushing_lock;
   gboolean flushing;
@@ -113,7 +113,7 @@ struct _GnlCompositionPrivate
   gboolean stackvalid;
 
   /*
-     current segment seek start/stop time. 
+     current segment seek start/stop time.
      Reconstruct pipeline ONLY if seeking outside of those values
      FIXME : segment_start isn't always the earliest time before which the
      timeline doesn't need to be modified
@@ -135,7 +135,7 @@ struct _GnlCompositionPrivate
   guint waitingpads;
 
   /*
-     OUR sync_handler on the child_bus 
+     OUR sync_handler on the child_bus
      We are called before gnl_object_sync_handler
    */
   GstPadEventFunction gnl_event_pad_func;
@@ -152,8 +152,8 @@ struct _GnlCompositionPrivate
 
 static GParamSpec *gnlobject_properties[GNLOBJECT_PROP_LAST];
 
-#define OBJECT_IN_ACTIVE_SEGMENT(comp,element)			\
-  ((GNL_OBJECT_START(element) < comp->priv->segment_stop) &&	\
+#define OBJECT_IN_ACTIVE_SEGMENT(comp,element)      \
+  ((GNL_OBJECT_START(element) < comp->priv->segment_stop) &&  \
    (GNL_OBJECT_STOP(element) >= comp->priv->segment_start))
 
 static void gnl_composition_dispose (GObject * object);
@@ -194,61 +194,61 @@ static void no_more_pads_object_cb (GstElement * element,
 
 
 /* COMP_REAL_START: actual position to start current playback at. */
-#define COMP_REAL_START(comp)					\
+#define COMP_REAL_START(comp)                                                  \
   (MAX (comp->priv->segment->start, GNL_OBJECT_START (comp)))
 
-#define COMP_REAL_STOP(comp)						\
-  ((GST_CLOCK_TIME_IS_VALID (comp->priv->segment->stop)			\
-    ? (MIN (comp->priv->segment->stop, GNL_OBJECT_STOP (comp))))	\
+#define COMP_REAL_STOP(comp)                                                   \
+  ((GST_CLOCK_TIME_IS_VALID (comp->priv->segment->stop)                        \
+    ? (MIN (comp->priv->segment->stop, GNL_OBJECT_STOP (comp))))               \
    : GNL_OBJECT_STOP (comp))
 
-#define COMP_ENTRY(comp, object)					\
+#define COMP_ENTRY(comp, object)                                               \
   (g_hash_table_lookup (comp->priv->objects_hash, (gconstpointer) object))
 
-#define COMP_OBJECTS_LOCK(comp) G_STMT_START {				\
-    GST_LOG_OBJECT (comp, "locking objects_lock from thread %p",	\
-		    g_thread_self());					\
-    g_mutex_lock (&comp->priv->objects_lock);				\
-    GST_LOG_OBJECT (comp, "locked objects_lock from thread %p",		\
-		    g_thread_self());					\
+#define COMP_OBJECTS_LOCK(comp) G_STMT_START {                                 \
+    GST_LOG_OBJECT (comp, "locking objects_lock from thread %p",               \
+        g_thread_self());                                                      \
+    g_mutex_lock (&comp->priv->objects_lock);                                  \
+    GST_LOG_OBJECT (comp, "locked objects_lock from thread %p",                \
+        g_thread_self());                                                      \
   } G_STMT_END
 
-#define COMP_OBJECTS_UNLOCK(comp) G_STMT_START {			\
-    GST_LOG_OBJECT (comp, "unlocking objects_lock from thread %p",	\
-		    g_thread_self());					\
-    g_mutex_unlock (&comp->priv->objects_lock);				\
+#define COMP_OBJECTS_UNLOCK(comp) G_STMT_START {                               \
+    GST_LOG_OBJECT (comp, "unlocking objects_lock from thread %p",             \
+        g_thread_self());                                                      \
+    g_mutex_unlock (&comp->priv->objects_lock);                                \
   } G_STMT_END
 
 
-#define COMP_FLUSHING_LOCK(comp) G_STMT_START {				\
-    GST_LOG_OBJECT (comp, "locking flushing_lock from thread %p",	\
-		    g_thread_self());					\
-    g_mutex_lock (&comp->priv->flushing_lock);				\
-    GST_LOG_OBJECT (comp, "locked flushing_lock from thread %p",	\
-		    g_thread_self());					\
+#define COMP_FLUSHING_LOCK(comp) G_STMT_START {                                \
+    GST_LOG_OBJECT (comp, "locking flushing_lock from thread %p",              \
+        g_thread_self());                                                      \
+    g_mutex_lock (&comp->priv->flushing_lock);                                 \
+    GST_LOG_OBJECT (comp, "locked flushing_lock from thread %p",               \
+        g_thread_self());                                                      \
   } G_STMT_END
 
-#define COMP_FLUSHING_UNLOCK(comp) G_STMT_START {			\
-    GST_LOG_OBJECT (comp, "unlocking flushing_lock from thread %p",	\
-		    g_thread_self());					\
-    g_mutex_unlock (&comp->priv->flushing_lock);				\
+#define COMP_FLUSHING_UNLOCK(comp) G_STMT_START {                              \
+    GST_LOG_OBJECT (comp, "unlocking flushing_lock from thread %p",            \
+        g_thread_self());                                                      \
+    g_mutex_unlock (&comp->priv->flushing_lock);                               \
   } G_STMT_END
 
-#define WAIT_FOR_UPDATE_PIPELINE(comp)   G_STMT_START {    \
-  GST_INFO_OBJECT (comp, "waiting for EOS from thread %p", \
-        g_thread_self());                                  \
-  g_mutex_lock(&(comp->priv->update_pipeline_mutex));      \
-  g_cond_wait(&(comp->priv->update_pipeline_cond),         \
-      &(comp->priv->update_pipeline_mutex));               \
-  g_mutex_unlock(&(comp->priv->update_pipeline_mutex));    \
+#define WAIT_FOR_UPDATE_PIPELINE(comp)   G_STMT_START {                        \
+  GST_INFO_OBJECT (comp, "waiting for EOS from thread %p",                     \
+        g_thread_self());                                                      \
+  g_mutex_lock(&(comp->priv->update_pipeline_mutex));                          \
+  g_cond_wait(&(comp->priv->update_pipeline_cond),                             \
+      &(comp->priv->update_pipeline_mutex));                                   \
+  g_mutex_unlock(&(comp->priv->update_pipeline_mutex));                        \
   } G_STMT_END
 
-#define SIGNAL_UPDATE_PIPELINE(comp) {                   \
-  GST_INFO_OBJECT (comp, "signaling EOS from thread %p", \
-        g_thread_self());                                \
-  g_mutex_lock(&(comp->priv->update_pipeline_mutex));    \
-  g_cond_signal(&(comp->priv->update_pipeline_cond));    \
-  g_mutex_unlock(&(comp->priv->update_pipeline_mutex));  \
+#define SIGNAL_UPDATE_PIPELINE(comp) {                                         \
+  GST_INFO_OBJECT (comp, "signaling EOS from thread %p",                       \
+        g_thread_self());                                                      \
+  g_mutex_lock(&(comp->priv->update_pipeline_mutex));                          \
+  g_cond_signal(&(comp->priv->update_pipeline_cond));                          \
+  g_mutex_unlock(&(comp->priv->update_pipeline_mutex));                        \
   } G_STMT_END
 
 
@@ -1186,8 +1186,8 @@ gnl_composition_event_handler (GstPad * ghostpad, GstObject * parent,
   if (res && priv->ghostpad) {
     COMP_OBJECTS_LOCK (comp);
 
-    /* If the timeline isn't entirely reconstructed, we silently ignore the 
-     * event. In the case of seeks the pipeline will already be correctly 
+    /* If the timeline isn't entirely reconstructed, we silently ignore the
+     * event. In the case of seeks the pipeline will already be correctly
      * configured at this point*/
     if (priv->waitingpads == 0) {
       GST_DEBUG_OBJECT (comp, "About to call gnl_event_pad_func()");
@@ -2382,7 +2382,7 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
           (GstPadProbeCallback) pad_blocked, comp, NULL);
     }
 
-    /* 2. If we have to modify or we have a parent, flush downstream 
+    /* 2. If we have to modify or we have a parent, flush downstream
      *   This ensures the streaming thread going through the current object has
      *   either stopped or is blocking against the source pad. */
     if ((modify || oldparent) && (peerpad = gst_pad_get_peer (srcpad))) {
@@ -2562,7 +2562,7 @@ beach:
  * @change_state: Change the state of the (de)activated objects if TRUE.
  * @modify: Flush downstream if TRUE. Needed for modified timelines.
  *
- * Updates the internal pipeline and properties. If @currenttime is 
+ * Updates the internal pipeline and properties. If @currenttime is
  * GST_CLOCK_TIME_NONE, it will not modify the current pipeline
  *
  * Returns: FALSE if there was an error updating the pipeline.
@@ -2776,7 +2776,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
   return ret;
 }
 
-/* 
+/*
  * Child modification updates
  */
 

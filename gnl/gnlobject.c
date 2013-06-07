@@ -28,14 +28,14 @@
 /**
  * SECTION:gnlobject
  * @short_description: Base class for GNonLin elements
- * 
+ *
  * <refsect2>
  * <para>
  * GnlObject encapsulates default behaviour and implements standard
  * properties provided by all the GNonLin elements.
  * </para>
  * </refsect2>
- *  
+ *
  */
 
 
