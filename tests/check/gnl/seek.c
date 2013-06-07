@@ -157,6 +157,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
 static void
 test_simplest_full (void)
 {
+  gboolean ret;
   GstElement *comp, *source1;
   GList *segments = NULL;
   GList *seeks = NULL;
@@ -181,6 +182,7 @@ test_simplest_full (void)
   /* Add one source */
 
   gst_bin_add (GST_BIN (comp), source1);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
@@ -220,6 +222,7 @@ test_simplest_full (void)
 static void
 test_one_after_other_full (void)
 {
+  gboolean ret;
   GstElement *comp, *source1, *source2;
   GList *segments = NULL, *seeks = NULL;
 
@@ -264,6 +267,10 @@ test_one_after_other_full (void)
   /* Add sources */
   gst_bin_add (GST_BIN (comp), source1);
   gst_bin_add (GST_BIN (comp), source2);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration (source2, 1 * GST_SECOND, 2 * GST_SECOND,
+      1 * GST_SECOND);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
@@ -300,6 +307,7 @@ test_one_after_other_full (void)
 static void
 test_one_under_another_full (void)
 {
+  gboolean ret;
   GstElement *comp, *source1, *source2;
   GList *segments = NULL, *seeks = NULL;
 
@@ -341,6 +349,10 @@ test_one_under_another_full (void)
 
   gst_bin_add (GST_BIN (comp), source1);
   gst_bin_add (GST_BIN (comp), source2);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration (source2, 1 * GST_SECOND, 3 * GST_SECOND,
+      2 * GST_SECOND);
   check_start_stop_duration (comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
 
   /* Expected segments */
@@ -376,6 +388,7 @@ test_one_under_another_full (void)
 static void
 test_one_bin_after_other_full (void)
 {
+  gboolean ret = FALSE;
   GstElement *comp, *source1, *source2;
   GList *segments = NULL, *seeks = NULL;
 
@@ -403,19 +416,20 @@ test_one_bin_after_other_full (void)
       videotest_in_bin_gnl_src ("source2", 1 * GST_SECOND, 1 * GST_SECOND, 2,
       1);
   fail_if (source2 == NULL);
-  check_start_stop_duration (source2, 1 * GST_SECOND, 2 * GST_SECOND,
-      1 * GST_SECOND);
 
   /* Add one source */
 
   gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration (comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   /* Second source */
 
   gst_bin_add (GST_BIN (comp), source2);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration (source2, 1 * GST_SECOND, 2 * GST_SECOND,
+      1 * GST_SECOND);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -455,6 +469,7 @@ test_one_bin_after_other_full (void)
 
 GST_START_TEST (test_complex_operations)
 {
+  gboolean ret = FALSE;
   GstElement *comp, *oper, *source1, *source2;
   GList *segments = NULL, *seeks = NULL;
 
@@ -514,12 +529,14 @@ GST_START_TEST (test_complex_operations)
 
   /* Add source1 */
   gst_bin_add (GST_BIN (comp), source1);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 4 * GST_SECOND, 4 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   /* Add source2 */
   gst_bin_add (GST_BIN (comp), source2);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -527,6 +544,7 @@ GST_START_TEST (test_complex_operations)
   /* Add operaton */
 
   gst_bin_add (GST_BIN (comp), oper);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (oper, "oper", 1);
@@ -567,6 +585,7 @@ GST_END_TEST;
 
 GST_START_TEST (test_complex_operations_bis)
 {
+  gboolean ret = FALSE;
   GstElement *comp, *oper, *source1, *source2;
   GList *segments = NULL, *seeks = NULL;
 
@@ -629,12 +648,14 @@ GST_START_TEST (test_complex_operations_bis)
 
   /* Add source1 */
   gst_bin_add (GST_BIN (comp), source1);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 4 * GST_SECOND, 4 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   /* Add source2 */
   gst_bin_add (GST_BIN (comp), source2);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -642,6 +663,10 @@ GST_START_TEST (test_complex_operations_bis)
   /* Add operaton */
 
   gst_bin_add (GST_BIN (comp), oper);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (source1, 0, 4 * GST_SECOND, 4 * GST_SECOND);
+  check_start_stop_duration (source2, 2 * GST_SECOND, 6 * GST_SECOND,
+      4 * GST_SECOND);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
   check_start_stop_duration (oper, 0 * GST_SECOND, 6 * GST_SECOND,
       6 * GST_SECOND);

@@ -127,6 +127,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
 
 GST_START_TEST (test_simple_operation)
 {
+  gboolean ret = FALSE;
   GstElement *comp, *oper, *source;
   GList *segments = NULL;
 
@@ -150,7 +151,6 @@ GST_START_TEST (test_simple_operation)
 
   source = videotest_gnl_src ("source", 0, 3 * GST_SECOND, 2, 1);
   fail_if (source == NULL);
-  check_start_stop_duration (source, 0, 3 * GST_SECOND, 3 * GST_SECOND);
 
   /*
      operation
@@ -161,14 +161,13 @@ GST_START_TEST (test_simple_operation)
 
   oper = new_operation ("oper", "identity", 1 * GST_SECOND, 1 * GST_SECOND, 0);
   fail_if (oper == NULL);
-  check_start_stop_duration (oper, 1 * GST_SECOND, 2 * GST_SECOND,
-      1 * GST_SECOND);
 
   /* Add source */
   ASSERT_OBJECT_REFCOUNT (source, "source", 1);
   ASSERT_OBJECT_REFCOUNT (oper, "oper", 1);
 
   gst_bin_add (GST_BIN (comp), source);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source, "source", 1);
@@ -176,6 +175,7 @@ GST_START_TEST (test_simple_operation)
   /* Add operaton */
 
   gst_bin_add (GST_BIN (comp), oper);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (oper, "oper", 1);
@@ -191,6 +191,7 @@ GST_START_TEST (test_simple_operation)
 
   /* re-add source */
   gst_bin_add (GST_BIN (comp), source);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
   gst_object_unref (source);
 
@@ -214,6 +215,7 @@ GST_END_TEST;
 GST_START_TEST (test_pyramid_operations)
 {
   GstElement *comp, *oper1, *oper2, *source;
+  gboolean ret = FALSE;
   GList *segments = NULL;
 
   comp =
@@ -227,7 +229,6 @@ GST_START_TEST (test_pyramid_operations)
    */
 
   source = videotest_gnl_src ("source", 0, 10 * GST_SECOND, 2, 2);
-  check_start_stop_duration (source, 0, 10 * GST_SECOND, 10 * GST_SECOND);
 
   /*
      operation1
@@ -238,8 +239,6 @@ GST_START_TEST (test_pyramid_operations)
 
   oper1 =
       new_operation ("oper1", "identity", 4 * GST_SECOND, 2 * GST_SECOND, 1);
-  check_start_stop_duration (oper1, 4 * GST_SECOND, 6 * GST_SECOND,
-      2 * GST_SECOND);
 
   /*
      operation2
@@ -250,8 +249,6 @@ GST_START_TEST (test_pyramid_operations)
 
   oper2 =
       new_operation ("oper2", "identity", 2 * GST_SECOND, 6 * GST_SECOND, 0);
-  check_start_stop_duration (oper2, 2 * GST_SECOND, 8 * GST_SECOND,
-      6 * GST_SECOND);
 
   /* Add source */
   ASSERT_OBJECT_REFCOUNT (source, "source", 1);
@@ -259,6 +256,8 @@ GST_START_TEST (test_pyramid_operations)
   ASSERT_OBJECT_REFCOUNT (oper2, "oper2", 1);
 
   gst_bin_add (GST_BIN (comp), source);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (source, 0, 10 * GST_SECOND, 10 * GST_SECOND);
   check_start_stop_duration (comp, 0, 10 * GST_SECOND, 10 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source, "source", 1);
@@ -266,6 +265,9 @@ GST_START_TEST (test_pyramid_operations)
   /* Add operation 1 */
 
   gst_bin_add (GST_BIN (comp), oper1);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (oper1, 4 * GST_SECOND, 6 * GST_SECOND,
+      2 * GST_SECOND);
   check_start_stop_duration (comp, 0, 10 * GST_SECOND, 10 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (oper1, "oper1", 1);
@@ -273,6 +275,9 @@ GST_START_TEST (test_pyramid_operations)
   /* Add operation 2 */
 
   gst_bin_add (GST_BIN (comp), oper2);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (oper2, 2 * GST_SECOND, 8 * GST_SECOND,
+      6 * GST_SECOND);
   check_start_stop_duration (comp, 0, 10 * GST_SECOND, 10 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (oper1, "oper2", 1);
@@ -300,6 +305,7 @@ GST_END_TEST;
 
 GST_START_TEST (test_pyramid_operations2)
 {
+  gboolean ret;
   GstElement *comp, *oper, *source1, *source2, *def;
   GList *segments = NULL;
 
@@ -314,7 +320,6 @@ GST_START_TEST (test_pyramid_operations2)
    */
 
   source1 = videotest_gnl_src ("source1", 0, 2 * GST_SECOND, 2, 2);
-  check_start_stop_duration (source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   /*
      operation
@@ -324,8 +329,6 @@ GST_START_TEST (test_pyramid_operations2)
    */
 
   oper = new_operation ("oper", "identity", 1 * GST_SECOND, 4 * GST_SECOND, 1);
-  check_start_stop_duration (oper, 1 * GST_SECOND, 5 * GST_SECOND,
-      4 * GST_SECOND);
 
   /*
      source2
@@ -335,8 +338,6 @@ GST_START_TEST (test_pyramid_operations2)
    */
 
   source2 = videotest_gnl_src ("source2", 4 * GST_SECOND, 2 * GST_SECOND, 2, 2);
-  check_start_stop_duration (source2, 4 * GST_SECOND, 6 * GST_SECOND,
-      2 * GST_SECOND);
 
   /*
      def (default source)
@@ -345,6 +346,7 @@ GST_START_TEST (test_pyramid_operations2)
   def =
       videotest_gnl_src ("default", 0 * GST_SECOND, 0 * GST_SECOND, 2,
       G_MAXUINT32);
+  g_object_set (def, "expandable", TRUE, NULL);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -354,21 +356,25 @@ GST_START_TEST (test_pyramid_operations2)
   /* Add source 1 */
 
   gst_bin_add (GST_BIN (comp), source1);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   /* Add source 2 */
 
   gst_bin_add (GST_BIN (comp), source2);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
   /* Add operation */
 
   gst_bin_add (GST_BIN (comp), oper);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
   /* Add default */
 
   gst_bin_add (GST_BIN (comp), def);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
 
@@ -396,6 +402,7 @@ GST_END_TEST;
 GST_START_TEST (test_pyramid_operations_expandable)
 {
   GstElement *comp, *oper, *source1, *source2, *def;
+  gboolean ret = FALSE;
   GList *segments = NULL;
 
   comp =
@@ -409,7 +416,6 @@ GST_START_TEST (test_pyramid_operations_expandable)
    */
 
   source1 = videotest_gnl_src ("source1", 0, 2 * GST_SECOND, 2, 2);
-  check_start_stop_duration (source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   /*
      operation (expandable)
@@ -420,8 +426,6 @@ GST_START_TEST (test_pyramid_operations_expandable)
 
   oper = new_operation ("oper", "identity", 1 * GST_SECOND, 4 * GST_SECOND, 1);
   g_object_set (oper, "expandable", TRUE, NULL);
-  check_start_stop_duration (oper, 1 * GST_SECOND, 5 * GST_SECOND,
-      4 * GST_SECOND);
 
   /*
      source2
@@ -431,8 +435,6 @@ GST_START_TEST (test_pyramid_operations_expandable)
    */
 
   source2 = videotest_gnl_src ("source2", 4 * GST_SECOND, 2 * GST_SECOND, 2, 2);
-  check_start_stop_duration (source2, 4 * GST_SECOND, 6 * GST_SECOND,
-      2 * GST_SECOND);
 
   /*
      def (default source)
@@ -441,6 +443,7 @@ GST_START_TEST (test_pyramid_operations_expandable)
   def =
       videotest_gnl_src ("default", 0 * GST_SECOND, 0 * GST_SECOND, 2,
       G_MAXUINT32);
+  g_object_set (def, "expandable", TRUE, NULL);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -448,23 +451,20 @@ GST_START_TEST (test_pyramid_operations_expandable)
   ASSERT_OBJECT_REFCOUNT (def, "default", 1);
 
   /* Add source 1 */
-
   gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
-
   /* Add source 2 */
-
   gst_bin_add (GST_BIN (comp), source2);
-  check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
-
   /* Add operation */
-
   gst_bin_add (GST_BIN (comp), oper);
-  check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
-
   /* Add default */
-
   gst_bin_add (GST_BIN (comp), def);
+
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration (oper, 0 * GST_SECOND, 6 * GST_SECOND,
+      6 * GST_SECOND);
+  check_start_stop_duration (source2, 4 * GST_SECOND, 6 * GST_SECOND,
+      2 * GST_SECOND);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
   /* Expected segments */
@@ -486,6 +486,7 @@ GST_END_TEST;
 GST_START_TEST (test_complex_operations)
 {
   GstElement *comp, *oper, *source1, *source2;
+  gboolean ret = FALSE;
   GList *segments = NULL;
 
   comp =
@@ -509,7 +510,6 @@ GST_START_TEST (test_complex_operations)
 
   source1 = videotest_in_bin_gnl_src ("source1", 0, 4 * GST_SECOND, 2, 3);
   fail_if (source1 == NULL);
-  check_start_stop_duration (source1, 0, 4 * GST_SECOND, 4 * GST_SECOND);
 
   /*
      source2
@@ -522,8 +522,6 @@ GST_START_TEST (test_complex_operations)
       videotest_in_bin_gnl_src ("source2", 2 * GST_SECOND, 4 * GST_SECOND, 2,
       2);
   fail_if (source2 == NULL);
-  check_start_stop_duration (source2, 2 * GST_SECOND, 6 * GST_SECOND,
-      4 * GST_SECOND);
 
   /*
      operation
@@ -535,8 +533,6 @@ GST_START_TEST (test_complex_operations)
   oper =
       new_operation ("oper", "videomixer", 2 * GST_SECOND, 2 * GST_SECOND, 1);
   fail_if (oper == NULL);
-  check_start_stop_duration (oper, 2 * GST_SECOND, 4 * GST_SECOND,
-      2 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -544,19 +540,19 @@ GST_START_TEST (test_complex_operations)
 
   /* Add source1 */
   gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration (comp, 0, 4 * GST_SECOND, 4 * GST_SECOND);
-
+  check_start_stop_duration (comp, 0, 0, 0);
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   /* Add source2 */
   gst_bin_add (GST_BIN (comp), source2);
-  check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
-
+  check_start_stop_duration (comp, 0, 0, 0);
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
 
   /* Add operaton */
-
   gst_bin_add (GST_BIN (comp), oper);
+  check_start_stop_duration (comp, 0, 0, 0);
+
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (oper, "oper", 1);
@@ -580,6 +576,7 @@ GST_END_TEST;
 GST_START_TEST (test_complex_operations_bis)
 {
   GstElement *comp, *oper, *source1, *source2;
+  gboolean ret;
   GList *segments = NULL;
 
   comp =
@@ -604,7 +601,6 @@ GST_START_TEST (test_complex_operations_bis)
 
   source1 = videotest_in_bin_gnl_src ("source1", 0, 4 * GST_SECOND, 3, 2);
   fail_if (source1 == NULL);
-  check_start_stop_duration (source1, 0, 4 * GST_SECOND, 4 * GST_SECOND);
 
   /*
      source2
@@ -617,8 +613,6 @@ GST_START_TEST (test_complex_operations_bis)
       videotest_in_bin_gnl_src ("source2", 2 * GST_SECOND, 4 * GST_SECOND, 2,
       3);
   fail_if (source2 == NULL);
-  check_start_stop_duration (source2, 2 * GST_SECOND, 6 * GST_SECOND,
-      4 * GST_SECOND);
 
   /*
      operation
@@ -631,8 +625,6 @@ GST_START_TEST (test_complex_operations_bis)
   oper =
       new_operation ("oper", "videomixer", 2 * GST_SECOND, 2 * GST_SECOND, 1);
   fail_if (oper == NULL);
-  check_start_stop_duration (oper, 2 * GST_SECOND, 4 * GST_SECOND,
-      2 * GST_SECOND);
   g_object_set (oper, "expandable", TRUE, NULL);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
@@ -641,12 +633,14 @@ GST_START_TEST (test_complex_operations_bis)
 
   /* Add source1 */
   gst_bin_add (GST_BIN (comp), source1);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 4 * GST_SECOND, 4 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   /* Add source2 */
   gst_bin_add (GST_BIN (comp), source2);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -654,6 +648,7 @@ GST_START_TEST (test_complex_operations_bis)
   /* Add operaton */
 
   gst_bin_add (GST_BIN (comp), oper);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 6 * GST_SECOND, 6 * GST_SECOND);
   /* Since it's expandable, it should have changed to full length */
   check_start_stop_duration (oper, 0 * GST_SECOND, 6 * GST_SECOND,

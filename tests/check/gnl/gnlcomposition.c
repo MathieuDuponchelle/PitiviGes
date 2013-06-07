@@ -69,7 +69,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   GstElement *comp, *source1, *def, *sink;
   GstBus *bus;
   GstMessage *message;
-  gboolean carry_on;
+  gboolean carry_on, ret = FALSE;
   int seek_events_before;
 
   pipeline = gst_pipeline_new ("test_pipeline");
@@ -96,8 +96,6 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   g_object_connect (source1, "signal::pad-added",
       on_source1_pad_added_cb, NULL, NULL);
 
-  check_start_stop_duration (source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
-
   /*
      def (default source)
      Priority = G_MAXUINT32
@@ -105,6 +103,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   def =
       videotest_gnl_src ("default", 0 * GST_SECOND, 0 * GST_SECOND, 2,
       G_MAXUINT32);
+  g_object_set (def, "expandable", TRUE, NULL);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
   ASSERT_OBJECT_REFCOUNT (def, "default", 1);
@@ -114,11 +113,11 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   /* keep an extra ref to source1 as we remove it from the bin */
   gst_object_ref (source1);
   gst_bin_add (GST_BIN (comp), source1);
-  check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   /* Add default */
-
   gst_bin_add (GST_BIN (comp), def);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  check_start_stop_duration (source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
@@ -166,6 +165,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
 
   /* move source1 out of the active segment */
   g_object_set (source1, "start", 4 * GST_SECOND, NULL);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   fail_unless (seek_events > seek_events_before);
 
   /* remove source1 from the composition, which will become empty and remove the
@@ -184,6 +184,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   g_object_set (source1, "start", 0 * GST_SECOND, NULL);
   /* add the source again and check that the ghostpad is added again */
   gst_bin_add (GST_BIN (comp), source1);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
 
   fail_unless_equals_int (composition_pad_added, 2);
   fail_unless_equals_int (composition_pad_removed, 1);
@@ -191,6 +192,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   seek_events_before = seek_events;
 
   g_object_set (source1, "duration", 1 * GST_SECOND, NULL);
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   fail_unless (seek_events > seek_events_before);
 
   GST_DEBUG ("Setting pipeline to NULL");
@@ -251,12 +253,16 @@ pad_block (GstPad * pad, GstPadProbeInfo * info, gpointer user_data)
 static void
 no_more_pads_test_cb (GObject * object, TestClosure * c)
 {
+  gboolean ret;
+
   GST_WARNING ("NO MORE PADS");
   gst_bin_add (GST_BIN (c->composition), c->source3);
+  g_signal_emit_by_name (c->composition, "commit", TRUE, &ret);
 }
 
 GST_START_TEST (test_no_more_pads_race)
 {
+  gboolean ret;
   GstElement *source1, *source2, *source3;
   GstBin *bin;
   GstElement *videotestsrc1, *videotestsrc2;
@@ -346,6 +352,7 @@ GST_START_TEST (test_no_more_pads_race)
       no_more_pads_test_cb, &closure, NULL);
 
   gst_bin_add (GST_BIN (composition), source1);
+  g_signal_emit_by_name (composition, "commit", TRUE, &ret);
   g_object_connect (composition, "signal::pad-added",
       on_composition_pad_added_cb, fakesink, NULL);
   g_object_connect (composition, "signal::pad-removed",
@@ -371,6 +378,7 @@ GST_START_TEST (test_no_more_pads_race)
 
   /* FIXME: maybe slow down the videotestsrc steaming thread */
   gst_bin_add (GST_BIN (composition), source2);
+  g_signal_emit_by_name (composition, "commit", TRUE, &ret);
 
   message =
       gst_bus_timed_pop_filtered (bus, GST_SECOND / 10, GST_MESSAGE_ERROR);
@@ -403,7 +411,7 @@ GST_START_TEST (test_simple_adder)
   GstElement *gnlsource1, *gnlsource2;
   GstElement *audiotestsrc1, *audiotestsrc2;
 
-  gboolean carry_on = TRUE;
+  gboolean carry_on = TRUE, ret;
   GstClockTime total_time = 10 * GST_SECOND;
 
   pipeline = GST_ELEMENT (gst_pipeline_new (NULL));
@@ -451,6 +459,7 @@ GST_START_TEST (test_simple_adder)
 
   GST_DEBUG ("Setting pipeline to PAUSED");
 
+  g_signal_emit_by_name (composition, "commit", TRUE, &ret);
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING)
       == GST_STATE_CHANGE_FAILURE);
 

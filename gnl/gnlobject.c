@@ -46,6 +46,35 @@ GST_DEBUG_CATEGORY_STATIC (gnlobject_debug);
   GST_DEBUG_CATEGORY_INIT (gnlobject_debug, "gnlobject", GST_DEBUG_FG_BLUE | GST_DEBUG_BOLD, "GNonLin Object base class");
 #define gnl_object_parent_class parent_class
 G_DEFINE_TYPE_WITH_CODE (GnlObject, gnl_object, GST_TYPE_BIN, _do_init);
+
+/****************************************************
+ *              Helper macros                       *
+ ****************************************************/
+#define CHECK_AND_SET(PROPERTY, property, prop_str, print_format)            \
+{                                                                            \
+GstObject *parent = gst_object_get_parent (GST_OBJECT (object));             \
+if (parent == NULL && !GNL_OBJECT_IS_COMPOSITION (object)) {                 \
+  GST_INFO_OBJECT (object, "Not in a composition yet, "                      \
+      "not commiting" prop_str);                                             \
+} else if (object->pending_##property != object->property)      {            \
+  object->property = object->pending_##property;                             \
+  GST_DEBUG_OBJECT(object, "Setting " prop_str " to %"                       \
+      print_format, object->property);                                       \
+} else                                                                       \
+  GST_DEBUG_OBJECT(object, "Nothing to do for " prop_str);                   \
+if (parent)                                                                  \
+  gst_object_unref (parent);                                                 \
+}
+
+#define SET_PENDING_VALUE(property, property_str, type, print_format)      \
+gnlobject->pending_##property = g_value_get_##type (value);                \
+if (gnlobject->property != gnlobject->pending_##property) {                \
+  GST_DEBUG_OBJECT(object, "Setting pending " property_str " to %"         \
+      print_format, gnlobject->pending_##property);                        \
+  gnl_object_set_commit_needed (gnlobject);                                \
+} else                                                                     \
+  GST_DEBUG_OBJECT(object, "Pending " property_str " did not change");
+
 enum
 {
   PROP_0,
@@ -62,7 +91,6 @@ enum
 
 static GParamSpec *properties[PROP_LAST];
 
-
 static void gnl_object_dispose (GObject * object);
 
 static void gnl_object_set_property (GObject * object, guint prop_id,
@@ -75,6 +103,7 @@ static GstStateChangeReturn gnl_object_change_state (GstElement * element,
 
 static gboolean gnl_object_prepare_func (GnlObject * object);
 static gboolean gnl_object_cleanup_func (GnlObject * object);
+static gboolean gnl_object_commit_func (GnlObject * object, gboolean recurse);
 
 static GstStateChangeReturn gnl_object_prepare (GnlObject * object);
 
@@ -97,6 +126,9 @@ gnl_object_class_init (GnlObjectClass * klass)
 
   gnlobject_class->prepare = GST_DEBUG_FUNCPTR (gnl_object_prepare_func);
   gnlobject_class->cleanup = GST_DEBUG_FUNCPTR (gnl_object_cleanup_func);
+  gnlobject_class->commit_signal_handler =
+      GST_DEBUG_FUNCPTR (gnl_object_commit);
+  gnlobject_class->commit = GST_DEBUG_FUNCPTR (gnl_object_commit_func);
 
   /**
    * GnlObject:start
@@ -213,13 +245,13 @@ gnl_object_class_init (GnlObjectClass * klass)
 static void
 gnl_object_init (GnlObject * object)
 {
-  object->start = 0;
-  object->duration = 0;
+  object->start = object->pending_start = 0;
+  object->duration = object->pending_duration = 0;
   object->stop = 0;
 
-  object->inpoint = GST_CLOCK_TIME_NONE;
-  object->priority = 0;
-  object->active = TRUE;
+  object->inpoint = object->pending_inpoint = GST_CLOCK_TIME_NONE;
+  object->priority = object->pending_priority = 0;
+  object->active = object->pending_active = TRUE;
 
   object->caps = gst_caps_new_any ();
 
@@ -395,18 +427,52 @@ gnl_object_set_caps (GnlObject * object, const GstCaps * caps)
   object->caps = gst_caps_copy (caps);
 }
 
+static inline void
+_update_stop (GnlObject * gnlobject)
+{
+  /* check if start/duration has changed */
+
+  if ((gnlobject->pending_start + gnlobject->pending_duration) !=
+      gnlobject->stop) {
+    gnlobject->stop = gnlobject->pending_start + gnlobject->pending_duration;
+
+    GST_LOG_OBJECT (gnlobject,
+        "Updating stop value : %" GST_TIME_FORMAT " [start:%" GST_TIME_FORMAT
+        ", duration:%" GST_TIME_FORMAT "]", GST_TIME_ARGS (gnlobject->stop),
+        GST_TIME_ARGS (gnlobject->pending_start),
+        GST_TIME_ARGS (gnlobject->pending_duration));
+    g_object_notify_by_pspec (G_OBJECT (gnlobject), properties[PROP_STOP]);
+  }
+}
+
 static void
 update_values (GnlObject * object)
 {
-  /* check if start/duration has changed */
-  if ((object->start + object->duration) != object->stop) {
-    object->stop = object->start + object->duration;
-    GST_LOG_OBJECT (object,
-        "Updating stop value : %" GST_TIME_FORMAT " [start:%" GST_TIME_FORMAT
-        ", duration:%" GST_TIME_FORMAT "]", GST_TIME_ARGS (object->stop),
-        GST_TIME_ARGS (object->start), GST_TIME_ARGS (object->duration));
-    g_object_notify_by_pspec (G_OBJECT (object), properties[PROP_STOP]);
+  CHECK_AND_SET (START, start, "start", G_GUINT64_FORMAT);
+  CHECK_AND_SET (INPOINT, inpoint, "inpoint", G_GUINT64_FORMAT);
+  CHECK_AND_SET (DURATION, duration, "duration", G_GINT64_FORMAT);
+  CHECK_AND_SET (PRIORITY, priority, "priority", G_GUINT32_FORMAT);
+  CHECK_AND_SET (ACTIVE, active, "active", G_GUINT32_FORMAT);
+
+  _update_stop (object);
+}
+
+static gboolean
+gnl_object_commit_func (GnlObject * object, gboolean recurse)
+{
+  GST_INFO_OBJECT (object, "Commiting object changed");
+
+  if (object->commit_needed == FALSE) {
+    GST_INFO_OBJECT (object, "No changes to commit");
+
+    return FALSE;
   }
+
+  update_values (object);
+
+  GST_INFO_OBJECT (object, "Done commiting");
+
+  return TRUE;
 }
 
 static void
@@ -417,23 +483,29 @@ gnl_object_set_property (GObject * object, guint prop_id,
 
   g_return_if_fail (GNL_IS_OBJECT (object));
 
+  GST_OBJECT_LOCK (object);
   switch (prop_id) {
     case PROP_START:
-      gnlobject->start = g_value_get_uint64 (value);
-      update_values (gnlobject);
+      SET_PENDING_VALUE (start, "start", uint64, G_GUINT64_FORMAT);
       break;
     case PROP_DURATION:
-      gnlobject->duration = g_value_get_int64 (value);
-      update_values (gnlobject);
+      SET_PENDING_VALUE (duration, "duration", int64, G_GINT64_FORMAT);
       break;
     case PROP_INPOINT:
-      gnlobject->inpoint = g_value_get_uint64 (value);
+      SET_PENDING_VALUE (inpoint, "inpoint", uint64, G_GUINT64_FORMAT);
       break;
     case PROP_PRIORITY:
-      gnlobject->priority = g_value_get_uint (value);
+      if (g_value_get_uint (value) == G_MAXUINT32) {
+        GST_DEBUG_OBJECT (object, "Setting priority to G_MAXUINT32, which means"
+            "'Default object', commiting right now");
+        /* This is not the cleanast thing to do but we anyway plan to remove
+         * that behaviour soon. */
+        gnlobject->pending_priority = gnlobject->priority = G_MAXUINT32;
+      } else
+        SET_PENDING_VALUE (priority, "priority", uint, G_GUINT32_FORMAT);
       break;
     case PROP_ACTIVE:
-      gnlobject->active = g_value_get_boolean (value);
+      SET_PENDING_VALUE (active, "active", boolean, G_GUINT32_FORMAT);
       break;
     case PROP_CAPS:
       gnl_object_set_caps (gnlobject, gst_value_get_caps (value));
@@ -448,6 +520,9 @@ gnl_object_set_property (GObject * object, guint prop_id,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
   }
+  GST_OBJECT_UNLOCK (object);
+
+  _update_stop (gnlobject);
 }
 
 static void
@@ -458,22 +533,22 @@ gnl_object_get_property (GObject * object, guint prop_id,
 
   switch (prop_id) {
     case PROP_START:
-      g_value_set_uint64 (value, gnlobject->start);
+      g_value_set_uint64 (value, gnlobject->pending_start);
       break;
     case PROP_DURATION:
-      g_value_set_int64 (value, gnlobject->duration);
+      g_value_set_int64 (value, gnlobject->pending_duration);
       break;
     case PROP_STOP:
       g_value_set_uint64 (value, gnlobject->stop);
       break;
     case PROP_INPOINT:
-      g_value_set_uint64 (value, gnlobject->inpoint);
+      g_value_set_uint64 (value, gnlobject->pending_inpoint);
       break;
     case PROP_PRIORITY:
-      g_value_set_uint (value, gnlobject->priority);
+      g_value_set_uint (value, gnlobject->pending_priority);
       break;
     case PROP_ACTIVE:
-      g_value_set_boolean (value, gnlobject->active);
+      g_value_set_boolean (value, gnlobject->pending_active);
       break;
     case PROP_CAPS:
       gst_value_set_caps (value, gnlobject->caps);
@@ -493,6 +568,24 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
   GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
 
   switch (transition) {
+    case GST_STATE_CHANGE_NULL_TO_READY:
+    {
+      GstObject *parent = gst_object_get_parent (GST_OBJECT (element));
+
+      /* Going to READY and if we are not in a composition, we need to make
+       * sure that the object positioning state is properly commited  */
+      if (parent) {
+        if (!GNL_OBJECT_IS_COMPOSITION (parent) &&
+            !GNL_OBJECT_IS_COMPOSITION (GNL_OBJECT (element))) {
+          GST_DEBUG ("Adding gnlobject to something that is not a composition,"
+              " commiting ourself");
+          gnl_object_commit (GNL_OBJECT (element), FALSE);
+        }
+
+        gst_object_unref (parent);
+      }
+    }
+      break;
     case GST_STATE_CHANGE_READY_TO_PAUSED:
       if (gnl_object_prepare (GNL_OBJECT (element)) == GST_STATE_CHANGE_FAILURE) {
         ret = GST_STATE_CHANGE_FAILURE;
@@ -524,4 +617,46 @@ gnl_object_change_state (GstElement * element, GstStateChange transition)
 
 beach:
   return ret;
+}
+
+void
+gnl_object_set_commit_needed (GnlObject * object)
+{
+  if (G_UNLIKELY (object->commiting)) {
+    GST_WARNING_OBJECT (object,
+        "Trying to set 'commit-needed' while commiting");
+
+    return;
+  }
+
+  GST_DEBUG_OBJECT (object, "Setting 'commit_needed'");
+  object->commit_needed = TRUE;
+}
+
+gboolean
+gnl_object_commit (GnlObject * object, gboolean recurse)
+{
+  gboolean ret;
+
+  GST_DEBUG_OBJECT (object, "Commiting object state");
+
+  object->commiting = TRUE;
+  ret = GNL_OBJECT_GET_CLASS (object)->commit (object, recurse);
+  object->commiting = FALSE;
+
+  return ret;
+
+}
+
+void
+gnl_object_reset (GnlObject * object)
+{
+  GST_INFO_OBJECT (object, "Resetting child timing values to default");
+
+  object->start = 0;
+  object->duration = 0;
+  object->stop = 0;
+  object->inpoint = GST_CLOCK_TIME_NONE;
+  object->priority = 0;
+  object->active = TRUE;
 }

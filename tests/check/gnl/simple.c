@@ -1,12 +1,9 @@
 #include "common.h"
 
-/* macros for 'update' property enabling */
-#define DISABLE_ASYNC_UPDATE { if (async) g_object_set(comp, "update", FALSE, NULL); }
-#define ENABLE_ASYNC_UPDATE { if (async) g_object_set(comp, "update", TRUE, NULL); }
-
 static void
-test_simplest_full (gboolean async)
+test_simplest_full (void)
 {
+  gboolean ret = FALSE;
   GstElement *pipeline;
   GstElement *comp, *sink, *source1;
   CollectStructure *collect;
@@ -34,11 +31,11 @@ test_simplest_full (gboolean async)
 
   /* Add one source */
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  fail_unless (ret);
+  check_start_stop_duration (source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
   check_start_stop_duration (comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
-
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   sink = gst_element_factory_make_or_warn ("fakesink", "sink");
@@ -114,8 +111,9 @@ test_simplest_full (gboolean async)
 }
 
 static void
-test_time_duration_full (gboolean async)
+test_time_duration_full (void)
 {
+  gboolean ret = FALSE;
   GstElement *comp, *source1, *source2;
 
   comp =
@@ -146,18 +144,19 @@ test_time_duration_full (gboolean async)
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  fail_unless (ret == TRUE);
   check_start_stop_duration (comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   /* Second source */
 
-  DISABLE_ASYNC_UPDATE;
+  ret = FALSE;
   gst_bin_add (GST_BIN (comp), source2);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  fail_unless (ret == TRUE);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -165,9 +164,8 @@ test_time_duration_full (gboolean async)
   /* Remove first source */
 
   gst_object_ref (source1);
-  DISABLE_ASYNC_UPDATE;
   gst_bin_remove (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 1 * GST_SECOND, 2 * GST_SECOND,
       1 * GST_SECOND);
 
@@ -175,9 +173,8 @@ test_time_duration_full (gboolean async)
 
   /* Re-add first source */
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
   gst_object_unref (source1);
 
@@ -187,7 +184,7 @@ test_time_duration_full (gboolean async)
 }
 
 static void
-test_one_after_other_full (gboolean async)
+test_one_after_other_full (void)
 {
   GstElement *pipeline;
   GstElement *comp, *sink, *source1, *source2;
@@ -196,6 +193,8 @@ test_one_after_other_full (gboolean async)
   GstMessage *message;
   gboolean carry_on = TRUE;
   GstPad *sinkpad;
+
+  gboolean ret = FALSE;
 
   pipeline = gst_pipeline_new ("test_pipeline");
   comp =
@@ -207,7 +206,6 @@ test_one_after_other_full (gboolean async)
      Start : 0s
      Duration : 1s
      Media start : 5s
-     Media Duartion : 1s
      Priority : 1
    */
   source1 =
@@ -230,19 +228,21 @@ test_one_after_other_full (gboolean async)
       1 * GST_SECOND);
 
   /* Add one source */
-
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   /* Second source */
-
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source2);
-  ENABLE_ASYNC_UPDATE;
+
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  fail_unless (ret);
+  check_start_stop_duration (source1, 0 * GST_SECOND, 1 * GST_SECOND,
+      1 * GST_SECOND);
+  check_start_stop_duration (source2, 1 * GST_SECOND, 2 * GST_SECOND,
+      1 * GST_SECOND);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
@@ -250,9 +250,7 @@ test_one_after_other_full (gboolean async)
   /* Remove first source */
 
   gst_object_ref (source1);
-  DISABLE_ASYNC_UPDATE;
   gst_bin_remove (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
   check_start_stop_duration (comp, 1 * GST_SECOND, 2 * GST_SECOND,
       1 * GST_SECOND);
 
@@ -260,9 +258,8 @@ test_one_after_other_full (gboolean async)
 
   /* Re-add first source */
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
   gst_object_unref (source1);
 
@@ -395,8 +392,9 @@ test_one_after_other_full (gboolean async)
 }
 
 static void
-test_one_under_another_full (gboolean async)
+test_one_under_another_full (void)
 {
+  gboolean ret = FALSE;
   GstElement *pipeline;
   GstElement *comp, *sink, *source1, *source2;
   CollectStructure *collect;
@@ -441,26 +439,27 @@ test_one_under_another_full (gboolean async)
 
   /* Add two sources */
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
   gst_bin_add (GST_BIN (comp), source2);
-  ENABLE_ASYNC_UPDATE;
+  check_start_stop_duration (comp, 0, 0 * GST_SECOND, 0 * GST_SECOND);
+  /* Now commiting changes */
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
+  check_start_stop_duration (source1, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration (source2, 1 * GST_SECOND, 3 * GST_SECOND,
+      2 * GST_SECOND);
 
   /* Remove second source */
 
   gst_object_ref (source1);
-  DISABLE_ASYNC_UPDATE;
   gst_bin_remove (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
   check_start_stop_duration (comp, 1 * GST_SECOND, 3 * GST_SECOND,
       2 * GST_SECOND);
 
   /* Re-add second source */
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 3 * GST_SECOND, 3 * GST_SECOND);
   gst_object_unref (source1);
 
@@ -536,8 +535,9 @@ test_one_under_another_full (gboolean async)
 }
 
 static void
-test_one_bin_after_other_full (gboolean async)
+test_one_bin_after_other_full (void)
 {
+  gboolean ret = FALSE;
   GstElement *pipeline;
   GstElement *comp, *sink, *source1, *source2;
   CollectStructure *collect;
@@ -580,28 +580,29 @@ test_one_bin_after_other_full (gboolean async)
 
   /* Add one source */
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
+  fail_unless (ret);
   check_start_stop_duration (comp, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration (source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source1, "source1", 1);
 
   /* Second source */
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source2);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
+  check_start_stop_duration (source1, 0, 1 * GST_SECOND, 1 * GST_SECOND);
+  check_start_stop_duration (source2, 1 * GST_SECOND, 2 * GST_SECOND,
+      1 * GST_SECOND);
 
   ASSERT_OBJECT_REFCOUNT (source2, "source2", 1);
 
   /* Remove first source */
 
   gst_object_ref (source1);
-  DISABLE_ASYNC_UPDATE;
   gst_bin_remove (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
   check_start_stop_duration (comp, 1 * GST_SECOND, 2 * GST_SECOND,
       1 * GST_SECOND);
 
@@ -609,9 +610,8 @@ test_one_bin_after_other_full (gboolean async)
 
   /* Re-add first source */
 
-  DISABLE_ASYNC_UPDATE;
   gst_bin_add (GST_BIN (comp), source1);
-  ENABLE_ASYNC_UPDATE;
+  g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   check_start_stop_duration (comp, 0, 2 * GST_SECOND, 2 * GST_SECOND);
   gst_object_unref (source1);
 
@@ -739,63 +739,35 @@ test_one_bin_after_other_full (gboolean async)
 
 GST_START_TEST (test_simplest)
 {
-  test_simplest_full (FALSE);
-}
-
-GST_END_TEST;
-
-GST_START_TEST (test_simplest_async)
-{
-  test_simplest_full (TRUE);
+  test_simplest_full ();
 }
 
 GST_END_TEST;
 
 GST_START_TEST (test_time_duration)
 {
-  test_time_duration_full (FALSE);
-}
-
-GST_END_TEST;
-
-GST_START_TEST (test_time_duration_async)
-{
-  test_time_duration_full (TRUE);
+  test_time_duration_full ();
 }
 
 GST_END_TEST;
 
 GST_START_TEST (test_one_after_other)
 {
-  test_one_after_other_full (FALSE);
-}
-
-GST_END_TEST;
-
-GST_START_TEST (test_one_after_other_async)
-{
-  test_one_after_other_full (TRUE);
+  test_one_after_other_full ();
 }
 
 GST_END_TEST;
 
 GST_START_TEST (test_one_under_another)
 {
-  test_one_under_another_full (FALSE);
-}
-
-GST_END_TEST;
-
-GST_START_TEST (test_one_under_another_async)
-{
-  test_one_under_another_full (TRUE);
+  test_one_under_another_full ();
 }
 
 GST_END_TEST;
 
 GST_START_TEST (test_one_bin_after_other)
 {
-  test_one_bin_after_other_full (FALSE);
+  test_one_bin_after_other_full ();
 }
 
 GST_END_TEST;
@@ -809,15 +781,10 @@ gnonlin_suite (void)
   suite_add_tcase (s, tc_chain);
 
   tcase_add_test (tc_chain, test_time_duration);
-  tcase_add_test (tc_chain, test_time_duration_async);
   tcase_add_test (tc_chain, test_simplest);
-  tcase_add_test (tc_chain, test_simplest_async);
   tcase_add_test (tc_chain, test_one_after_other);
-  tcase_add_test (tc_chain, test_one_after_other_async);
   tcase_add_test (tc_chain, test_one_under_another);
-  tcase_add_test (tc_chain, test_one_under_another_async);
   tcase_add_test (tc_chain, test_one_bin_after_other);
-  tcase_add_test (tc_chain, test_one_bin_after_other_full);
   return s;
 }
 
