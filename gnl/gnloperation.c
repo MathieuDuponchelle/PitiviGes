@@ -183,6 +183,7 @@ gnl_operation_reset (GnlOperation * operation)
 {
   operation->num_sinks = 1;
   operation->realsinks = 0;
+  operation->next_base_time = 0;
 }
 
 static void
@@ -790,4 +791,20 @@ gnl_operation_signal_input_priority_changed (GnlOperation * operation,
       GST_DEBUG_PAD_NAME (pad), priority);
   g_signal_emit (operation, gnl_operation_signals[INPUT_PRIORITY_CHANGED],
       0, pad, priority);
+}
+
+void
+gnl_operation_update_base_time (GnlOperation * operation,
+    GstClockTime timestamp)
+{
+  if (!gnl_object_to_media_time (GNL_OBJECT (operation),
+          timestamp, &operation->next_base_time)) {
+    GST_WARNING_OBJECT (operation, "Trying to set a basetime outside of "
+        "ourself");
+
+    return;
+  }
+
+  GST_INFO_OBJECT (operation, "Setting next_basetime to %"
+      GST_TIME_FORMAT, GST_TIME_ARGS (operation->next_base_time));
 }

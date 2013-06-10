@@ -295,6 +295,12 @@ translate_incoming_segment (GnlObject * object, GstEvent * event)
     segment.time = 0;
   };
 
+  if (GNL_IS_OPERATION (object)) {
+    segment.base = GNL_OPERATION (object)->next_base_time;
+    GST_INFO_OBJECT (object, "Using operation base time %" GST_TIME_FORMAT,
+        GST_TIME_ARGS (GNL_OPERATION (object)->next_base_time));
+  }
+
   if (G_UNLIKELY (segment.time > G_MAXINT64))
     GST_WARNING_OBJECT (object, "Return value too big...");
 
@@ -649,7 +655,7 @@ control_internal_pad (GstPad * ghostpad, GnlObject * object)
  * @name: Name for the new pad
  * @target: Target #GstPad to ghost
  *
- * Adds a #GstGhostPad overridding the correct pad [query|event]_function so 
+ * Adds a #GstGhostPad overridding the correct pad [query|event]_function so
  * that time shifting is done correctly
  * The #GstGhostPad is added to the #GnlObject
  *

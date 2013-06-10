@@ -62,6 +62,8 @@ G_BEGIN_DECLS
   GstPad *ghostpad;		/* src ghostpad */
 
   GstElement *element;		/* controlled element */
+
+  GstClockTime next_base_time;
 };
 
 struct _GnlOperationClass
@@ -76,6 +78,9 @@ GstPad * get_unlinked_sink_ghost_pad (GnlOperation * operation);
 void
 gnl_operation_signal_input_priority_changed(GnlOperation * operation, GstPad *pad,
 					    guint32 priority);
+
+void gnl_operation_update_base_time (GnlOperation *operation,
+                                     GstClockTime timestamp);
 
 
 /* normal GOperation stuff */

@@ -842,8 +842,8 @@ gnl_composition_set_update (GnlComposition * comp, gboolean update)
 
   GST_DEBUG_OBJECT (comp, "update:%d [currently %d], update_required:%d",
       update, priv->can_update, priv->update_required);
-
   COMP_OBJECTS_LOCK (comp);
+
   priv->can_update = update;
 
   if (update && priv->update_required) {
@@ -1499,6 +1499,8 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
               GST_OBJECT_NAME (object));
           stack = g_list_insert_sorted (stack, object,
               (GCompareFunc) priority_comp);
+          if (GNL_IS_OPERATION (object))
+            gnl_operation_update_base_time (GNL_OPERATION (object), timestamp);
         }
       } else {
         GST_LOG_OBJECT (comp, "too far, stopping iteration");
@@ -1524,6 +1526,8 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
               GST_OBJECT_NAME (object));
           stack = g_list_insert_sorted (stack, object,
               (GCompareFunc) priority_comp);
+          if (GNL_IS_OPERATION (object))
+            gnl_operation_update_base_time (GNL_OPERATION (object), timestamp);
         }
       } else {
         GST_LOG_OBJECT (comp, "too far, stopping iteration");
@@ -1540,6 +1544,8 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
           GST_OBJECT_NAME (tmp->data));
       stack = g_list_insert_sorted (stack, tmp->data,
           (GCompareFunc) priority_comp);
+      if (GNL_IS_OPERATION (tmp->data))
+        gnl_operation_update_base_time (GNL_OPERATION (tmp->data), timestamp);
     }
 
   /* convert that list to a stack */
