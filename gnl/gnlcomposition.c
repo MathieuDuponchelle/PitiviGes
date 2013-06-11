@@ -985,6 +985,31 @@ beach:
   return (guint64) value;
 }
 
+static gboolean
+update_base_time (GNode * node, GstClockTime * timestamp)
+{
+  if (GNL_IS_OPERATION (node->data))
+    gnl_operation_update_base_time (GNL_OPERATION (node->data), *timestamp);
+
+  return FALSE;
+}
+
+static void
+update_operations_base_time (GnlComposition * comp, gboolean reverse)
+{
+  GstClockTime timestamp;
+
+  if (reverse)
+    timestamp = comp->priv->segment->stop;
+  else
+    timestamp = comp->priv->segment->start;
+
+  COMP_OBJECTS_LOCK (comp);
+  g_node_traverse (comp->priv->current, G_IN_ORDER, G_TRAVERSE_ALL, -1,
+      (GNodeTraverseFunc) update_base_time, &timestamp);
+  COMP_OBJECTS_UNLOCK (comp);
+}
+
 /*
   Figures out if pipeline needs updating.
   Updates it and sends the seek event.
@@ -1011,6 +1036,8 @@ seek_handling (GnlComposition * comp, gboolean initial, gboolean update)
           !update);
     else
       update_pipeline (comp, comp->priv->segment->stop, initial, TRUE, !update);
+  } else {
+    update_operations_base_time (comp, !(comp->priv->segment->rate >= 0.0));
   }
 
   return TRUE;
