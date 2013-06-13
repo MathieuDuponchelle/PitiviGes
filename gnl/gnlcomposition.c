@@ -860,7 +860,6 @@ gnl_composition_commit_func (GnlObject * object, gboolean recurse)
     GST_DEBUG_OBJECT (object, "Nothing to commit, leaving");
     return FALSE;
   }
-  COMP_OBJECTS_UNLOCK (comp);
 
   /* The topology of the composition might have changed, update the lists */
   priv->objects_start = g_list_sort
@@ -870,6 +869,7 @@ gnl_composition_commit_func (GnlObject * object, gboolean recurse)
 
   /* And update the pipeline at current position if needed */
   update_pipeline_at_current_position (comp);
+  COMP_OBJECTS_UNLOCK (comp);
 
   GST_DEBUG_OBJECT (object, "Done commiting");
   return TRUE;
@@ -994,6 +994,7 @@ update_base_time (GNode * node, GstClockTime * timestamp)
   return FALSE;
 }
 
+/* WITH OBJECTS LOCK TAKEN */
 static void
 update_operations_base_time (GnlComposition * comp, gboolean reverse)
 {
@@ -1004,10 +1005,8 @@ update_operations_base_time (GnlComposition * comp, gboolean reverse)
   else
     timestamp = comp->priv->segment->start;
 
-  COMP_OBJECTS_LOCK (comp);
   g_node_traverse (comp->priv->current, G_IN_ORDER, G_TRAVERSE_ALL, -1,
       (GNodeTraverseFunc) update_base_time, &timestamp);
-  COMP_OBJECTS_UNLOCK (comp);
 }
 
 /*
@@ -1030,6 +1029,7 @@ seek_handling (GnlComposition * comp, gboolean initial, gboolean update)
   comp->priv->flushing = TRUE;
   COMP_FLUSHING_UNLOCK (comp);
 
+  COMP_OBJECTS_LOCK (comp);
   if (update || have_to_update_pipeline (comp)) {
     if (comp->priv->segment->rate >= 0.0)
       update_pipeline (comp, comp->priv->segment->start, initial, TRUE,
@@ -1039,6 +1039,7 @@ seek_handling (GnlComposition * comp, gboolean initial, gboolean update)
   } else {
     update_operations_base_time (comp, !(comp->priv->segment->rate >= 0.0));
   }
+  COMP_OBJECTS_UNLOCK (comp);
 
   return TRUE;
 }
@@ -1496,8 +1497,9 @@ beach:
  * Not MT-safe, you should take the objects lock before calling it.
  * Returns: A tree of #GNode sorted in priority order, corresponding
  * to the given search arguments. The returned value can be #NULL.
+ *
+ * WITH OBJECTS LOCK TAKEN
  */
-
 static GNode *
 get_stack_list (GnlComposition * comp, GstClockTime timestamp,
     guint32 priority, gboolean activeonly, GstClockTime * start,
@@ -1619,8 +1621,9 @@ get_stack_list (GnlComposition * comp, GstClockTime timestamp,
  * @start_time: Pointer to a #GstClockTime for greatest start time of returned stack
  *
  * Returns: The new current stack for the given #GnlComposition and @timestamp.
+ *
+ * WITH OBJECTS LOCK TAKEN
  */
-
 static GNode *
 get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
     GstClockTime * start_time, GstClockTime * stop_time)
@@ -1877,11 +1880,16 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
         gst_iterator_free (childs);
       }
 
+
       /* set ghostpad target */
+      COMP_OBJECTS_LOCK (comp);
       if (!(update_pipeline (comp, COMP_REAL_START (comp), TRUE, FALSE, TRUE))) {
         ret = GST_STATE_CHANGE_FAILURE;
+        COMP_OBJECTS_UNLOCK (comp);
         goto beach;
       }
+
+      COMP_OBJECTS_UNLOCK (comp);
     }
       break;
     case GST_STATE_CHANGE_PAUSED_TO_READY:
@@ -1949,6 +1957,7 @@ objects_stop_compare (GnlObject * a, GnlObject * b)
   return 0;
 }
 
+/* WITH OBJECTS LOCK TAKEN */
 static void
 update_start_stop_duration (GnlComposition * comp)
 {
@@ -2568,8 +2577,9 @@ beach:
  * GST_CLOCK_TIME_NONE, it will not modify the current pipeline
  *
  * Returns: FALSE if there was an error updating the pipeline.
+ *
+ * WITH OBJECTS LOCK TAKEN
  */
-
 static gboolean
 update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     gboolean initial, gboolean change_state, gboolean modify)
@@ -2581,8 +2591,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
       "currenttime:%" GST_TIME_FORMAT
       " initial:%d , change_state:%d , modify:%d", GST_TIME_ARGS (currenttime),
       initial, change_state, modify);
-
-  COMP_OBJECTS_LOCK (comp);
 
   if (GST_CLOCK_TIME_IS_VALID (currenttime)) {
     GstState state = GST_STATE (comp);
@@ -2643,8 +2651,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     /* invalidate the stack while modifying it */
     priv->stackvalid = FALSE;
 
-    COMP_OBJECTS_UNLOCK (comp);
-
     /* 5. deactivate unused elements */
     if (todeactivate) {
       GList *tmp;
@@ -2689,8 +2695,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     if (priv->current) {
       GstEvent *event;
 
-      COMP_OBJECTS_LOCK (comp);
-
       priv->stackvalid = TRUE;
 
       /* 7.1. Create new seek event for newly configured timeline stack */
@@ -2714,7 +2718,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
               "We have a valid toplevel element pad %s:%s",
               GST_DEBUG_PAD_NAME (pad));
 
-          COMP_OBJECTS_UNLOCK (comp);
           /* Send seek event */
           GST_LOG_OBJECT (comp, "sending seek event");
           if (gst_pad_send_event (pad, event)) {
@@ -2723,7 +2726,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
                 "Setting the composition's ghostpad target to %s:%s",
                 GST_DEBUG_PAD_NAME (pad));
 
-            COMP_OBJECTS_LOCK (comp);
             gnl_composition_ghost_pad_set_target (comp, pad, topentry);
 
             if (topentry->probeid) {
@@ -2734,7 +2736,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
               topentry->probeid = 0;
             }
           } else {
-            COMP_OBJECTS_LOCK (comp);
             ret = FALSE;
           }
           gst_object_unref (pad);
@@ -2754,7 +2755,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
         priv->childseek = event;
         ret = TRUE;
       }
-      COMP_OBJECTS_UNLOCK (comp);
     } else {
       if ((!priv->objects_start) && priv->ghostpad) {
         GST_DEBUG_OBJECT (comp, "composition is now empty, removing ghostpad");
@@ -2764,7 +2764,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
       }
     }
   } else {
-    COMP_OBJECTS_UNLOCK (comp);
   }
 
   GST_DEBUG_OBJECT (comp, "Returning %d", ret);
@@ -2921,7 +2920,6 @@ beach:
 
 chiringuito:
   {
-    COMP_OBJECTS_UNLOCK (comp);
     update_start_stop_duration (comp);
     goto beach;
   }
@@ -2973,7 +2971,6 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
       (GNL_OBJECT_PRIORITY (element) == G_MAXUINT32) ||
       GNL_OBJECT_IS_EXPANDABLE (element);
 
-  COMP_OBJECTS_UNLOCK (comp);
   if (G_LIKELY (update_required)) {
     /* And update the pipeline at current position if needed */
     update_pipeline_at_current_position (comp);
@@ -2981,6 +2978,7 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
 
   ret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
   GST_LOG_OBJECT (element, "Done removing from the composition, now updating");
+  COMP_OBJECTS_UNLOCK (comp);
 
   /* unblock source pad */
   if (probeid && (srcpad = get_src_pad (element))) {
