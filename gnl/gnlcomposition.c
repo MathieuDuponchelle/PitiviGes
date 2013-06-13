@@ -2584,186 +2584,184 @@ static gboolean
 update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     gboolean initial, gboolean change_state, gboolean modify)
 {
+  gboolean startchanged, stopchanged;
+
+  GNode *stack = NULL;
   gboolean ret = TRUE;
+  GList *todeactivate = NULL;
+  gboolean samestack = FALSE;
+  GstState state = GST_STATE (comp);
   GnlCompositionPrivate *priv = comp->priv;
+  GstClockTime new_stop = GST_CLOCK_TIME_NONE;
+  GstClockTime new_start = GST_CLOCK_TIME_NONE;
+  GstState nextstate = (GST_STATE_NEXT (comp) == GST_STATE_VOID_PENDING) ?
+      GST_STATE (comp) : GST_STATE_NEXT (comp);
 
   GST_DEBUG_OBJECT (comp,
       "currenttime:%" GST_TIME_FORMAT
       " initial:%d , change_state:%d , modify:%d", GST_TIME_ARGS (currenttime),
       initial, change_state, modify);
 
-  if (GST_CLOCK_TIME_IS_VALID (currenttime)) {
-    GstState state = GST_STATE (comp);
-    GstState nextstate =
-        (GST_STATE_NEXT (comp) ==
-        GST_STATE_VOID_PENDING) ? GST_STATE (comp) : GST_STATE_NEXT (comp);
-    GNode *stack = NULL;
-    GList *todeactivate = NULL;
-    GstClockTime new_start = GST_CLOCK_TIME_NONE;
-    GstClockTime new_stop = GST_CLOCK_TIME_NONE;
-    gboolean samestack = FALSE;
-    gboolean startchanged, stopchanged;
+  if (!GST_CLOCK_TIME_IS_VALID (currenttime))
+    return FALSE;
 
-    GST_DEBUG_OBJECT (comp,
-        "now really updating the pipeline, current-state:%s",
-        gst_element_state_get_name (state));
+  GST_DEBUG_OBJECT (comp,
+      "now really updating the pipeline, current-state:%s",
+      gst_element_state_get_name (state));
 
-    /* 1. Get new stack and compare it to current one */
-    stack =
-        get_clean_toplevel_stack (comp, &currenttime, &new_start, &new_stop);
-    samestack = are_same_stacks (priv->current, stack);
+  /* 1. Get new stack and compare it to current one */
+  stack = get_clean_toplevel_stack (comp, &currenttime, &new_start, &new_stop);
+  samestack = are_same_stacks (priv->current, stack);
 
-    /* 2. If stacks are different, unlink/relink objects */
-    if (!samestack)
-      todeactivate = compare_relink_stack (comp, stack, modify);
+  /* 2. If stacks are different, unlink/relink objects */
+  if (!samestack)
+    todeactivate = compare_relink_stack (comp, stack, modify);
 
-    if (priv->segment->rate >= 0.0) {
-      startchanged = priv->segment_start != currenttime;
-      stopchanged = priv->segment_stop != new_stop;
-    } else {
-      startchanged = priv->segment_start != new_start;
-      stopchanged = priv->segment_stop != currenttime;
+  if (priv->segment->rate >= 0.0) {
+    startchanged = priv->segment_start != currenttime;
+    stopchanged = priv->segment_stop != new_stop;
+  } else {
+    startchanged = priv->segment_start != new_start;
+    stopchanged = priv->segment_stop != currenttime;
+  }
+
+  /* 3. set new segment_start/stop (the current zone over which the new stack
+   *    is valid) */
+  if (priv->segment->rate >= 0.0) {
+    priv->segment_start = currenttime;
+    priv->segment_stop = new_stop;
+  } else {
+    priv->segment_start = new_start;
+    priv->segment_stop = currenttime;
+  }
+
+  /* 4. Clear pending child seek
+   *    We'll be creating a new one */
+  if (priv->childseek) {
+    GST_DEBUG ("unreffing event %p", priv->childseek);
+    gst_event_unref (priv->childseek);
+    priv->childseek = NULL;
+  }
+
+  /* Invalidate current stack */
+  if (priv->current)
+    g_node_destroy (priv->current);
+  priv->current = NULL;
+
+  /* invalidate the stack while modifying it */
+  priv->stackvalid = FALSE;
+
+  /* 5. deactivate unused elements */
+  if (todeactivate) {
+    GList *tmp;
+    GnlCompositionEntry *entry;
+    GstElement *element;
+
+    GST_DEBUG_OBJECT (comp, "De-activating objects no longer used");
+
+    /* state-lock elements no more used */
+    for (tmp = todeactivate; tmp; tmp = tmp->next) {
+      element = GST_ELEMENT_CAST (tmp->data);
+
+      if (change_state)
+        gst_element_set_state (element, state);
+      gst_element_set_locked_state (element, TRUE);
+      entry = COMP_ENTRY (comp, element);
+
+      /* entry can be NULL here if update_pipeline was called by
+       * gnl_composition_remove_object (comp, tmp->data)
+       */
+      if (entry && entry->nomorepadshandler)
+        wait_no_more_pads (comp, element, entry, FALSE);
     }
 
-    /* 3. set new segment_start/stop (the current zone over which the new stack
-     *    is valid) */
-    if (priv->segment->rate >= 0.0) {
-      priv->segment_start = currenttime;
-      priv->segment_stop = new_stop;
-    } else {
-      priv->segment_start = new_start;
-      priv->segment_stop = currenttime;
-    }
+    g_list_free (todeactivate);
 
-    /* 4. Clear pending child seek
-     *    We'll be creating a new one */
-    if (priv->childseek) {
-      GST_DEBUG ("unreffing event %p", priv->childseek);
-      gst_event_unref (priv->childseek);
-      priv->childseek = NULL;
-    }
+    GST_DEBUG_OBJECT (comp, "Finished de-activating objects no longer used");
+  }
 
-    /* Invalidate current stack */
-    if (priv->current)
-      g_node_destroy (priv->current);
-    priv->current = NULL;
+  /* 6. Unlock all elements in new stack */
+  GST_DEBUG_OBJECT (comp, "Setting current stack");
+  priv->current = stack;
 
-    /* invalidate the stack while modifying it */
-    priv->stackvalid = FALSE;
+  if (!samestack && stack) {
+    GST_DEBUG_OBJECT (comp, "activating objects in new stack to %s",
+        gst_element_state_get_name (nextstate));
+    unlock_activate_stack (comp, stack, change_state, nextstate);
+    GST_DEBUG_OBJECT (comp, "Finished activating objects in new stack");
+  }
 
-    /* 5. deactivate unused elements */
-    if (todeactivate) {
-      GList *tmp;
-      GnlCompositionEntry *entry;
-      GstElement *element;
+  /* 7. Activate stack (might happen asynchronously) */
+  if (priv->current) {
+    GstEvent *event;
 
-      GST_DEBUG_OBJECT (comp, "De-activating objects no longer used");
+    priv->stackvalid = TRUE;
 
-      /* state-lock elements no more used */
-      for (tmp = todeactivate; tmp; tmp = tmp->next) {
-        element = GST_ELEMENT_CAST (tmp->data);
+    /* 7.1. Create new seek event for newly configured timeline stack */
+    if (samestack && (startchanged || stopchanged))
+      event =
+          get_new_seek_event (comp,
+          (state == GST_STATE_PLAYING) ? FALSE : TRUE, !startchanged);
+    else
+      event = get_new_seek_event (comp, initial, FALSE);
 
-        if (change_state)
-          gst_element_set_state (element, state);
-        gst_element_set_locked_state (element, TRUE);
-        entry = COMP_ENTRY (comp, element);
+    /* 7.2.a If the stack entirely ready, send seek out synchronously */
+    if (priv->waitingpads == 0) {
+      GstPad *pad;
+      GstElement *topelement = GST_ELEMENT (priv->current->data);
 
-        /* entry can be NULL here if update_pipeline was called by
-         * gnl_composition_remove_object (comp, tmp->data)
-         */
-        if (entry && entry->nomorepadshandler)
-          wait_no_more_pads (comp, element, entry, FALSE);
-      }
+      /* Get toplevel object source pad */
+      if ((pad = get_src_pad (topelement))) {
+        GnlCompositionEntry *topentry = COMP_ENTRY (comp, topelement);
 
-      g_list_free (todeactivate);
+        GST_DEBUG_OBJECT (comp,
+            "We have a valid toplevel element pad %s:%s",
+            GST_DEBUG_PAD_NAME (pad));
 
-      GST_DEBUG_OBJECT (comp, "Finished de-activating objects no longer used");
-    }
-
-    /* 6. Unlock all elements in new stack */
-    GST_DEBUG_OBJECT (comp, "Setting current stack");
-    priv->current = stack;
-
-    if (!samestack && stack) {
-      GST_DEBUG_OBJECT (comp, "activating objects in new stack to %s",
-          gst_element_state_get_name (nextstate));
-      unlock_activate_stack (comp, stack, change_state, nextstate);
-      GST_DEBUG_OBJECT (comp, "Finished activating objects in new stack");
-    }
-
-    /* 7. Activate stack (might happen asynchronously) */
-    if (priv->current) {
-      GstEvent *event;
-
-      priv->stackvalid = TRUE;
-
-      /* 7.1. Create new seek event for newly configured timeline stack */
-      if (samestack && (startchanged || stopchanged))
-        event =
-            get_new_seek_event (comp,
-            (state == GST_STATE_PLAYING) ? FALSE : TRUE, !startchanged);
-      else
-        event = get_new_seek_event (comp, initial, FALSE);
-
-      /* 7.2.a If the stack entirely ready, send seek out synchronously */
-      if (priv->waitingpads == 0) {
-        GstPad *pad;
-        GstElement *topelement = GST_ELEMENT (priv->current->data);
-
-        /* Get toplevel object source pad */
-        if ((pad = get_src_pad (topelement))) {
-          GnlCompositionEntry *topentry = COMP_ENTRY (comp, topelement);
-
-          GST_DEBUG_OBJECT (comp,
-              "We have a valid toplevel element pad %s:%s",
+        /* Send seek event */
+        GST_LOG_OBJECT (comp, "sending seek event");
+        if (gst_pad_send_event (pad, event)) {
+          /* Unconditionnaly set the ghostpad target to pad */
+          GST_LOG_OBJECT (comp,
+              "Setting the composition's ghostpad target to %s:%s",
               GST_DEBUG_PAD_NAME (pad));
 
-          /* Send seek event */
-          GST_LOG_OBJECT (comp, "sending seek event");
-          if (gst_pad_send_event (pad, event)) {
-            /* Unconditionnaly set the ghostpad target to pad */
-            GST_LOG_OBJECT (comp,
-                "Setting the composition's ghostpad target to %s:%s",
-                GST_DEBUG_PAD_NAME (pad));
+          gnl_composition_ghost_pad_set_target (comp, pad, topentry);
 
-            gnl_composition_ghost_pad_set_target (comp, pad, topentry);
+          if (topentry->probeid) {
 
-            if (topentry->probeid) {
-
-              /* unblock top-level pad */
-              GST_LOG_OBJECT (comp, "About to unblock top-level srcpad");
-              gst_pad_remove_probe (pad, topentry->probeid);
-              topentry->probeid = 0;
-            }
-          } else {
-            ret = FALSE;
+            /* unblock top-level pad */
+            GST_LOG_OBJECT (comp, "About to unblock top-level srcpad");
+            gst_pad_remove_probe (pad, topentry->probeid);
+            topentry->probeid = 0;
           }
-          gst_object_unref (pad);
-
         } else {
-          GST_WARNING_OBJECT (comp,
-              "Timeline is entirely linked, but couldn't get top-level element's source pad");
-
           ret = FALSE;
         }
-      } else {
-        /* 7.2.b. Stack isn't entirely ready, save seek event for later on */
-        GST_LOG_OBJECT (comp,
-            "The timeline stack isn't entirely linked, delaying sending seek event (waitingpads:%d)",
-            priv->waitingpads);
+        gst_object_unref (pad);
 
-        priv->childseek = event;
-        ret = TRUE;
+      } else {
+        GST_WARNING_OBJECT (comp,
+            "Timeline is entirely linked, but couldn't get top-level element's source pad");
+
+        ret = FALSE;
       }
     } else {
-      if ((!priv->objects_start) && priv->ghostpad) {
-        GST_DEBUG_OBJECT (comp, "composition is now empty, removing ghostpad");
-        gnl_composition_remove_ghostpad (comp);
-        priv->segment_start = 0;
-        priv->segment_stop = GST_CLOCK_TIME_NONE;
-      }
+      /* 7.2.b. Stack isn't entirely ready, save seek event for later on */
+      GST_LOG_OBJECT (comp,
+          "The timeline stack isn't entirely linked, delaying sending seek event (waitingpads:%d)",
+          priv->waitingpads);
+
+      priv->childseek = event;
+      ret = TRUE;
     }
   } else {
+    if ((!priv->objects_start) && priv->ghostpad) {
+      GST_DEBUG_OBJECT (comp, "composition is now empty, removing ghostpad");
+      gnl_composition_remove_ghostpad (comp);
+      priv->segment_start = 0;
+      priv->segment_stop = GST_CLOCK_TIME_NONE;
+    }
   }
 
   GST_DEBUG_OBJECT (comp, "Returning %d", ret);
