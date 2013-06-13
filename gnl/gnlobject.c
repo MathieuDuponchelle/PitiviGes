@@ -495,14 +495,7 @@ gnl_object_set_property (GObject * object, guint prop_id,
       SET_PENDING_VALUE (inpoint, "inpoint", uint64, G_GUINT64_FORMAT);
       break;
     case PROP_PRIORITY:
-      if (g_value_get_uint (value) == G_MAXUINT32) {
-        GST_DEBUG_OBJECT (object, "Setting priority to G_MAXUINT32, which means"
-            "'Default object', commiting right now");
-        /* This is not the cleanast thing to do but we anyway plan to remove
-         * that behaviour soon. */
-        gnlobject->pending_priority = gnlobject->priority = G_MAXUINT32;
-      } else
-        SET_PENDING_VALUE (priority, "priority", uint, G_GUINT32_FORMAT);
+      SET_PENDING_VALUE (priority, "priority", uint, G_GUINT32_FORMAT);
       break;
     case PROP_ACTIVE:
       SET_PENDING_VALUE (active, "active", boolean, G_GUINT32_FORMAT);

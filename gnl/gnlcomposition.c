@@ -2839,8 +2839,7 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
 
   COMP_OBJECTS_LOCK (comp);
 
-  if (((GNL_OBJECT_PRIORITY (element) == G_MAXUINT32) ||
-          GNL_OBJECT_IS_EXPANDABLE (element)) &&
+  if ((GNL_OBJECT_IS_EXPANDABLE (element)) &&
       g_list_find (priv->expandables, element)) {
     GST_WARNING_OBJECT (comp,
         "We already have an expandable, remove it before adding new one");
@@ -2867,8 +2866,7 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
   entry = g_slice_new0 (GnlCompositionEntry);
   entry->object = (GnlObject *) element;
 
-  if (G_LIKELY ((GNL_OBJECT_PRIORITY (element) == G_MAXUINT32) ||
-          GNL_OBJECT_IS_EXPANDABLE (element))) {
+  if (GNL_OBJECT_IS_EXPANDABLE (element)) {
     /* Only react on non-default objects properties */
     g_object_set (element,
         "start", (GstClockTime) 0,
@@ -2892,8 +2890,7 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
     gnl_object_set_caps ((GnlObject *) element, ((GnlObject *) comp)->caps);
 
   /* Special case for default source. */
-  if ((GNL_OBJECT_PRIORITY (element) == G_MAXUINT32) ||
-      GNL_OBJECT_IS_EXPANDABLE (element)) {
+  if (GNL_OBJECT_IS_EXPANDABLE (element)) {
     /* It doesn't get added to objects_start and objects_stop. */
     priv->expandables = g_list_prepend (priv->expandables, element);
     goto beach;
@@ -2959,8 +2956,7 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
   gst_element_set_locked_state (element, FALSE);
 
   /* handle default source */
-  if ((GNL_OBJECT_PRIORITY (element) == G_MAXUINT32) ||
-      GNL_OBJECT_IS_EXPANDABLE (element)) {
+  if (GNL_OBJECT_IS_EXPANDABLE (element)) {
     /* Find it in the list */
     priv->expandables = g_list_remove (priv->expandables, element);
   } else {
