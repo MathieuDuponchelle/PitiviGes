@@ -1,7 +1,8 @@
 #include "common.h"
 
 static void
-fill_pipeline_and_check (GstElement * comp, GList * segments)
+fill_pipeline_and_check (GstElement * comp, GList * segments,
+    gint expected_error_domain)
 {
   GstElement *pipeline, *sink;
   CollectStructure *collect;
@@ -56,7 +57,20 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
           fail_if (TRUE);
           break;
         case GST_MESSAGE_ERROR:
-          fail_error_message (message);
+        {
+          GError *error;
+
+          gst_message_parse_error (message, &error, NULL);
+          if (comp == GST_ELEMENT (GST_MESSAGE_SRC (message)) &&
+              expected_error_domain == error->domain) {
+            GST_DEBUG ("Expected Error Message from %s : %s",
+                GST_OBJECT_NAME (GST_MESSAGE_SRC (message)), error->message);
+
+            carry_on = FALSE;
+          } else
+            fail_error_message (message);
+        }
+          break;
         default:
           break;
       }
@@ -66,8 +80,10 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
 
   GST_DEBUG ("Setting pipeline to READY");
 
+
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline),
           GST_STATE_READY) == GST_STATE_CHANGE_FAILURE);
+
 
   fail_if (collect->expected_segments != NULL);
 
@@ -76,6 +92,9 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
   collect->expected_segments = listcopy;
   collect->gotsegment = FALSE;
   collect->expected_base = 0;
+
+  if (expected_error_domain)
+    goto done;
 
   GST_DEBUG ("Setting pipeline to PLAYING again");
 
@@ -113,6 +132,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments)
 
   fail_if (collect->expected_segments != NULL);
 
+done:
   fail_if (gst_element_set_state (GST_ELEMENT (pipeline),
           GST_STATE_NULL) == GST_STATE_CHANGE_FAILURE);
 
@@ -197,11 +217,8 @@ GST_START_TEST (test_one_space_another)
   /* Expected segments */
   segments = g_list_append (segments,
       segment_new (1.0, GST_FORMAT_TIME, 0, 1 * GST_SECOND, 0));
-  segments = g_list_append (segments,
-      segment_new (1.0, GST_FORMAT_TIME,
-          2 * GST_SECOND, 3 * GST_SECOND, 2 * GST_SECOND));
 
-  fill_pipeline_and_check (comp, segments);
+  fill_pipeline_and_check (comp, segments, GST_STREAM_ERROR);
 }
 
 GST_END_TEST;
@@ -317,7 +334,7 @@ GST_START_TEST (test_one_default_another)
       segment_new (1.0, GST_FORMAT_TIME,
           4 * GST_SECOND, 5 * GST_SECOND, 4 * GST_SECOND));
 
-  fill_pipeline_and_check (comp, segments);
+  fill_pipeline_and_check (comp, segments, GST_STREAM_ERROR);
 }
 
 GST_END_TEST;
@@ -438,7 +455,7 @@ GST_START_TEST (test_one_expandable_another)
       segment_new (1.0, GST_FORMAT_TIME,
           4 * GST_SECOND, 5 * GST_SECOND, 4 * GST_SECOND));
 
-  fill_pipeline_and_check (comp, segments);
+  fill_pipeline_and_check (comp, segments, 0);
 }
 
 GST_END_TEST;
@@ -722,11 +739,7 @@ GST_START_TEST (test_one_bin_space_another)
   segments = g_list_append (segments,
       segment_new (1.0, GST_FORMAT_TIME, 0, 1 * GST_SECOND, 0));
 
-  segments = g_list_append (segments,
-      segment_new (1.0, GST_FORMAT_TIME,
-          2 * GST_SECOND, 3 * GST_SECOND, 2 * GST_SECOND));
-
-  fill_pipeline_and_check (comp, segments);
+  fill_pipeline_and_check (comp, segments, GST_STREAM_ERROR);
 }
 
 GST_END_TEST;
@@ -796,7 +809,7 @@ GST_START_TEST (test_one_above_another)
       segment_new (1.0, GST_FORMAT_TIME,
           1 * GST_SECOND, 3 * GST_SECOND, 1 * GST_SECOND));
 
-  fill_pipeline_and_check (comp, segments);
+  fill_pipeline_and_check (comp, segments, 0);
 }
 
 GST_END_TEST;

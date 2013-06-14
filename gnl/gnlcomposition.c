@@ -200,9 +200,9 @@ static void update_start_stop_duration (GnlComposition * comp);
   (MAX (comp->priv->segment->start, GNL_OBJECT_START (comp)))
 
 #define COMP_REAL_STOP(comp)                                                   \
-  ((GST_CLOCK_TIME_IS_VALID (comp->priv->segment->stop)                        \
-    ? (MIN (comp->priv->segment->stop, GNL_OBJECT_STOP (comp))))               \
-   : GNL_OBJECT_STOP (comp))
+  (GST_CLOCK_TIME_IS_VALID (comp->priv->segment->stop) ?                       \
+   (MIN (comp->priv->segment->stop, GNL_OBJECT_STOP (comp))) :                 \
+   GNL_OBJECT_STOP (comp))
 
 #define COMP_ENTRY(comp, object)                                               \
   (g_hash_table_lookup (comp->priv->objects_hash, (gconstpointer) object))
@@ -1629,7 +1629,6 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
     GstClockTime * start_time, GstClockTime * stop_time)
 {
   GNode *stack = NULL;
-  GList *tmp;
   GstClockTime start = G_MAXUINT64;
   GstClockTime stop = G_MAXUINT64;
   guint highprio;
@@ -1642,42 +1641,17 @@ get_clean_toplevel_stack (GnlComposition * comp, GstClockTime * timestamp,
 
   stack = get_stack_list (comp, *timestamp, 0, TRUE, &start, &stop, &highprio);
 
-  if (!stack) {
-    GnlObject *object = NULL;
+  if (!stack &&
+      ((reverse && (*timestamp > COMP_REAL_START (comp))) ||
+          (!reverse && (*timestamp < COMP_REAL_STOP (comp))))) {
+    GST_ELEMENT_ERROR (comp, STREAM, WRONG_TYPE,
+        ("Gaps ( at %" GST_TIME_FORMAT
+            ") in the stream is not supported, the application is responsible"
+            " for filling them", GST_TIME_ARGS (*timestamp)),
+        ("Gap in the composition this should never"
+            "append, make sure to fill them"));
 
-    /* Case for gaps, therefore no objects at specified *timestamp */
-    GST_DEBUG_OBJECT (comp,
-        "Got empty stack, checking if it really was after the last object");
-
-    if (reverse) {
-      /* Find the first active object just before *timestamp */
-      for (tmp = comp->priv->objects_stop; tmp; tmp = g_list_next (tmp)) {
-        object = (GnlObject *) tmp->data;
-
-        if (object->stop < *timestamp && object->active)
-          break;
-      }
-    } else {
-      /* Find the first active object just after *timestamp */
-      for (tmp = comp->priv->objects_start; tmp; tmp = g_list_next (tmp)) {
-        object = (GnlObject *) tmp->data;
-
-        if (object->start > *timestamp && object->active)
-          break;
-      }
-    }
-
-    if (tmp) {
-      GST_DEBUG_OBJECT (comp,
-          "Found a valid object %s %" GST_TIME_FORMAT " : %s [%"
-          GST_TIME_FORMAT " - %" GST_TIME_FORMAT "]",
-          (reverse ? "before" : "after"), GST_TIME_ARGS (*timestamp),
-          GST_ELEMENT_NAME (object), GST_TIME_ARGS (object->start),
-          GST_TIME_ARGS (object->stop));
-      *timestamp = (reverse ? object->stop : object->start);
-      stack =
-          get_stack_list (comp, *timestamp, 0, TRUE, &start, &stop, &highprio);
-    }
+    return NULL;
   }
 
   GST_DEBUG ("start:%" GST_TIME_FORMAT ", stop:%" GST_TIME_FORMAT,
