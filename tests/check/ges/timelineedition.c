@@ -46,12 +46,6 @@ create_custom_clip (void)
   return GES_CLIP (ges_custom_source_clip_new (my_fill_track_func, NULL));
 }
 
-#define CHECK_OBJECT_PROPS(obj, start, inpoint, duration) {\
-  assert_equals_uint64 (_START (obj), start);\
-  assert_equals_uint64 (_INPOINT (obj), inpoint);\
-  assert_equals_uint64 (_DURATION (obj), duration);\
-}
-
 GST_START_TEST (test_basic_timeline_edition)
 {
   GESAsset *asset;

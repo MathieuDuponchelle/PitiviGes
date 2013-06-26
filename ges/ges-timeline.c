@@ -184,6 +184,7 @@ struct _GESTimelinePrivate
   /* While we are creating and adding the TrackElements for a clip, we need to
    * ignore the child-added signal */
   GESClip *ignore_track_element_added;
+  GList *groups;
 };
 
 /* private structure to contain our track-related information */
@@ -324,9 +325,12 @@ ges_timeline_dispose (GObject * object)
    * objects aren't notified that their gnlobjects have been destroyed.
    */
 
-  while (tl->tracks) {
+  while (tl->tracks)
     ges_timeline_remove_track (GES_TIMELINE (object), tl->tracks->data);
-  }
+
+  while (priv->groups)
+    g_list_free_full (ges_container_ungroup (priv->groups->data, FALSE),
+        gst_object_unref);
 
   g_hash_table_unref (priv->by_start);
   g_hash_table_unref (priv->by_end);
@@ -1713,6 +1717,28 @@ timeline_context_to_layer (GESTimeline * timeline, gint offset)
   }
 
   return ret;
+}
+
+void
+timeline_add_group (GESTimeline * timeline, GESGroup * group)
+{
+  GST_DEBUG_OBJECT (timeline, "Adding group %" GST_PTR_FORMAT, group);
+
+  timeline->priv->groups = g_list_prepend (timeline->priv->groups,
+      gst_object_ref_sink (group));
+
+  ges_timeline_element_set_timeline (GES_TIMELINE_ELEMENT (group), timeline);
+}
+
+void
+timeline_remove_group (GESTimeline * timeline, GESGroup * group)
+{
+  GST_DEBUG_OBJECT (timeline, "Removing group %" GST_PTR_FORMAT, group);
+
+  timeline->priv->groups = g_list_remove (timeline->priv->groups, group);
+
+  ges_timeline_element_set_timeline (GES_TIMELINE_ELEMENT (group), NULL);
+  gst_object_unref (group);
 }
 
 static GPtrArray *
