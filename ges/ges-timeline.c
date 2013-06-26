@@ -854,32 +854,6 @@ _create_transitions_on_layer (GESTimeline * timeline, GESLayer * layer,
   }
 }
 
-/* @track_element must be a GESSource */
-static void
-create_transitions (GESTimeline * timeline, GESTrackElement * track_element)
-{
-  GESTrack *track;
-  GList *layer_node;
-
-  GESTimelinePrivate *priv = timeline->priv;
-
-  if (!priv->needs_transitions_update)
-    return;
-
-  GST_DEBUG_OBJECT (timeline, "Creating transitions around %p", track_element);
-
-  track = ges_track_element_get_track (track_element);
-  layer_node = g_list_find_custom (timeline->layers,
-      GINT_TO_POINTER (_ges_track_element_get_layer_priority (track_element)),
-      (GCompareFunc) find_layer_by_prio);
-
-  _create_transitions_on_layer (timeline,
-      layer_node ? layer_node->data : NULL, track, track_element,
-      _find_transition_from_auto_transitions);
-
-  GST_DEBUG_OBJECT (timeline, "Done updating transitions");
-}
-
 /* Timeline edition functions */
 static inline void
 init_movecontext (MoveContext * mv_ctx, gboolean first_init)
@@ -1000,7 +974,6 @@ start_tracking_track_element (GESTimeline * timeline,
     timeline->priv->movecontext.needs_move_ctx = TRUE;
 
     timeline_update_duration (timeline);
-    create_transitions (timeline, trackelement);
   }
 }
 
@@ -2000,8 +1973,6 @@ trackelement_start_changed_cb (GESTrackElement * child,
     if (timeline->priv->movecontext.ignore_needs_ctx &&
         timeline->priv->snapping_distance == 0)
       timeline->priv->movecontext.needs_move_ctx = TRUE;
-
-    create_transitions (timeline, child);
   }
 }
 
@@ -2069,8 +2040,6 @@ trackelement_duration_changed_cb (GESTrackElement * child,
         timeline->priv->snapping_distance == 0) {
       timeline->priv->movecontext.needs_move_ctx = TRUE;
     }
-
-    create_transitions (timeline, child);
   }
 }
 
