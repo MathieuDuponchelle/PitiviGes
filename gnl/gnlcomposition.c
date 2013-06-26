@@ -2848,13 +2848,13 @@ gnl_composition_add_object (GstBin * bin, GstElement * element)
     gnl_object_commit (GNL_OBJECT (element), FALSE);
   }
 
+  /* ...and add it to the hash table */
+  g_hash_table_insert (priv->objects_hash, element, entry);
+
   entry->padremovedhandler = g_signal_connect (G_OBJECT (element),
       "pad-removed", G_CALLBACK (object_pad_removed), comp);
   entry->padaddedhandler = g_signal_connect (G_OBJECT (element),
       "pad-added", G_CALLBACK (object_pad_added), comp);
-
-  /* ...and add it to the hash table */
-  g_hash_table_insert (priv->objects_hash, element, entry);
 
   /* Set the caps of the composition */
   if (G_UNLIKELY (!gst_caps_is_any (((GnlObject *) comp)->caps)))
