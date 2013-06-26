@@ -18,7 +18,7 @@
  */
 
 /**
- * SECTION: ges-gerror
+ * SECTION:ges-gerror
  * @short_description: GError — Categorized error messages
  */
 
