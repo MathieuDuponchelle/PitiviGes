@@ -2666,6 +2666,11 @@ ges_timeline_commit (GESTimeline * timeline)
 
   GST_DEBUG_OBJECT (timeline, "commiting changes");
 
+  for (tmp = timeline->layers; tmp; tmp = tmp->next) {
+    _create_transitions_on_layer (timeline, GES_LAYER (tmp->data),
+        NULL, NULL, _find_transition_from_auto_transitions);
+  }
+
   for (tmp = timeline->tracks; tmp; tmp = tmp->next) {
     if (!ges_track_commit (GES_TRACK (tmp->data)))
       res = FALSE;
@@ -2673,11 +2678,6 @@ ges_timeline_commit (GESTimeline * timeline)
 
   /* Make sure we reset the context */
   timeline->priv->movecontext.needs_move_ctx = TRUE;
-
-  for (tmp = timeline->layers; tmp; tmp = tmp->next) {
-    _create_transitions_on_layer (timeline, GES_LAYER (tmp->data),
-        NULL, NULL, _find_transition_from_auto_transitions);
-  }
 
   return res;
 }
