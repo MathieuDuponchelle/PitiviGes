@@ -321,6 +321,9 @@ _set_duration (GESTimelineElement * element, GstClockTime duration)
 {
   GESTrackElement *object = GES_TRACK_ELEMENT (element);
   GESTrackElementPrivate *priv = object->priv;
+  GESTrackElementClass *class;
+
+  class = GES_TRACK_ELEMENT_GET_CLASS (object);
 
   if (GST_CLOCK_TIME_IS_VALID (_MAXDURATION (element)) &&
       duration > _INPOINT (object) + _MAXDURATION (element))
@@ -331,6 +334,10 @@ _set_duration (GESTimelineElement * element, GstClockTime duration)
       return FALSE;
 
     g_object_set (priv->gnlobject, "duration", duration, NULL);
+
+    if (class->duration_changed)
+      class->duration_changed (object, duration);
+
   } else
     priv->pending_duration = duration;
 
