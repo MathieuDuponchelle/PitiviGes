@@ -236,6 +236,7 @@ G_GNUC_INTERNAL void ges_base_xml_formatter_add_control_binding(GESBaseXmlFormat
                 const gchar * source_type,
                 const gchar * property_name,
                 gint mode,
+		const gchar *track_id,
                 GSList * timed_values);
 
 G_GNUC_INTERNAL void set_property_foreach                       (GQuark field_id,
