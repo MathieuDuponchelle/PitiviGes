@@ -2761,7 +2761,7 @@ object_pad_removed (GnlObject * object, GstPad * pad, GnlComposition * comp)
     else {
       GnlCompositionEntry *entry = COMP_ENTRY (comp, object);
 
-      if (entry->probeid) {
+      if (entry && entry->probeid) {
         gst_pad_remove_probe (pad, entry->probeid);
         entry->probeid = 0;
       }
