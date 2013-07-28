@@ -30,6 +30,7 @@
  * priority.
  */
 
+#include "ges-utils.h"
 #include "ges-internal.h"
 #include "ges-extractable.h"
 #include "ges-track-element.h"
@@ -259,8 +260,6 @@ ges_track_element_class_init (GESTrackElementClass * klass)
   element_class->deep_copy = ges_track_element_copy_properties;
 
   klass->create_gnl_object = ges_track_element_create_gnl_object_func;
-  /*  There is no 'get_props_hashtable' default implementation */
-  klass->get_props_hastable = NULL;
   klass->list_children_properties = default_list_children_properties;
 }
 
@@ -470,7 +469,7 @@ ges_track_element_create_gnl_object_func (GESTrackElement * self)
     goto no_gnlobject;
 
   if (klass->create_element) {
-    GST_DEBUG ("Calling subclass 'create_element' vmethod");
+    GST_DEBUG_OBJECT (self, "Calling subclass 'create_element' vmethod");
     child = klass->create_element (self);
 
     if (G_UNLIKELY (!child))
@@ -525,12 +524,104 @@ add_failure:
   }
 }
 
+static GHashTable *
+_create_props_hashtable (GESTrackElement * self)
+{
+  GValue item = { 0, };
+  GstIterator *it;
+  GParamSpec **parray;
+  GObjectClass *class;
+  const gchar *klass;
+  GstElementFactory *factory;
+  GstElement *element;
+  gboolean done = FALSE;
+  GHashTable *ret = NULL;
+
+  element = ges_track_element_get_element (self);
+  if (!element) {
+    GST_DEBUG
+        ("Can't build the property hashtable until the gnlobject is created");
+    return NULL;
+  }
+
+  ret = g_hash_table_new_full ((GHashFunc) pspec_hash, pspec_equal,
+      (GDestroyNotify) g_param_spec_unref, gst_object_unref);
+
+  /*  We go over child elements recursivly, and add writable properties to the
+   *  hashtable
+   *  FIXME: Add a blacklist of properties */
+  it = gst_bin_iterate_recurse (GST_BIN (element));
+
+  while (!done) {
+    switch (gst_iterator_next (it, &item)) {
+      case GST_ITERATOR_OK:
+      {
+        gchar **categories;
+        guint category;
+        GstElement *child = g_value_get_object (&item);
+
+        factory = gst_element_get_factory (child);
+        klass = gst_element_factory_get_metadata (factory,
+            GST_ELEMENT_METADATA_KLASS);
+
+        GST_DEBUG ("Looking at element '%s' of klass '%s'",
+            GST_ELEMENT_NAME (child), klass);
+
+        categories = g_strsplit (klass, "/", 0);
+
+        /* TODO : blacklist */
+        for (category = 0; categories[category]; category++) {
+          if (g_strcmp0 (categories[category], "Effect") == 0 ||
+              g_strcmp0 (categories[category], "Metadata") == 0) {
+            guint i, nb_specs;
+
+            class = G_OBJECT_GET_CLASS (child);
+            parray = g_object_class_list_properties (class, &nb_specs);
+            for (i = 0; i < nb_specs; i++) {
+              if (parray[i]->flags & G_PARAM_WRITABLE) {
+                g_hash_table_insert (ret, g_param_spec_ref (parray[i]),
+                    gst_object_ref (child));
+              }
+            }
+            g_free (parray);
+
+            GST_DEBUG
+                ("%d configurable properties of '%s' added to property hashtable",
+                nb_specs, GST_ELEMENT_NAME (child));
+            break;
+          }
+        }
+
+        g_strfreev (categories);
+        g_value_reset (&item);
+        break;
+      }
+      case GST_ITERATOR_RESYNC:
+        /* FIXME, properly restart the process */
+        GST_DEBUG ("iterator resync");
+        gst_iterator_resync (it);
+        break;
+
+      case GST_ITERATOR_DONE:
+        GST_DEBUG ("iterator done");
+        done = TRUE;
+        break;
+
+      default:
+        break;
+    }
+  }
+  g_value_unset (&item);
+  gst_iterator_free (it);
+
+  return ret;
+}
+
 static gboolean
 ensure_gnl_object (GESTrackElement * object)
 {
   GESTrackElementClass *class;
   GstElement *gnlobject;
-  GHashTable *props_hash;
   gboolean res = TRUE;
 
   if (object->priv->gnlobject && object->priv->valid)
@@ -593,18 +684,8 @@ ensure_gnl_object (GESTrackElement * object)
         g_object_set (object->priv->gnlobject,
             "caps", ges_track_get_caps (object->priv->track), NULL);
 
-      /*  We feed up the props_hashtable if possible */
-      if (class->get_props_hastable) {
-        props_hash = class->get_props_hastable (object);
-
-        if (props_hash == NULL) {
-          GST_DEBUG ("'get_props_hastable' implementation returned TRUE but no"
-              "properties_hashtable is available");
-        } else {
-          object->priv->properties_hashtable = props_hash;
-          connect_properties_signals (object);
-        }
-      }
+      object->priv->properties_hashtable = _create_props_hashtable (object);
+      connect_properties_signals (object);
     }
   }
 
