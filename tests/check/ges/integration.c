@@ -607,6 +607,7 @@ test_image (void)
 #define CREATE_TEST(name, func, profile)                                       \
 GST_START_TEST (test_##name##_raw_h264_mov)                                    \
 {                                                                              \
+  g_print("running test_%s_%s\n", #name, "raw_h264_mov");		       \
   testfilename1 = "raw_h264.0.mov";                                            \
   testfilename2 = "raw_h264.1.mov";                                            \
   current_profile = profile;                                                   \
@@ -615,6 +616,7 @@ GST_START_TEST (test_##name##_raw_h264_mov)                                    \
 GST_END_TEST;                                                                  \
 GST_START_TEST (test_##name##_vorbis_theora_ogv)                               \
 {                                                                              \
+  g_print("running test_%s_%s\n", #name, "vorbis_theora_ogv");		       \
   testfilename1 = "vorbis_theora.0.ogg";                                       \
   testfilename2 = "vorbis_theora.1.ogg";                                       \
   current_profile = profile;                                                   \
@@ -623,6 +625,7 @@ GST_START_TEST (test_##name##_vorbis_theora_ogv)                               \
 GST_END_TEST;                                                                  \
 GST_START_TEST (test_##name##_vorbis_vp8_webm)                                 \
 {                                                                              \
+  g_print("running test_%s_%s\n", #name, "vorbis_vp8_webm");		       \
   testfilename1 = "vorbis_vp8.0.webm";                                         \
   testfilename2 = "vorbis_vp8.1.webm";                                         \
   current_profile = profile;                                                   \
@@ -631,6 +634,7 @@ GST_START_TEST (test_##name##_vorbis_vp8_webm)                                 \
 GST_END_TEST;                                                                  \
 GST_START_TEST (test_##name##_mp3_h264_mov)                                    \
 {                                                                              \
+  g_print("running test_%s_%s\n", #name, "mp3_h264_mov");		       \
   testfilename1 = "mp3_h264.0.mov";                                            \
   testfilename2 = "mp3_h264.1.mov";                                            \
   current_profile = profile;                                                   \
