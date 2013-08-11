@@ -1041,7 +1041,8 @@ main (int argc, char **argv)
 
   GOptionEntry options[] = {
     {"list-tests", 'l', 0.0, G_OPTION_ARG_NONE, &list_tests,
-        "List all avalaible tests", "N"}
+        "List all avalaible tests", "N"},
+    {NULL}
   };
 
   ctx = g_option_context_new ("Run integration tests");
