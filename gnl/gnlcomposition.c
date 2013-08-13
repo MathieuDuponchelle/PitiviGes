@@ -1210,6 +1210,11 @@ pad_blocked (GstPad * pad, GstPadProbeInfo * info, GnlComposition * comp)
 {
   GST_DEBUG_OBJECT (comp, "Pad : %s:%s", GST_DEBUG_PAD_NAME (pad));
 
+  /* When updating the pipeline, do not let data flowing */
+  if (comp->priv->stackvalid == FALSE &&
+      GST_IS_BUFFER (GST_PAD_PROBE_INFO_DATA (info)))
+    return GST_PAD_PROBE_DROP;
+
   return GST_PAD_PROBE_OK;
 }
 
@@ -2587,6 +2592,9 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
   stack = get_clean_toplevel_stack (comp, &currenttime, &new_start, &new_stop);
   samestack = are_same_stacks (priv->current, stack);
 
+  /* invalidate the stack while modifying it */
+  priv->stackvalid = FALSE;
+
   /* 2. If stacks are different, unlink/relink objects */
   if (!samestack)
     todeactivate = compare_relink_stack (comp, stack, modify);
@@ -2621,9 +2629,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
   if (priv->current)
     g_node_destroy (priv->current);
   priv->current = NULL;
-
-  /* invalidate the stack while modifying it */
-  priv->stackvalid = FALSE;
 
   /* 5. deactivate unused elements */
   if (todeactivate) {
