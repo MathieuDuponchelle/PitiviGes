@@ -71,6 +71,8 @@ static const gchar *testfilename2 = NULL;
 static const gchar *test_image_filename = NULL;
 static EncodingProfileName current_profile = PROFILE_NONE;
 
+static const gchar *effect_name = "agingtv";
+
 #define DURATION_TOLERANCE 0.1 * GST_SECOND
 
 #define get_asset(filename, asset)                                            \
@@ -566,7 +568,7 @@ test_effect (void)
       0 * GST_SECOND, 1 * GST_SECOND, GES_TRACK_TYPE_UNKNOWN);
   gst_object_unref (asset1);
 
-  effect = ges_effect_new ("agingtv");
+  effect = ges_effect_new (effect_name);
   ges_container_add (GES_CONTAINER (clip), GES_TIMELINE_ELEMENT (effect));
 
     /**
@@ -997,6 +999,19 @@ ges_suite (void)
   return s;
 }
 
+static Suite *
+ges_effects_suite (void)
+{
+  Suite *s = suite_create ("ges-effects-integration");
+  TCase *tc_chain = tcase_create ("effects-integration");
+
+  suite_add_tcase (s, tc_chain);
+
+  ADD_TESTS (effect);
+
+  return s;
+}
+
 static gboolean
 generate_all_files (void)
 {
@@ -1028,20 +1043,60 @@ generate_all_files (void)
   return TRUE;
 }
 
+static gint
+check_effects (gchar * test_effects)
+{
+  gint nf = 0;
+  Suite *s;
+
+  if (!g_strcmp0 (test_effects, "all")) {
+    GList *assets, *tmp;
+    assets = ges_list_assets (GES_TYPE_EFFECT);
+
+    for (tmp = assets; tmp; tmp = tmp->next) {
+      effect_name = ges_asset_get_id (tmp->data);
+      g_print ("testing effect %s\n", effect_name);
+      s = ges_effects_suite ();
+      nf = gst_check_run_suite (s, "ges_effects", __FILE__);
+    }
+  } else {
+    GESAsset *asset;
+    gchar **effects_names;
+    gint i = 0;
+
+    effects_names = g_strsplit (test_effects, ";", 0);
+    while (effects_names[i]) {
+      asset = ges_asset_request (GES_TYPE_EFFECT, effects_names[i], NULL);
+      if (asset) {
+        effect_name = effects_names[i];
+        g_print ("testing effect %s\n", effect_name);
+        s = ges_effects_suite ();
+        nf = gst_check_run_suite (s, "ges_effects", __FILE__);
+      }
+      i += 1;
+    }
+    g_strfreev (effects_names);
+  }
+
+  return nf;
+}
 
 int
 main (int argc, char **argv)
 {
-  int nf;
+  int nf = 0;
   GOptionContext *ctx;
 
   GError *err = NULL;
-  Suite *s = ges_suite ();
+  Suite *s;
   gboolean list_tests = FALSE;
+  gchar *test_effects = NULL;
 
   GOptionEntry options[] = {
     {"list-tests", 'l', 0.0, G_OPTION_ARG_NONE, &list_tests,
         "List all avalaible tests", "N"},
+    {"test-effects", 'e', 0, G_OPTION_ARG_STRING, &test_effects,
+        "Test all available effects", "N"},
     {NULL}
   };
 
@@ -1070,9 +1125,13 @@ main (int argc, char **argv)
     return 1;
   }
 
-
   loop = g_main_loop_new (NULL, FALSE);
-  nf = gst_check_run_suite (s, "ges", __FILE__);
+  if (test_effects) {
+    nf = check_effects (test_effects);
+  } else {
+    s = ges_suite ();
+    nf = gst_check_run_suite (s, "ges", __FILE__);
+  }
 
   g_list_free_full (tests_names, g_free);
 
