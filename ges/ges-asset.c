@@ -87,6 +87,8 @@
 
 #include <gst/gst.h>
 
+#include <string.h>
+
 enum
 {
   PROP_0,
@@ -558,6 +560,27 @@ ges_asset_cache_put (GESAsset * asset, GSimpleAsyncResult * res)
   UNLOCK_CACHE;
 }
 
+static void
+_init_effect_assets (void)
+{
+  GstRegistry *registry;
+  GList *features, *tmp;
+
+  registry = gst_registry_get ();
+  features = gst_registry_get_feature_list (registry, GST_TYPE_ELEMENT_FACTORY);
+  for (tmp = features; tmp; tmp = tmp->next) {
+    GstElementFactory *fact = tmp->data;
+    const gchar *klass;
+
+    klass = gst_element_factory_get_metadata (fact, "klass");
+    if (strstr (klass, "Effect")) {
+      GESAsset *asset = ges_asset_request (GES_TYPE_EFFECT,
+          gst_plugin_feature_get_name (fact), NULL);
+      gst_object_unref (asset);
+    }
+  }
+}
+
 void
 ges_asset_cache_init (void)
 {
@@ -567,6 +590,7 @@ ges_asset_cache_init (void)
 
   _init_formatter_assets ();
   _init_standard_transition_assets ();
+  _init_effect_assets ();
 }
 
 gboolean
