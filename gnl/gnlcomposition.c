@@ -2717,6 +2717,8 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
   if (priv->current) {
     GstEvent *event;
 
+    priv->stackvalid = TRUE;
+
     /* 7.1. Create new seek event for newly configured timeline stack */
     if (samestack && (startchanged || stopchanged))
       event =
@@ -2775,7 +2777,6 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
       priv->childseek = event;
       ret = TRUE;
     }
-    priv->stackvalid = TRUE;
   } else {
     if ((!priv->objects_start) && priv->ghostpad) {
       GST_DEBUG_OBJECT (comp, "composition is now empty, removing ghostpad");
