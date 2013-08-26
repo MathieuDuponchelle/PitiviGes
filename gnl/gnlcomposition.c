@@ -1210,14 +1210,16 @@ gnl_composition_event_handler (GstPad * ghostpad, GstObject * parent,
      * event. In the case of seeks the pipeline will already be correctly
      * configured at this point*/
     if (priv->waitingpads == 0) {
+      COMP_OBJECTS_UNLOCK (comp);
       GST_DEBUG_OBJECT (comp, "About to call gnl_event_pad_func()");
       res = priv->gnl_event_pad_func (priv->ghostpad, parent, event);
       priv->reset_time = FALSE;
       GST_DEBUG_OBJECT (comp, "Done calling gnl_event_pad_func() %d", res);
-    } else
+    } else {
+      COMP_OBJECTS_UNLOCK (comp);
       gst_event_unref (event);
+    }
 
-    COMP_OBJECTS_UNLOCK (comp);
   }
 
 beach:
