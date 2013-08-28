@@ -2629,6 +2629,12 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
   if (!GST_CLOCK_TIME_IS_VALID (currenttime))
     return FALSE;
 
+  if (state == GST_STATE_NULL && nextstate == GST_STATE_NULL) {
+    GST_DEBUG_OBJECT (comp, "STATE_NULL: not updating pipeline");
+    return FALSE;
+  }
+
+
   GST_DEBUG_OBJECT (comp,
       "now really updating the pipeline, current-state:%s",
       gst_element_state_get_name (state));
@@ -3003,7 +3009,8 @@ gnl_composition_remove_object (GstBin * bin, GstElement * element)
   if (G_LIKELY (update_required)) {
     /* And update the pipeline at current position if needed */
     update_pipeline_at_current_position (comp);
-  }
+  } else
+    update_start_stop_duration (comp);
 
   ret = GST_BIN_CLASS (parent_class)->remove_element (bin, element);
   GST_LOG_OBJECT (element, "Done removing from the composition, now updating");
