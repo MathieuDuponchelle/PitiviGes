@@ -589,8 +589,11 @@ test_transition (void)
   GESLayer *layer;
   GESUriClipAsset *asset1, *asset2;
   GESClip *clip;
+  GList *tmp;
+  GESTrack *trackv = GES_TRACK (ges_video_track_new ());
 
-  timeline = ges_timeline_new_audio_video ();
+  timeline = ges_timeline_new ();
+  ges_timeline_add_track (timeline, trackv);
   layer = ges_layer_new ();
   fail_unless (ges_timeline_add_layer (timeline, layer));
 
@@ -612,6 +615,19 @@ test_transition (void)
   gst_object_unref (asset2);
 
   ges_timeline_element_set_start (GES_TIMELINE_ELEMENT (clip), 1 * GST_SECOND);
+
+  ges_timeline_commit (timeline);
+
+  for (tmp = ges_track_get_elements (trackv); tmp; tmp = tmp->next) {
+    if (GES_IS_VIDEO_TRANSITION (tmp->data)) {
+      ges_video_transition_set_transition_type (tmp->data,
+          GES_VIDEO_STANDARD_TRANSITION_TYPE_BAR_WIPE_LR);
+      ges_video_transition_set_transition_type (tmp->data,
+          GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE);
+    }
+  }
+
+  ges_timeline_commit (timeline);
 
     /**
    * Our timeline
