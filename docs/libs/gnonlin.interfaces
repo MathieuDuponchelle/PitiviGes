@@ -1,7 +1,7 @@
-GstBin GstChildProxy
-GstPipeline GstChildProxy
+GnlComposition GstChildProxy
 GnlObject GstChildProxy
+GnlOperation GstChildProxy
 GnlSource GstChildProxy
 GnlURISource GstChildProxy
-GnlComposition GstChildProxy
-GnlOperation GstChildProxy
+GstBin GstChildProxy
+GstPipeline GstChildProxy

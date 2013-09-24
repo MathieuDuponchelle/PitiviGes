@@ -3,7 +3,7 @@ AC_PREREQ(2.62)
 dnl initialize autoconf
 dnl when going to/from release please set the nano (fourth number) right !
 dnl releases only do Wall, cvs and prerelease does Werror too
-AC_INIT(GNonLin, 0.11.89.1,
+AC_INIT(GNonLin, 1.1.90,
     http://gnonlin.sourceforge.net/,
     gnonlin)
 
@@ -44,8 +44,8 @@ AC_SUBST(GST_API_VERSION)
 AS_LIBTOOL(GST, 0, 0, 0)
 
 dnl *** required versions of GStreamer stuff ***
-GST_REQ=1.1.0
-GSTPB_REQ=1.1.0
+GST_REQ=1.2.0
+GSTPB_REQ=1.2.0
 
 dnl *** autotools stuff ****
 
@@ -111,7 +111,7 @@ AG_GST_CHECK_GST_BASE($GST_API_VERSION, [$GST_REQ], [yes])
 AG_GST_CHECK_GST_PLUGINS_BASE($GST_API_VERSION, [$GSTPB_REQ], [yes])
 
 dnl check for uninstalled plugin directories for unit tests
-AG_GST_CHECK_GST_PLUGINS_GOOD($GST_API_VERSION, [1.1.0])
+AG_GST_CHECK_GST_PLUGINS_GOOD($GST_API_VERSION, [1.2.0])
 
 dnl There are paths for documentation xrefs
 GLIB_PREFIX="`$PKG_CONFIG --variable=prefix glib-2.0`"

@@ -1,9 +1,1262 @@
-=== release 0.10.17 ===
+=== release 1.1.90 ===
 
-2011-01-20  Edward Hervey <bilboed@bilboed.com>
+2013-09-24  Thibault Saunier <thibault.saunier@collabora.com>
 
 	* configure.ac:
-	  releasing 0.10.17, "Flight from Hawaii coming out of the sun"
+	  releasing 1.1.90
+
+2013-09-24 14:39:47 +0200  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* configure.ac:
+	  RELEASE WIP
+
+2013-08-31 12:05:43 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  composition: Never take the OBJECTS_LOCK when sending events
+	  We should never have the OBJECTS_LOCK when sending or receiving
+	  events. This lock is usefull only when we deal with children of
+	  composition, so it should be used exclusivly for that purpose
+	  Avoiding deadlocks
+	  https://bugzilla.gnome.org/show_bug.cgi?id=706831
+
+2013-09-20 16:18:30 +0200  Edward Hervey <edward@collabora.com>
+
+	* common:
+	  Automatic update of common submodule
+	  From b613661 to 6b03ba7
+
+2013-09-19 18:45:49 +0100  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 74a6857 to b613661
+
+2013-09-19 17:38:45 +0100  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 01a7a46 to 74a6857
+
+2013-08-28 14:48:58 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  composition: Do not update the pipeline if we are in NULL state
+	  And always update start/duration when removing an object from the
+	  composition
+
+2013-08-26 16:26:31 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  composition: Release objects lock while forwarding an event
+	  There is no reason to keep it and in some rare cases it creates
+	  deadlocks as followed:
+	  t1:
+	  → Composition receives a flushing seek, it takes the OBJECTS_LOCK
+	  and fowards the flushing seek event upstream
+	  → adder receives the seek and set its collectpad to flushing
+	  This implies tacking STREAM_LOCK (collectpad)
+	  t2:
+	  → Collectpad has buffers ready, and has the STREAM_LOCK
+	  (collectpad) and is EOS, so it sends it downstream
+	  → The composition receives EOS, and needs to check if it is
+	  the actual EOS or not, thus need to take the OBJECTS_LOCK
+	  This create a deadlock, and in the first stage, we did not need the
+	  OBJECTS_LOCK to forward downstream the flushing seek, so do not take
+	  it.
+	  https://bugzilla.gnome.org/show_bug.cgi?id=706831
+
+2013-08-24 22:15:15 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  composition: Validate stack right after it has been re computed
+
+2013-08-15 21:57:49 +0200  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  composition: Implement a separate probe to drop data.
+	  It ensures that all data that still flows while we update the
+	  pipeline is dropped, otherwise we have races where we could get
+	  buffer from the old pipeline flowing into elements that are already
+	  fully flushed (and have no segment caps, etc... set)
+	  Also validate the stack a little later.
+	  This commits finnishes what had been started with
+	  a24a3be13b81c5d0080c061edf61daece6341f95
+
+2013-08-13 18:20:27 +0200  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Drop any buffer flowing from a source when updating pipeline
+	  There is a race where we can have an EOS from the element which
+	  srcpad is our ghost pad but other elements upstream are still outputing
+	  data and we flush the element so its pads have no segment info
+	  anymore, and we end up having warning about flow before segement event.
+	  The solution here is that we do not let any data flowing when we are
+	  updating the pipeline.
+
+2013-08-02 14:19:28 +0200  Lubosz Sarnecki <lubosz@gmail.com>
+
+	* configure.ac:
+	  build: add subdir-objects to AM_INIT_AUTOMAKE
+	  Fixes warnings with automake 1.14
+	  https://bugzilla.gnome.org/show_bug.cgi?id=705350
+
+2013-01-22 14:40:15 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* gnl/gnloperation.c:
+	  gnloperation: check for request pads on the element class not the factory
+	  When checking for request pads as fallback, just look at the
+	  element's class, not the factory, since there might not be
+	  a factory (in case of python elements) or the factory might
+	  be the wrong one (in case of a GstBin sub-class) and doesn't
+	  have complete information.
+	  https://bugzilla.gnome.org/show_bug.cgi?id=582244
+
+2013-06-05 15:14:54 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: grammar (childs -> children)
+	  https://bugzilla.gnome.org/show_bug.cgi?id=701647
+
+2013-07-09 23:16:53 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* gnl/gnlcomposition.c:
+	  composition: Check if we have an entry before trying to get its probeid
+	  The object can be removed at the time the pad is removed, avoid segfaulting
+	  when that happens.
+
+2013-06-26 17:25:37 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  composition: Add entry to the the hashtable before connecting to pad-added
+	  Avoiding races where the pad would be added right between the connection
+	  and inserting to the hashtable
+
+2013-06-13 20:33:00 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* tests/check/gnl/complex.c:
+	  gnlcomposition: Remove support for gaps
+	  The way we were handling gap was weird and not natural at all for
+	  users, remove it for now.
+	  In the long term, we should have a proper way of filling gaps in the
+	  API and for now only emit an STREAM_ERROR message on the bus when a
+	  gap is detected.
+	  The user is now responsible for filling gaps in the composition
+	  https://bugzilla.gnome.org/show_bug.cgi?id=701287
+
+2013-06-13 19:39:55 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Remove uneeded indents
+	  Going from
+	  if (something) {
+	  do_something();
+	  } else {
+	  }
+	  to
+	  if (!something)
+	  return;
+	  do_something ();
+
+2013-06-13 19:33:46 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Make the pipeline update protected from any child changes
+	  When calling the gnl_object_commit method, we need to make sure that no
+	  object can be changed and, it should be true until the pipeline has
+	  fully been udpated.
+	  We now need the update_pipeline function to be called with the
+	  COMP_OBJECTS_LOCK taken, and we do not unlock that lock during the whole
+	  pipeline updating process.
+	  https://bugzilla.gnome.org/show_bug.cgi?id=701287
+
+2013-06-13 18:51:15 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlobject.c:
+	  gnl: Setting priority == MAXUINT32 does not mean "default object"
+	  This was how expandables worked prior to the expandable property.
+	  Using MAXUINT32 has some limitation and which are fully covered by the
+	  expandable property. Drop this support, as we will plan on implementing
+	  an automatic way of filling gaps.
+	  https://bugzilla.gnome.org/show_bug.cgi?id=701287
+
+2013-06-07 18:58:24 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlobject.c:
+	* gnl/gnlobject.h:
+	* tests/check/gnl/common.c:
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/gnlsource.c:
+	* tests/check/gnl/seek.c:
+	* tests/check/gnl/simple.c:
+	  gnl: First implementation of the commit based API
+	  Currently, the only safe way to modify a composition, or an object, is to pause
+	  the pipeline first. We think that this limitation eliminates many use cases for
+	  GNonLin. Few video editors let you create a draft of your video by applying
+	  multi-cam technic. Also people could want to eventually consider doing live
+	  video production, which obviously require being able to change the composition
+	  in playing state (and increase compositon duration as we go).
+	  This commit is a first step making GNL fully commit base. Objects, Operations and
+	  Compositon keep a copy of modified values, and only apply those changes
+	  when a commit is executed. This potentially allows making the changes
+	  (or group of changes) fully 'atomic' without having to pause the pipeline.
+	  Added API:
+	  ----------
+	  GnlObject::commit action signal
+	  Removed API:
+	  ------------
+	  GnlComposition:update property
+	  + Fix the tests
+	  https://bugzilla.gnome.org/show_bug.cgi?id=701287
+
+2013-06-07 18:17:25 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlobject.c:
+	  gnl: Remove trailling whitespaces and tabs in .c files
+
+2013-06-07 11:39:17 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlghostpad.c:
+	* gnl/gnlobject.c:
+	* gnl/gnlobject.h:
+	* tests/check/gnl/common.c:
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/seek.c:
+	* tests/check/gnl/simple.c:
+	  gnl: Remove the notion of media-duration
+	  Rational described at https://bugzilla.gnome.org/show_bug.cgi?id=701287
+
+2013-05-30 17:48:47 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* docs/libs/gnonlin.args:
+	* gnl/gnlcomposition.c:
+	* gnl/gnlghostpad.c:
+	* gnl/gnlobject.c:
+	* gnl/gnlobject.h:
+	* tests/check/gnl/common.c:
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/gnlcomposition.c:
+	  gnl: Rename media-start as inpoint
+	  Rational described at https://bugzilla.gnome.org/show_bug.cgi?id=701287
+
+2013-06-11 18:22:11 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* gnl/gnlcomposition.c:
+	  composition: update operations base time even when we don't update the pipeline.
+
+2013-05-29 16:55:34 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: forward non time-resetting flush stops outside the composition, except those consecutive to a seek event.
+	  The 'reset-time' parameter has been added in 1.0, and we need it to be FALSE
+	  outside the composition.
+	  Related to https://bugzilla.gnome.org/show_bug.cgi?id=701146
+
+2013-05-28 19:09:23 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Don't flush_start / flush_stop according to user's flags.
+	  We do it ourselves when needed, doing so led the pipeline to lose state,
+	  which was updating the base time.
+	  fixes https://bugzilla.gnome.org/show_bug.cgi?id=701146
+
+2013-06-10 17:46:51 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlghostpad.c:
+	* gnl/gnloperation.c:
+	* gnl/gnloperation.h:
+	  gnl: Properly set operations basetime
+	  For operations (especially mixers) to be able to do proper
+	  synchronization they need the segment from different sources to be in
+	  the same running time context.
+	  This commit makes sure that the basetime of the incoming segments of
+	  operations will be the same, and equal to the duration of the
+	  already "played" time of the operation at the position at which
+	  the new portion of the composition starts.
+
+2013-06-05 15:17:37 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 098c0d7 to 01a7a46
+
+2013-05-27 20:52:36 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* tests/check/Makefile.am:
+	* tests/check/gnl/common.c:
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/gnlsource.c:
+	* tests/check/gnl/seek.c:
+	* tests/check/gnl/simple.c:
+	  tests: sanitization.
+	  + Create a no_install libtestutils.
+	  + Remove code from common.h to put it in common.c
+	  + Abstract away bus polling from test_simplest # TODO use it as much as possible.
+	  + Fix various little errors spotted thanks to new flags.
+
+2013-05-25 03:05:40 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: When removing a ghostpad, remove the probe_handlers associated to its target.
+
+2013-05-25 03:43:20 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlcomposition.h:
+	  gnlcomposition:  replace eos_main_thread with update_pipeline_func.
+	  + This function is called in a thread of its own.
+
+2013-05-24 16:23:26 +0200  Mathieu Duponchelle <mathieu.duponchelle@epitech.eu>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Forward EOS from the streaming thread when appropriate.
+
+2013-04-26 18:14:36 +0200  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* .gitignore:
+	  Cleanup and fix gitignore
+
+2012-09-11 18:35:17 -0400  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlghostpad.c:
+	* gnl/gnlghostpad.h:
+	* gnl/gnloperation.c:
+	* gnl/gnlsource.c:
+	  ghostpad: Remove unsued parameter flush_hack
+	  As a result, remove unused gnl_object_ghost_pad_full.
+
+2013-01-25 10:35:22 -0500  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlghostpad.c:
+	  ghostpad: Remove uneeded set_caps()
+	  Linking the element should automatically resend all sticky events.
+
+2013-01-09 11:54:36 -0500  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlghostpad.c:
+	  ghostpad: Correctly handle pad creation failure
+	  We where trying to activate the pad even if creating the ghostpad failed.
+	  Instead, warn if that fails, and return NULL as expected.
+
+2012-09-12 12:43:07 -0400  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlsource.c:
+	  source: Split change_state into prepare/cleanup
+
+2012-09-12 12:37:04 -0400  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlobject.c:
+	  object: Fix function declaration coding style
+
+2012-09-11 19:28:55 -0400  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlobject.c:
+	  doc: Add missing description
+
+2012-09-11 19:28:42 -0400  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnloperation.c:
+	* gnl/gnlsource.c:
+	* gnl/gnlurisource.c:
+	  doc: Remove duplicate short description
+	  nowadays the plugin description is used.
+
+2012-09-11 19:09:30 -0400  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* docs/libs/gnonlin-sections.txt:
+	* docs/libs/gnonlin.args:
+	* docs/libs/gnonlin.hierarchy:
+	* docs/libs/gnonlin.interfaces:
+	* docs/random/design:
+	  Drop remaining references to GnlFileSource
+
+2013-05-23 21:09:58 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  Revert "composition: Foward eos from the streaming thread when appropriate"
+	  This reverts commit 9db8b0211bf64137ff3215b78172fe76de1994a1.
+	  This should be implemented properly using our knowledge of the
+	  composition's content
+
+2013-05-23 20:35:58 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  composition: Foward eos from the streaming thread when appropriate
+
+2013-05-19 12:06:40 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* tests/check/gnl/common.h:
+	  tests: Use spaces instead of tabs
+
+2013-05-16 00:16:18 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Only send stream-start once and for each source start
+	  We concider the output of a gnlcomposition as 1 coherente stream.
+
+2013-05-05 11:24:45 +0100  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlobject.c:
+	  Remove useless GLib version checks
+
+2013-04-12 18:16:40 -0300  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* tests/check/gnl/gnlcomposition.c:
+	  tests: Add a simple test with adder
+
+2013-05-15 10:54:24 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 5edcd85 to 098c0d7
+
+2013-04-22 23:55:18 +0100  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 3cb3d3c to 5edcd85
+
+2012-10-24 12:17:28 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* configure.ac:
+	* gnl/Makefile.am:
+	  gst: Add better support for static plugins
+
+2013-04-14 17:57:45 +0100  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From aed87ae to 3cb3d3c
+
+2013-04-09 21:02:21 +0200  Stefan Sauer <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 04c7a1e to aed87ae
+
+2013-03-28 19:07:30 +0100  Edward Hervey <edward@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/seek.c:
+	* tests/check/gnl/simple.c:
+	  composition: Ensure segment base time is correct
+	  We update it based on accumulated segment time.
+	  Tests are also updated to check for valid base/time/duration
+
+2013-03-28 17:26:52 +0000  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposion: When seeking flush downstream before unlinking
+	  The 'update' parameter in seek_handling is used to know if flush most be
+	  performed before unlinking or linking new objects. It accidently set to
+	  TRUE d196cd3cdc850f2355bb16518e22ccfda1170078.
+
+2013-03-28 16:26:25 +0000  Nicolas Dufresne <nicolas.dufresne@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposion: objects lock must be taken to call _set_target()
+	  gnl_composition_ghost_pad_set_target() require the objects_lock to be
+	  taken. Aslo improve protection around user_seek_flush.
+
+2013-03-07 00:03:43 +0000  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 2de221c to 04c7a1e
+
+2013-01-30 15:12:55 +0000  Luis de Bethencourt <luis@debethencourt.com>
+
+	* configure.ac:
+	  configure: update to 1.0 dependency
+
+2013-01-28 20:44:59 +0100  Stefan Sauer <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From a942293 to 2de221c
+
+2013-01-16 12:30:11 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* docs/libs/Makefile.am:
+	* tests/check/Makefile.am:
+	  tests, docs: use GST_*_1_0 environment variables everywhere
+	  The _1_0 suffixed environment variables override the
+	  non-suffixed ones, so if we're in an environment that
+	  sets the _1_0 suffixed ones, such as jhbuild, we need
+	  to set those to make sure ours actually always get
+	  used.
+
+2013-01-15 15:08:44 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From a72faea to a942293
+
+2012-12-30 23:19:05 +0000  Kerrick Staley <bugs@kerrickstaley.com>
+
+	* configure.ac:
+	  configure: replace deprecated AM_CONFIG_HEADER with AC_CONFIG_HEADERS
+	  AM_CONFIG_HEADER has been removed in the just-released automake 1.13:
+	  https://lists.gnu.org/archive/html/automake/2012-12/msg00038.html
+	  https://bugzilla.gnome.org/show_bug.cgi?id=690881
+
+2012-11-28 15:59:43 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Add support for reverse playback
+	  Conflicts:
+	  gnl/gnlcomposition.c
+
+2012-11-28 15:49:37 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Make sure to pass flushes downstream if flushing seeks were received
+	  Conflicts:
+	  gnl/gnlcomposition.c
+
+2012-11-19 11:30:01 +0000  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 6bb6951 to a72faea
+
+2012-11-07 12:30:51 +0100  Edward Hervey <edward@collabora.com>
+
+	* tests/check/gnl/common.h:
+	  check: Detect stray segments better
+
+2012-11-04 00:13:12 +0000  Tim-Philipp Müller <tim@centricular.net>
+
+	* COPYING:
+	* COPYING.LIB:
+	* LICENSE:
+	* gnl/gnl.c:
+	* gnl/gnl.h:
+	* gnl/gnlcomposition.c:
+	* gnl/gnlcomposition.h:
+	* gnl/gnlghostpad.c:
+	* gnl/gnlghostpad.h:
+	* gnl/gnlobject.c:
+	* gnl/gnlobject.h:
+	* gnl/gnloperation.c:
+	* gnl/gnloperation.h:
+	* gnl/gnlsource.c:
+	* gnl/gnlsource.h:
+	* gnl/gnltypes.h:
+	* gnl/gnlurisource.c:
+	* gnl/gnlurisource.h:
+	* tests/check/gnl/gnlcomposition.c:
+	  Fix FSF address
+
+2012-11-03 18:16:05 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/seek.c:
+	  check: Re-enable more tests
+	  Event though they don't succeed due to some issues in videomixer
+	  segment handling (or lack thereof).
+
+2012-11-03 18:15:20 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/gnlcomposition.c:
+	  check: Fix usage of probe
+	  We only care about downstream data, and we only need to be called once
+
+2012-11-03 18:13:32 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlghostpad.c:
+	* tests/check/gnl/common.h:
+	  misc: Add more/better debugging
+
+2012-11-03 18:09:39 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnloperation.c:
+	  gnloperation: Only release sink pads that need to be
+
+2012-11-03 18:08:37 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlghostpad.c:
+	  gnlghostpad: Control internal pad straight away
+	  The behaviour changed in 1.0, the internal (proxy) pad is always present
+	  for a ghostpad. We therefore need to control straight away to avoid
+	  races between the mode it is linked with the target and the moment we set
+	  custom pad functions.
+
+2012-11-03 18:03:58 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  composition: Only care about source pads that go away
+	  sink pads are handled by operations
+
+2012-09-25 14:22:54 +0200  Edward Hervey <edward@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  composition: Ensure seeks always have flush/accurate
+	  Otherwise we will never be able to unblock upstream elements
+
+2012-09-25 14:21:55 +0200  Edward Hervey <edward@collabora.com>
+
+	* gnl/gnlghostpad.c:
+	  events: Don't leak segments and carry-over seqnums
+	  Even though we transform events, we carry-over the seqnum
+
+2012-09-25 14:21:12 +0200  Edward Hervey <edward@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Fix leak
+
+2012-10-17 17:51:49 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnloperation.c:
+	* gnl/gnlsource.c:
+	* gnl/gnlurisource.c:
+	  gnl: use gst_element_class_set_static_metadata()
+
+2012-10-06 15:01:28 +0100  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 6c0b52c to 6bb6951
+
+2012-09-22 16:10:51 +0100  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 4f962f7 to 6c0b52c
+
+2012-09-03 13:05:34 +0200  Edward Hervey <edward@collabora.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Update for API change
+
+2012-08-22 13:32:51 +0200  Stefan Sauer <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 668acee to 4f962f7
+
+2012-08-05 16:43:01 +0100  Tim-Philipp Müller <tim@centricular.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 94ccf4c to 668acee
+
+2012-07-23 08:47:43 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 98e386f to 94ccf4c
+
+2012-07-05 13:24:41 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Implement segment-done event
+
+2012-06-11 10:46:17 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* configure.ac:
+	  configure: Remove -Wcast-align
+	  See https://bugzilla.gnome.org/show_bug.cgi?id=615698
+
+2012-06-08 15:06:46 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 03a0e57 to 98e386f
+
+2012-06-06 18:20:27 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 1fab359 to 03a0e57
+
+2012-06-01 10:30:37 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From f1b5a96 to 1fab359
+
+2012-05-31 13:10:50 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 92b7266 to f1b5a96
+
+2012-05-30 12:48:11 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From ec1c4a8 to 92b7266
+
+2012-05-30 11:26:42 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 3429ba6 to ec1c4a8
+
+2012-05-13 15:58:20 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From dc70203 to 3429ba6
+
+2012-04-17 17:59:41 +0400  Руслан Ижбулатов <lrn1986@gmail.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: fix printf format in debug message
+	  https://bugzilla.gnome.org/show_bug.cgi?id=675276
+
+2012-04-24 15:38:44 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Use correct enum type
+
+2012-04-16 09:11:12 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 6db25be to dc70203
+
+2012-04-13 13:54:59 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* autogen.sh:
+	* configure.ac:
+	  configure: Modernize autotools setup a bit
+	  Also we now only create tar.bz2 and tar.xz tarballs.
+
+2012-04-13 13:39:02 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 464fe15 to 6db25be
+
+2012-04-05 18:45:02 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 7fda524 to 464fe15
+
+2012-04-05 17:40:34 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* gnl/gnl.c:
+	  gst: Update for GST_PLUGIN_DEFINE() API changes
+
+2012-04-04 14:52:13 +0200  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* configure.ac:
+	* docs/libs/gnonlin-docs.sgml:
+	* docs/version.entities.in:
+	* gnl/Makefile.am:
+	* gnonlin.spec.in:
+	  gnl: Update versioning
+
+2012-03-26 12:40:13 +0200  Wim Taymans <wim.taymans@collabora.co.uk>
+
+	  Replace master with 0.11
+
+2012-03-13 19:49:36 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	  Merge remote-tracking branch 'origin/master' into 0.11
+	  Conflicts:
+	  configure.ac
+	  gnl/gnlfilesource.c
+	  gnl/gnlsource.c
+	  tests/check/gnl/common.h
+
+2012-03-13 19:32:08 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* configure.ac:
+	* gnl/.gitignore:
+	* gnl/Makefile.am:
+	* gnl/gnloperation.c:
+	  Remove gstmarshal.[ch] completely and use the generic marshaller
+
+2012-03-06 15:33:49 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* gnl/gnlobject.h:
+	  gnl: Fix 'signed shift result (0x20000000000) requires 43 bits to represent, but 'int' only has 32 bits' compiler warning
+	  Seems we don't have that many flags left...
+
+2012-01-25 18:13:35 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/seek.c:
+	  tests: don't use deprecated API
+
+2012-01-25 18:13:15 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* configure.ac:
+	* gnl/gnlcomposition.c:
+	* gnl/gnlsource.c:
+	  gnl: Don't use deprecated GMutex/GThread API
+	  And depend on same glib version as 0.11 core
+
+2012-01-25 14:12:03 +0100  Thomas Vander Stichele <thomas (at) apestaart (dot) org>
+
+	* common:
+	  Automatic update of common submodule
+	  From c463bc0 to 7fda524
+
+2012-01-25 11:40:36 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 2a59016 to c463bc0
+
+2012-01-18 16:48:22 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 0807187 to 2a59016
+
+2012-01-13 12:32:29 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* tests/check/gnl/common.h:
+	  tests: don't redefine fail_unless_equals_int64()
+	  Fixes compiler warnings with recent GStreamer versions.
+
+2012-01-13 12:19:31 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* gnl/gnlfilesource.c:
+	  gnlfilesource: unescape URIs when converting an URI into a filename
+	  URIs may contain escapes, which need to be unescaped when creating
+	  a filename (even if we pass an URI that's unescaped, we may get back
+	  an escaped one, can't really make any assumptions).
+
+2012-01-13 12:18:14 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* configure.ac:
+	* gnl/gnlfilesource.c:
+	  gnlfilesource: use gst_filename_to_uri() to create a proper file URI
+	  This will create a correct URI even for relative paths, which are
+	  allowed for "location" properties.
+	  Bump GStreamer core/base requirement to 0.10.33 for that API.
+
+2012-01-04 19:55:27 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 0546e58 to 0807187
+
+2011-12-30 14:16:41 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlghostpad.c:
+	* gnl/gnlsource.c:
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/gnlcomposition.c:
+	  More updates for probe changes
+
+2011-11-24 00:38:21 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlghostpad.c:
+	* gnl/gnlsource.c:
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/gnlsource.c:
+	* tests/check/gnl/seek.c:
+	* tests/check/gnl/simple.c:
+	  gnl, tests: update for pad probe API changes
+	  But unit tests time out after pad gets blocked,
+	  so still something missing somewhere.
+
+2011-11-01 00:49:00 +0000  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlsource.c:
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/gnlsource.c:
+	* tests/check/gnl/seek.c:
+	* tests/check/gnl/simple.c:
+	  Update for pad API changes
+	  GstProbeType, GstProbeReturn and GstActivateMode -> GstPad*
+
+2011-10-06 10:50:12 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlsource.c:
+	  gnlsource: Don't use _accept_caps to figure out compatible pads
+	  It isn't reliable due to issues with gst_caps_is_subset.
+	  Instead we just check if a pad caps intersect with the target caps
+	  Ported from 0.11 (471611). Fixes bug #662312.
+	  Conflicts:
+	  gnl/gnlsource.c
+
+2011-10-10 17:15:30 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Set ghostpad *after* sending seek event
+	  Avoids ending up with stray EOS events being copied over.
+
+2011-10-10 17:14:21 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/seek.c:
+	  check: Use a probe to detect events
+	  ... and not a pad block
+
+2011-10-10 13:18:43 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlghostpad.c:
+	  gnlghostpad: Make debug message more informative
+
+2011-10-10 13:18:32 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnloperation.c:
+	  gnloperation: Fix iterator/GValue usage
+
+2011-10-10 13:18:01 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlghostpad.c:
+	* gnl/gnlghostpad.h:
+	  gnlcomposition: Refactor probe handling
+
+2011-10-10 13:15:53 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlobject.c:
+	* gnl/gnloperation.c:
+	* gnl/gnlsource.c:
+	  gnl: Code Cleanup
+
+2011-10-06 10:50:12 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlsource.c:
+	  gnlsource: Don't use _accept_caps to figure out compatible pads
+	  It isn't reliable due to issues with gst_caps_is_subset.
+	  Instead we just check if a pad caps intersect with the target caps
+
+2011-10-06 10:49:15 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlsource.c:
+	  gnlsource: Don't remove probes that don't exist
+
+2011-10-06 10:46:46 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlsource.c:
+	  gnlsource: Ref the proper pad
+	  And not the pointer to the pad
+
+2011-10-05 11:02:44 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	  Merge remote-tracking branch 'origin/master' into 0.11
+
+2011-10-05 11:00:25 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/Makefile.am:
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/gnlsource.c:
+	* tests/check/gnl/seek.c:
+	* tests/check/gnl/simple.c:
+	  tests: Update to new 0.11 API
+	  * Use GST_UNSTABLE_API
+	  * Remove unused variables
+	  * Properly disable tests that require videomixer if not present
+	  * Clarify failures with ERROR messages
+	  * Use new probe API
+	  Compiles ... but most tests fail due to caps issues (which is also present
+	  in 0.10)
+
+2011-10-05 10:57:24 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlghostpad.c:
+	* gnl/gnlghostpad.h:
+	* gnl/gnloperation.c:
+	* gnl/gnlsource.c:
+	  gnl: More porting to 0.11 API
+	  Now properly compiles
+	  * Switch to new probe API for pad probes and pad blocking
+	  * Switch to new GstIterator API
+	  * Switch to new GstSegment API
+	  * Switch to new GstEvent API (for SEGMENT and SEEK events)
+
+2011-10-05 10:56:02 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* common:
+	  common: Switch to head of 0.11 branch
+
+2011-09-07 15:56:12 +0200  Stefan Sauer <ensonic@users.sf.net>
+
+	* docs/libs/Makefile.am:
+	  docs: cleanup makefiles
+	  Remove commented out parts that we don't need. Remove "the wingo addition" - no
+	  so useful after all. Narrow down file-globs for plugin docs.
+
+2011-09-06 21:53:17 +0200  Stefan Sauer <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From a39eb83 to 11f0cd5
+
+2011-09-06 16:06:47 +0200  Stefan Sauer <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 605cd9a to a39eb83
+
+2011-08-05 13:12:48 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	* gnl/gnlobject.c:
+	* gnl/gnloperation.c:
+	* gnl/gnlsource.c:
+	* gnl/gnlurisource.c:
+	  gnl: Remove GST_BOILERPLATE usage
+	  doesn't compile yet
+
+2011-08-05 12:52:14 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* docs/libs/gnonlin-docs.sgml:
+	* gnl/Makefile.am:
+	* gnl/gnl.c:
+	* gnl/gnl.h:
+	* gnl/gnlfilesource.c:
+	* gnl/gnlfilesource.h:
+	* gnl/gnltypes.h:
+	* gnl/gnlurisource.h:
+	  gnlfilesource: is dead, long live gnlurisource
+
+2011-08-05 12:42:00 +0200  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* common:
+	* configure.ac:
+	* gnl/Makefile.am:
+	  0.11 branch is open \o/
+
+2011-06-23 11:29:50 -0700  David Schleef <ds@schleef.org>
+
+	* common:
+	  Automatic update of common submodule
+	  From 69b981f to 605cd9a
+
+2011-05-19 23:00:01 +0300  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 9e5bbd5 to 69b981f
+
+2011-05-18 16:13:29 +0300  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From fd35073 to 9e5bbd5
+
+2011-05-18 12:26:54 +0300  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 46dfcea to fd35073
+
+2011-04-24 14:06:15 +0100  Tim-Philipp Müller <tim.muller@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From c3cafe1 to 46dfcea
+
+2011-01-27 17:32:28 +0100  Alessandro Decina <alessandro.d@gmail.com>
+
+	* Android.mk:
+	* gnl/Makefile.am:
+	  android: make it ready for androgenizer
+	  Remove the android/ top dir
+	  Fix the Makefile.am to be androgenized
+	  To build gstreamer for android we are now using androgenizer which generates the needed Android.mk files.
+	  Androgenizer can be found here: http://git.collabora.co.uk/?p=user/derek/androgenizer.git
+
+2011-04-04 15:59:13 +0300  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 1ccbe09 to c3cafe1
+
+2011-03-25 22:36:45 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 193b717 to 1ccbe09
+
+2011-03-25 14:57:43 +0200  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From b77e2bf to 193b717
+
+2011-03-25 09:34:19 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From d8814b6 to b77e2bf
+
+2011-03-25 09:10:40 +0100  Sebastian Dröge <sebastian.droege@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 6aaa286 to d8814b6
+
+2011-03-24 18:51:06 +0200  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 6aec6b9 to 6aaa286
+
+2011-03-18 19:34:57 +0100  Luis de Bethencourt <luis@debethencourt.com>
+
+	* autogen.sh:
+	  autogen: wingo signed comment
+
+2011-02-28 20:26:33 +0100  Mark Nauwelaerts <mark.nauwelaerts@collabora.co.uk>
+
+	* configure.ac:
+	  configure.ac: export plugin description more platform independent
+	  Fixes #642504.
+
+2011-02-28 18:34:36 +0100  Mark Nauwelaerts <mark.nauwelaerts@collabora.co.uk>
+
+	* common:
+	  Automatic update of common submodule
+	  From 1de7f6a to 6aec6b9
+
+2011-02-24 12:50:01 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnloperation.c:
+	  gnloperation: Handle the cases where the sink pads disappear
+
+2011-01-31 15:40:19 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnloperation.c:
+	  gnloperation: Synchronize all pads
+	  We were previously only removing one pad instead of synchronizing
+	  back down to the number of requested pads.
+
+2011-01-31 15:39:52 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnloperation.c:
+	  gnloperation: Cleanup pads when going from PAUSED to READY
+
+2011-02-14 12:55:36 +0200  Stefan Kost <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From f94d739 to 1de7f6a
+
+2011-02-10 19:11:57 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* tests/check/gnl/gnlcomposition.c:
+	  tests: Make gnlcomposition check stop faster
+
+2011-02-10 18:51:41 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* tests/check/gnl/gnloperation.c:
+	* tests/check/gnl/seek.c:
+	* tests/check/gnl/simple.c:
+	  tests: Add doc and refine seek check
+
+2011-02-10 18:51:08 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* tests/check/gnl/common.h:
+	  tests: Small cleanup
+
+2011-02-08 13:45:03 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* tests/check/gnl/seek.c:
+	  tests: Added more seeking tests involving operations
+
+2011-02-08 12:59:10 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* tests/check/gnl/gnloperation.c:
+	  check: refactor 'gnloperation' tests
+
+2011-02-08 09:12:35 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* tests/check/gnl/common.h:
+	* tests/check/gnl/complex.c:
+	  tests: refactor 'complex' test
+
+2011-02-02 18:10:52 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/Makefile.am:
+	* tests/check/gnl/seek.c:
+	  tests: First go at testing seeking
+	  Still needs more checks though
+
+2011-01-31 16:05:34 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/gnlcomposition.c:
+	* tests/check/gnl/gnloperation.c:
+	  check: More debugging and state checking
+
+2011-01-31 16:05:15 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/common.h:
+	  tests: Add a method for checking element states
+
+2011-01-29 12:52:30 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/complex.c:
+	* tests/check/gnl/gnloperation.c:
+	  check: Add some comments
+
+2011-01-29 12:52:09 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* tests/check/gnl/simple.c:
+	  check: Add a simple variant
+
+2011-01-24 13:34:38 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: clarify update_pipeline internal comments
+
+2011-01-21 15:35:59 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* docs/random/part-gnlcomposition.txt:
+	  docs: Explanations about scheduling in gnlcomposition
+
+2011-01-20 13:31:51 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* docs/random/design:
+	  docs: Re-indent design doc to 70 column and clarify
+
+2011-01-25 11:17:47 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
+
+	* configure.ac:
+	  configure.ac: And back to development we go
+
+=== release 0.10.17 ===
+
+2011-01-20 20:56:23 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* ChangeLog:
+	* NEWS:
+	* RELEASE:
+	* configure.ac:
+	  Release 0.10.17
 
 2011-01-13 11:29:52 +0100  Edward Hervey <edward.hervey@collabora.co.uk>
 
