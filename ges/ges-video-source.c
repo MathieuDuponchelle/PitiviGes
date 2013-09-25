@@ -102,6 +102,8 @@ ges_video_source_create_element (GESTrackElement * trksrc)
   capsfilter =
       gst_element_factory_make ("capsfilter", "track-element-capsfilter");
 
+  g_object_set (videoscale, "add-borders", FALSE, NULL);
+
   ges_frame_positionner_set_source_and_filter (GST_FRAME_POSITIONNER
       (positionner), trksrc, capsfilter);
 
