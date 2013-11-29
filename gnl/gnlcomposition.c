@@ -664,7 +664,7 @@ ghost_event_probe_handler (GstPad * ghostpad G_GNUC_UNUSED,
         /* FIXME: Do we want to create a new stream ID here? */
         GST_DEBUG_OBJECT (comp, "forward stream-start %p", event);
       } else {
-        GST_DEBUG_OBJECT (comp, "droping stream-start %p", event);
+        GST_DEBUG_OBJECT (comp, "dropping stream-start %p", event);
         retval = GST_PAD_PROBE_DROP;
       }
       break;
