@@ -498,9 +498,6 @@ get_unused_static_sink_pad (GnlOperation * operation)
         break;
       }
       case GST_ITERATOR_RESYNC:
-        if (ret)
-          gst_object_unref (ret);
-        ret = NULL;
         gst_iterator_resync (pads);
         break;
       default:
@@ -553,9 +550,6 @@ get_unlinked_sink_ghost_pad (GnlOperation * operation)
         break;
       }
       case GST_ITERATOR_RESYNC:
-        if (ret)
-          gst_object_unref (ret);
-        ret = NULL;
         gst_iterator_resync (pads);
         break;
       default:
