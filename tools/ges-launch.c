@@ -21,6 +21,7 @@
 #include "config.h"
 #endif
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -595,6 +596,15 @@ _parse_encoding_profile (const gchar * format)
   return encoding_profile;
 }
 
+static void
+interrupt_handler (int sig)
+{
+  GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (pipeline),
+      GST_DEBUG_GRAPH_SHOW_ALL, "ges-launch.interrupted");
+  signal (sig, SIG_DFL);
+  raise (sig);
+}
+
 int
 main (int argc, gchar ** argv)
 {
@@ -650,6 +660,8 @@ main (int argc, gchar ** argv)
   GESTimeline *timeline;
 
   setlocale (LC_ALL, "");
+
+  signal (SIGINT, interrupt_handler);
 
   ctx = g_option_context_new ("- plays or renders a timeline.");
   g_option_context_set_summary (ctx,
