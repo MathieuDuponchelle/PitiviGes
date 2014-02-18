@@ -1,0 +1,4 @@
+description, duration=15.0
+pause, playback_time="min(1.0, duration/2)", duration=1.0
+edit-clip, playback_time=0.0, clip-name="uriclip0", position=3.0
+eos, playback_time=15.0
