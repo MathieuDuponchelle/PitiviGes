@@ -402,13 +402,14 @@ ges_timeline_element_set_timeline (GESTimelineElement * self,
   g_return_val_if_fail (GES_IS_TIMELINE_ELEMENT (self), FALSE);
   g_return_val_if_fail (timeline == NULL || GES_IS_TIMELINE (timeline), FALSE);
 
-  GST_DEBUG_OBJECT (self, "set timeline to %" GST_PTR_FORMAT, timeline);
+  GST_ERROR_OBJECT (self, "set timeline to %" GST_PTR_FORMAT, timeline);
 
   if (timeline != NULL && G_UNLIKELY (self->timeline != NULL))
     goto had_timeline;
 
   if (timeline == NULL) {
     if (self->timeline) {
+      GST_ERROR_OBJECT (self, "Want removal");
       if (!timeline_remove_element (self->timeline, self))
         return FALSE;
     }
@@ -418,14 +419,16 @@ ges_timeline_element_set_timeline (GESTimelineElement * self,
   }
 
   self->timeline = timeline;
+  GST_ERROR_OBJECT (self, "MY TL IS %" GST_PTR_FORMAT, self->timeline);
 
   g_object_notify_by_pspec (G_OBJECT (self), properties[PROP_TIMELINE]);
+  GST_ERROR_OBJECT (self, "MY TL IS %" GST_PTR_FORMAT, self->timeline);
   return TRUE;
 
   /* ERROR handling */
 had_timeline:
   {
-    GST_DEBUG_OBJECT (self, "set timeline failed, object already had a "
+    GST_ERROR_OBJECT (self, "set timeline failed, object already had a "
         "timeline");
     return FALSE;
   }

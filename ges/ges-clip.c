@@ -356,15 +356,16 @@ _child_removed (GESContainer * container, GESTimelineElement * element)
 }
 
 static void
-add_tlobj_to_list (gpointer key, gpointer tlobj, GList ** list)
+add_clip_to_list (gpointer key, gpointer clip, GList ** list)
 {
-  *list = g_list_prepend (*list, gst_object_ref (tlobj));
+  GST_ERROR_OBJECT (clip, "Ctimeline %p", GES_TIMELINE_ELEMENT_TIMELINE (clip));
+  *list = g_list_prepend (*list, gst_object_ref (clip));
 }
 
 static GList *
 _ungroup (GESContainer * container, gboolean recursive)
 {
-  GESClip *tmpclip;
+  GESClip *tmpclip = NULL;
   GESTrackType track_type;
   GESTrackElement *track_element;
 
@@ -402,22 +403,44 @@ _ungroup (GESContainer * container, gboolean recursive)
         }
       }
 
+      GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+          GES_TIMELINE_ELEMENT_TIMELINE (tmpclip));
       g_hash_table_insert (_tracktype_clip, &track_type, tmpclip);
       ges_clip_set_supported_formats (tmpclip, track_type);
+
     }
 
     /* Move trackelement to the container it is supposed to land into */
     if (tmpclip != clip) {
       /* We need to bump the refcount to avoid the object to be destroyed */
       gst_object_ref (track_element);
+      GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+          GES_TIMELINE_ELEMENT_TIMELINE (tmpclip));
       ges_container_remove (container, GES_TIMELINE_ELEMENT (track_element));
+      GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+          GES_TIMELINE_ELEMENT_TIMELINE (tmpclip));
       ges_container_add (GES_CONTAINER (tmpclip),
           GES_TIMELINE_ELEMENT (track_element));
+      GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+          GES_TIMELINE_ELEMENT_TIMELINE (tmpclip));
       gst_object_unref (track_element);
     }
+
+    GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+        GES_TIMELINE_ELEMENT_TIMELINE (tmpclip));
+    ges_timeline_element_set_timeline (GES_TIMELINE_ELEMENT (tmpclip),
+        GES_TIMELINE_ELEMENT_TIMELINE (container));
+    GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+        GES_TIMELINE_ELEMENT (tmpclip)->timeline);
   }
+  GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+      GES_TIMELINE_ELEMENT_TIMELINE (tmpclip));
   g_list_free_full (children, gst_object_unref);
-  g_hash_table_foreach (_tracktype_clip, (GHFunc) add_tlobj_to_list, &ret);
+  GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+      GES_TIMELINE_ELEMENT_TIMELINE (tmpclip));
+  g_hash_table_foreach (_tracktype_clip, (GHFunc) add_clip_to_list, &ret);
+  GST_ERROR_OBJECT (tmpclip, "Setting timeline %p",
+      GES_TIMELINE_ELEMENT_TIMELINE (tmpclip));
   g_hash_table_unref (_tracktype_clip);
 
   return ret;

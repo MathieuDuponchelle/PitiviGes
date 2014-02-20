@@ -717,6 +717,7 @@ ges_container_group (GList * containers)
   if (containers) {
     element = GES_TIMELINE_ELEMENT (containers->data);
     timeline = GES_TIMELINE_ELEMENT_TIMELINE (element);
+    GST_ERROR_OBJECT (element, "Timeline: %" GST_PTR_FORMAT, timeline);
     g_return_val_if_fail (timeline, NULL);
   }
 
@@ -727,6 +728,8 @@ ges_container_group (GList * containers)
     g_return_val_if_fail (GES_IS_CONTAINER (tmp->data), NULL);
     g_return_val_if_fail (GES_TIMELINE_ELEMENT_PARENT (tmp->data) == NULL,
         NULL);
+    GST_ERROR_OBJECT (tmp->data, "Current %" GST_PTR_FORMAT "Timeline: %"
+        GST_PTR_FORMAT, GES_TIMELINE_ELEMENT_TIMELINE (tmp->data), timeline);
     g_return_val_if_fail (GES_TIMELINE_ELEMENT_TIMELINE (tmp->data) == timeline,
         NULL);
   }

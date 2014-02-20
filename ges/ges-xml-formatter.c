@@ -1182,9 +1182,9 @@ _save (GESFormatter * formatter, GESTimeline * timeline, GError ** error)
   _save_encoding_profiles (str, project);
   g_string_append (str, "    </encoding-profiles>\n");
 
-  g_string_append (str, "    <ressources>\n");
+  g_string_append (str, "    <resources>\n");
   _save_assets (str, project);
-  g_string_append (str, "    </ressources>\n");
+  g_string_append (str, "    </resources>\n");
 
   _save_timeline (str, timeline);
   g_string_append (str, "</project>\n</ges>");

@@ -181,10 +181,10 @@ GST_START_TEST (test_split_object)
   fail_unless (splitclip != clip);
 
   /* We own the only ref */
-  ASSERT_OBJECT_REFCOUNT (splitclip, "1 ref for us, 1 ref for the timeline", 2);
+  ASSERT_OBJECT_REFCOUNT (splitclip, "1 ref for us", 1);
   /* 1 ref for the Clip, 1 ref for the Track and 2 ref for the timeline
    * (1 for the "all_element" hashtable, another for the sequence of TrackElement*/
-  ASSERT_OBJECT_REFCOUNT (splittrackelement, "splittrackelement", 4);
+  ASSERT_OBJECT_REFCOUNT (splittrackelement, "splittrackelement", 3);
 
   check_destroyed (G_OBJECT (timeline), G_OBJECT (splitclip), clip,
       splittrackelement, NULL);
@@ -234,13 +234,16 @@ GST_START_TEST (test_clip_group_ungroup)
       "1 in containers list", 3);
 
   clip2 = containers->next->data;
+  GST_ERROR_OBJECT (clip2, "HAS timeline %p",
+      GES_TIMELINE_ELEMENT_TIMELINE (clip2));
   fail_if (clip2 == clip);
+  fail_unless (GES_TIMELINE_ELEMENT_TIMELINE (clip2) != NULL);
   assert_equals_int (g_list_length (GES_CONTAINER_CHILDREN (clip2)), 1);
   assert_equals_uint64 (_START (clip2), 0);
   assert_equals_uint64 (_INPOINT (clip2), 0);
   assert_equals_uint64 (_DURATION (clip2), 10);
   ASSERT_OBJECT_REFCOUNT (clip2, "1 for the layer + 1 for the timeline +"
-      " 1 in containers list", 3);
+      " 1 in containers list", 2);
 
   tmp = ges_track_get_elements (audio_track);
   assert_equals_int (g_list_length (tmp), 1);

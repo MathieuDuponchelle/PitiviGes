@@ -2395,8 +2395,11 @@ pad_removed_cb (GESTrack * track, GstPad * pad, TrackPrivate * tr_priv)
 gboolean
 timeline_add_element (GESTimeline * timeline, GESTimelineElement * element)
 {
-  if (g_hash_table_contains (timeline->priv->all_elements, element->name))
+  GST_ERROR_OBJECT (element, "ADDING %s", element->name);
+  if (g_hash_table_contains (timeline->priv->all_elements, element->name)) {
+    GST_ERROR_OBJECT (element, "Already in %s", element->name);
     return FALSE;
+  }
 
   g_hash_table_insert (timeline->priv->all_elements,
       ges_timeline_element_get_name (element), gst_object_ref (element));
@@ -2407,6 +2410,7 @@ timeline_add_element (GESTimeline * timeline, GESTimelineElement * element)
 gboolean
 timeline_remove_element (GESTimeline * timeline, GESTimelineElement * element)
 {
+  GST_ERROR_OBJECT (element, "Removing");
   return g_hash_table_remove (timeline->priv->all_elements, element->name);
 }
 

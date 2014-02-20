@@ -715,7 +715,7 @@ GST_START_TEST (test_ges_timeline_element_name)
 
   ges_init ();
 
-  timeline = create_timeline_sync (TRUE);
+  timeline = ges_timeline_new_audio_video ();
   layer = ges_layer_new ();
   fail_unless (ges_timeline_add_layer (timeline, layer));
 
