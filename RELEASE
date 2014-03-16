@@ -1,10 +1,9 @@
 
-Release notes for GNonLin Non-Linear Editing Plug-ins 0.10.17 "Flight from Hawaii coming out of the sun"
-        
+Release notes for GNonLin Non-Linear Editing Plug-ins 1.2.0
 
 
-The GStreamer team is proud to announce a new release
-in the 0.10.x stable series of GNonLin.
+The GStreamer team is proud to announce the first stable release
+in the 1.x stable series of GNonLin.
 
 
 
@@ -29,35 +28,47 @@ An element for using filters in a GnlComposition
 
 Features of this release
     
-      * documentation and debugging fixes
-      * Use glib 2.22 API if available
+      * 
 
 Bugs fixed in this release
      
-      * 628943 : make check fails if videomixer element can't be found
-      * 633721 : tests: gnl/simple: test_one_under_another failure / timeout
+      * 596374 : GnlObject: " priority " property should be changed to int type for special -1 value
+      * 690881 : Replace AM_CONFIG_HEADER with AC_CONFIG_HEADERS in configure.ac
+      * 691041 : pitivi frozen when after drag'n drop to timeline: GstVideoTestSrc Internal data flow error
+      * 701015 : Using a g_thread for gnonlin pipeline update / forward eos on the streaming thread.
+      * 706831 : composition: Release objects lock while forwarding an event
 
-Download
+==== Download ====
 
-You can find source releases of gnonlin in the download directory:
-http://gstreamer.freedesktop.org/src/gnonlin/
+You can find source releases of gnonlin in the download
+directory: http://gstreamer.freedesktop.org/src/gnonlin/
 
-GStreamer Homepage
+The git repository and details how to clone it can be found at
+http://cgit.freedesktop.org/gstreamer/gnonlin/
 
-More details can be found on the project's website:
-http://gstreamer.freedesktop.org/
+==== Homepage ====
 
-Support and Bugs
+The project's website is http://gstreamer.freedesktop.org/
+
+==== Support and Bugs ====
 
 We use GNOME's bugzilla for bug reports and feature requests:
 http://bugzilla.gnome.org/enter_bug.cgi?product=GStreamer
 
-Developers
+Please submit patches via bugzilla as well.
 
-GStreamer is stored in Git, hosted at git.freedesktop.org, and can be cloned from there.
-Interested developers of the core library, plug-ins, and applications should
-subscribe to the gstreamer-devel list. If there is sufficient interest we
-will create more lists as necessary.
+For help and support, please subscribe to and send questions to the
+gstreamer-devel mailing list (see below for details).
+
+There is also a #gstreamer IRC channel on the Freenode IRC network.
+
+==== Developers ====
+
+GStreamer is stored in Git, hosted at git.freedesktop.org, and can be cloned
+from there (see link above).
+
+Interested developers of the core library, plugins, and applications should
+subscribe to the gstreamer-devel list.
 
         
 Applications
@@ -65,10 +76,9 @@ GNonLin is primarily used by PiTiVi (http://www.pitivi.org/) and Jokosher (http:
   
 Contributors to this release
     
-      * David Schleef
       * Edward Hervey
-      * Jan Schmidt
       * Sebastian Dröge
-      * Stefan Kost
+      * Stefan Sauer
+      * Thibault Saunier
       * Tim-Philipp Müller
  

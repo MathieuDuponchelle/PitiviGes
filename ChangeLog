@@ -1,24 +1,78 @@
-=== release 1.1.90 ===
+=== release 1.2.0 ===
 
-2013-09-24  Thibault Saunier <thibault.saunier@collabora.com>
+2014-03-15  Thibault Saunier <tsaunier@gnome.org>
 
 	* configure.ac:
-	  releasing 1.1.90
+	  releasing 1.2.0
+
+2014-02-28 09:36:24 +0100  Sebastian Dröge <sebastian@centricular.com>
+
+	* common:
+	  Automatic update of common submodule
+	  From fe1672e to bcb1518
+
+2014-02-26 22:15:19 +0100  Stefan Sauer <ensonic@users.sf.net>
+
+	* common:
+	  Automatic update of common submodule
+	  From 1a07da9 to fe1672e
+
+2014-01-30 10:45:29 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* common:
+	  Automatic update of common submodule
+	  From d48bed3 to 1a07da9
+
+2013-12-30 16:29:54 +0100  Edward Hervey <bilboed@bilboed.com>
+
+	* gnl/gnloperation.c:
+	  gnloperation: Remove dead code
+	  ret is only set before leaving the loop.
+	  COVERITY CID 1139661
+	  COVERITY CID 1139662
+
+2013-12-22 22:35:42 +0000  Tim-Philipp Müller <tim@centricular.com>
+
+	* common:
+	  Automatic update of common submodule
+	  From dbedaa0 to d48bed3
+
+2013-11-29 09:50:33 +0100  Sebastian Dröge <sebastian@centricular.com>
+
+	* gnl/gnlcomposition.c:
+	  gnlcomposition: Fix typo
+
+2013-11-05 11:22:15 +0000  Tim-Philipp Müller <tim@centricular.com>
+
+	* common:
+	  Automatic update of common submodule
+	  From 865aa20 to dbedaa0
+
+2013-09-28 21:06:41 +0200  Thibault Saunier <thibault.saunier@collabora.com>
+
+	* configure.ac:
+	  Back to development
+
+=== release 1.1.90 ===
 
 2013-09-24 14:39:47 +0200  Thibault Saunier <thibault.saunier@collabora.com>
 
+	* ChangeLog:
 	* configure.ac:
-	  RELEASE WIP
+	* docs/libs/gnonlin.hierarchy:
+	* docs/libs/gnonlin.interfaces:
+	* docs/libs/gnonlin.prerequisites:
+	* docs/libs/gnonlin.signals:
+	* docs/libs/inspect-build.stamp:
+	* docs/libs/inspect.stamp:
+	* docs/libs/inspect/plugin-gnonlin.xml:
+	  Release 1.1.90
 
-2013-08-31 12:05:43 -0400  Thibault Saunier <thibault.saunier@collabora.com>
+2013-09-24 18:34:58 +0100  Tim-Philipp Müller <tim@centricular.net>
 
-	* gnl/gnlcomposition.c:
-	  composition: Never take the OBJECTS_LOCK when sending events
-	  We should never have the OBJECTS_LOCK when sending or receiving
-	  events. This lock is usefull only when we deal with children of
-	  composition, so it should be used exclusivly for that purpose
-	  Avoiding deadlocks
-	  https://bugzilla.gnome.org/show_bug.cgi?id=706831
+	* common:
+	  Automatic update of common submodule
+	  From 6b03ba7 to 865aa20
 
 2013-09-20 16:18:30 +0200  Edward Hervey <edward@collabora.com>
 
