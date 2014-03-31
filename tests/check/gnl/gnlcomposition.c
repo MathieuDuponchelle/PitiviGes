@@ -164,7 +164,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   /* pipeline is paused at this point */
 
   /* move source1 out of the active segment */
-  g_object_set (source1, "start", 4 * GST_SECOND, NULL);
+  g_object_set (source1, "start", (guint64) 4 * GST_SECOND, NULL);
   g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   fail_unless (seek_events > seek_events_before);
 
@@ -181,7 +181,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   fail_unless_equals_int (composition_pad_added, 1);
   fail_unless_equals_int (composition_pad_removed, 1);
 
-  g_object_set (source1, "start", 0 * GST_SECOND, NULL);
+  g_object_set (source1, "start", (guint64) 0 * GST_SECOND, NULL);
   /* add the source again and check that the ghostpad is added again */
   gst_bin_add (GST_BIN (comp), source1);
   g_signal_emit_by_name (comp, "commit", TRUE, &ret);
@@ -191,7 +191,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
 
   seek_events_before = seek_events;
 
-  g_object_set (source1, "duration", 1 * GST_SECOND, NULL);
+  g_object_set (source1, "duration", (guint64) 1 * GST_SECOND, NULL);
   g_signal_emit_by_name (comp, "commit", TRUE, &ret);
   fail_unless (seek_events > seek_events_before);
 
@@ -315,16 +315,18 @@ GST_START_TEST (test_no_more_pads_race)
   videomixer = gst_element_factory_make ("videomixer", "videomixer");
   fail_unless (videomixer != NULL);
   gst_bin_add (GST_BIN (operation), videomixer);
-  g_object_set (operation, "start", 0 * GST_SECOND, "duration", 10 * GST_SECOND,
-      "inpoint", 0 * GST_SECOND, "priority", 10, NULL);
+  g_object_set (operation, "start", (guint64) 0 * GST_SECOND,
+      "duration", (guint64) 10 * GST_SECOND,
+      "inpoint", (guint64) 0 * GST_SECOND, "priority", 10, NULL);
   gst_bin_add (GST_BIN (composition), operation);
 
   /* source 1 */
   source1 = gst_element_factory_make ("gnlsource", "source1");
   videotestsrc1 = gst_element_factory_make ("videotestsrc", "videotestsrc1");
   gst_bin_add (GST_BIN (source1), videotestsrc1);
-  g_object_set (source1, "start", 0 * GST_SECOND, "duration", 5 * GST_SECOND,
-      "inpoint", 0 * GST_SECOND, "priority", 20, NULL);
+  g_object_set (source1, "start", (guint64) 0 * GST_SECOND, "duration",
+      (guint64) 5 * GST_SECOND, "inpoint", (guint64) 0 * GST_SECOND, "priority",
+      20, NULL);
 
   /* source2 */
   source2 = gst_element_factory_make ("gnlsource", "source2");
@@ -336,15 +338,17 @@ GST_START_TEST (test_no_more_pads_race)
       (GstPadProbeCallback) pad_block, bin, NULL);
   gst_bin_add (bin, videotestsrc2);
   gst_bin_add (GST_BIN (source2), GST_ELEMENT (bin));
-  g_object_set (source2, "start", 0 * GST_SECOND, "duration", 5 * GST_SECOND,
-      "inpoint", 0 * GST_SECOND, "priority", 20, NULL);
+  g_object_set (source2, "start", (guint64) 0 * GST_SECOND, "duration",
+      (guint64) 5 * GST_SECOND, "inpoint", (guint64) 0 * GST_SECOND, "priority",
+      20, NULL);
 
   /* source3 */
   source3 = gst_element_factory_make ("gnlsource", "source3");
   videotestsrc2 = gst_element_factory_make ("videotestsrc", "videotestsrc3");
   gst_bin_add (GST_BIN (source3), videotestsrc2);
-  g_object_set (source3, "start", 0 * GST_SECOND, "duration", 5 * GST_SECOND,
-      "inpoint", 0 * GST_SECOND, "priority", 20, NULL);
+  g_object_set (source3, "start", (guint64) 0 * GST_SECOND, "duration",
+      (guint64) 5 * GST_SECOND, "inpoint", (guint64) 0 * GST_SECOND, "priority",
+      20, NULL);
 
   closure.composition = composition;
   closure.source3 = source3;
@@ -426,24 +430,26 @@ GST_START_TEST (test_simple_adder)
   adder = gst_element_factory_make ("adder", "adder");
   fail_unless (adder != NULL);
   gst_bin_add (GST_BIN (gnl_adder), adder);
-  g_object_set (gnl_adder, "start", 0 * GST_SECOND, "duration", total_time,
-      "inpoint", 0 * GST_SECOND, "priority", 0, NULL);
+  g_object_set (gnl_adder, "start", (guint64) 0 * GST_SECOND,
+      "duration", total_time, "inpoint", (guint64) 0 * GST_SECOND,
+      "priority", 0, NULL);
   gst_bin_add (GST_BIN (composition), gnl_adder);
 
   /* source 1 */
   gnlsource1 = gst_element_factory_make ("gnlsource", "gnlsource1");
   audiotestsrc1 = gst_element_factory_make ("audiotestsrc", "audiotestsrc1");
   gst_bin_add (GST_BIN (gnlsource1), audiotestsrc1);
-  g_object_set (gnlsource1, "start", 0 * GST_SECOND, "duration",
-      total_time / 2, "inpoint", 0, "priority", 1, NULL);
+  g_object_set (gnlsource1, "start", (guint64) 0 * GST_SECOND,
+      "duration", total_time / 2, "inpoint", (guint64) 0, "priority", 1, NULL);
   fail_unless (gst_bin_add (GST_BIN (composition), gnlsource1));
 
   /* gnlsource2 */
   gnlsource2 = gst_element_factory_make ("gnlsource", "gnlsource2");
   audiotestsrc2 = gst_element_factory_make ("audiotestsrc", "audiotestsrc2");
   gst_bin_add (GST_BIN (gnlsource2), GST_ELEMENT (audiotestsrc2));
-  g_object_set (gnlsource2, "start", 0 * GST_SECOND, "duration", total_time,
-      "inpoint", 0 * GST_SECOND, "priority", 2, NULL);
+  g_object_set (gnlsource2, "start", (guint64) 0 * GST_SECOND,
+      "duration", total_time, "inpoint", (guint64) 0 * GST_SECOND, "priority",
+      2, NULL);
   fail_unless (gst_bin_add (GST_BIN (composition), gnlsource2));
 
   /* Connecting signals */
