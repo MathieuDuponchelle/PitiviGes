@@ -1,4 +1,6 @@
 *.o
+lib*.la
+lib*.lo
 *~
 *.swp
 *.bak
@@ -42,5 +44,10 @@ Makefile.in
 /m4/ltsugar.m4
 /m4/ltversion.m4
 /m4/lt~obsolete.m4
+
 /tests/check/gnl/seek
 
+/test-driver
+/tests/check/gnl/*.log
+/tests/check/gnl/*.trs
+/tests/check/test-suite.log
