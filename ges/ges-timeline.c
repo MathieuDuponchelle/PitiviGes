@@ -1005,7 +1005,7 @@ start_tracking_track_element (GESTimeline * timeline,
      * dummy layer, or even refuse TrackElements to be added in Tracks if
      * they land in no layer the timeline controls.
      */
-    GST_ERROR_OBJECT (timeline, "Adding a TrackElement that lands in no layer "
+    GST_DEBUG_OBJECT (timeline, "Adding a TrackElement that lands in no layer "
         "we are controlling");
   } else {
     by_layer_sequence = g_hash_table_lookup (priv->by_layer, layer);
@@ -2204,7 +2204,7 @@ trackelement_priority_changed_cb (GESTrackElement * child,
       child);
 
   if (G_UNLIKELY (layer == NULL)) {
-    GST_ERROR_OBJECT (timeline,
+    GST_DEBUG_OBJECT (timeline,
         "Changing a TrackElement prio, which would not "
         "land in no layer we are controlling");
     g_sequence_remove (iters->iter_by_layer);
@@ -2395,7 +2395,6 @@ pad_removed_cb (GESTrack * track, GstPad * pad, TrackPrivate * tr_priv)
 gboolean
 timeline_add_element (GESTimeline * timeline, GESTimelineElement * element)
 {
-  GST_ERROR_OBJECT (element, "ADDING %s", element->name);
   if (g_hash_table_contains (timeline->priv->all_elements, element->name)) {
     GST_ERROR_OBJECT (element, "Already in %s", element->name);
     return FALSE;
@@ -2410,7 +2409,6 @@ timeline_add_element (GESTimeline * timeline, GESTimelineElement * element)
 gboolean
 timeline_remove_element (GESTimeline * timeline, GESTimelineElement * element)
 {
-  GST_ERROR_OBJECT (element, "Removing");
   return g_hash_table_remove (timeline->priv->all_elements, element->name);
 }
 
