@@ -46,6 +46,8 @@ typedef struct _CollectStructure {
   GList         *seen_segments;
   GList   *expected_segments;
   guint64 expected_base;
+
+  gboolean keep_expected_segments;
 } CollectStructure;
 
 void poll_the_bus(GstBus *bus);

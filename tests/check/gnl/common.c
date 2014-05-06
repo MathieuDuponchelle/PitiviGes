@@ -126,7 +126,13 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event,
 
     segment = (Segment *) collect->expected_segments->data;
 
-    compare_segments (collect, segment, event);
+    if (compare_segments (collect, segment, event) &&
+        collect->keep_expected_segments == FALSE) {
+      collect->expected_segments =
+          g_list_remove (collect->expected_segments, segment);
+      g_free (segment);
+    }
+
     collect->gotsegment = TRUE;
   }
 

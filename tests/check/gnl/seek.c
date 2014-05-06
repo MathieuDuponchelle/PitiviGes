@@ -46,6 +46,7 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
 
   /* Expected segments */
   collect->expected_segments = segments;
+  collect->keep_expected_segments = TRUE;
 
   g_signal_connect (G_OBJECT (comp), "pad-added",
       G_CALLBACK (composition_pad_added_cb), collect);
