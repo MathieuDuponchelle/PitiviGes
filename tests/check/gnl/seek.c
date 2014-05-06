@@ -86,13 +86,16 @@ fill_pipeline_and_check (GstElement * comp, GList * segments, GList * seeks)
 
           if (seeks == NULL) {
             carry_on = FALSE;
+            g_list_free_full (collect->expected_segments, g_free);
+            collect->expected_segments = NULL;
             GST_DEBUG ("Done seeking");
             break;
           }
 
+          g_list_free_full (collect->expected_segments, g_free);
+          collect->expected_segments = NULL;
           expected_failure = TRUE;
           while (expected_failure && carry_on) {
-
             SeekInfo *sinfo = (SeekInfo *) seeks->data;
 
             seeks = seeks->next;

@@ -108,7 +108,9 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event,
       GST_EVENT_TYPE_NAME (event), GST_EVENT_SEQNUM (event), collect);
 
   if (GST_EVENT_TYPE (event) == GST_EVENT_SEGMENT) {
-    fail_if (collect->expected_segments == NULL, "Received unexpected segment");
+    fail_if (collect->expected_segments == NULL,
+        "Received unexpected segment on pad: %s:%s",
+        GST_DEBUG_PAD_NAME (sinkpad));
 
     if (!collect->gotsegment)
       collect->seen_segments =
@@ -124,11 +126,7 @@ sinkpad_event_probe (GstPad * sinkpad, GstEvent * event,
 
     segment = (Segment *) collect->expected_segments->data;
 
-    if (compare_segments (collect, segment, event)) {
-      collect->expected_segments =
-          g_list_remove (collect->expected_segments, segment);
-      g_free (segment);
-    }
+    compare_segments (collect, segment, event);
     collect->gotsegment = TRUE;
   }
 
