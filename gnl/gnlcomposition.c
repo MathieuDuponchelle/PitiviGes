@@ -268,6 +268,8 @@ struct _GnlCompositionEntry
   /* handler id for block probe */
   gulong probeid;
   gulong dataprobeid;
+
+  gboolean seeked;
 };
 
 static void
@@ -1237,14 +1239,28 @@ pad_blocked (GstPad * pad, GstPadProbeInfo * info, GnlComposition * comp)
 static GstPadProbeReturn
 drop_data (GstPad * pad, GstPadProbeInfo * info, GnlCompositionEntry * entry)
 {
-  GnlCompositionPrivate *priv = entry->comp->priv;
-
   /* When updating the pipeline, do not let data flowing */
-  if (priv->stackvalid == FALSE || priv->childseek != NULL)
+  if (!GST_IS_EVENT (info->data)) {
+    GST_LOG_OBJECT (pad, "Dropping data while updating pipeline");
     return GST_PAD_PROBE_DROP;
+  } else {
+    GstEvent *event = GST_EVENT (info->data);
 
-  entry->dataprobeid = 0;
-  return GST_PAD_PROBE_REMOVE;
+    if (GST_EVENT_TYPE (event) == GST_EVENT_SEEK) {
+      entry->seeked = TRUE;
+      GST_DEBUG_OBJECT (pad, "Got SEEK event");
+    } else if (entry->seeked == TRUE &&
+        GST_EVENT_TYPE (event) == GST_EVENT_SEGMENT) {
+      entry->seeked = FALSE;
+      entry->dataprobeid = 0;
+
+      GST_DEBUG_OBJECT (pad, "Already seeked and got segment,"
+          " removing probe");
+      return GST_PAD_PROBE_REMOVE;
+    }
+  }
+
+  return GST_PAD_PROBE_OK;
 }
 
 static inline void
@@ -1327,8 +1343,9 @@ gnl_composition_ghost_pad_set_target (GnlComposition * comp, GstPad * target,
 
       if (!priv->toplevelentry->dataprobeid) {
         priv->toplevelentry->dataprobeid = gst_pad_add_probe (ptarget,
-            GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST,
-            (GstPadProbeCallback) drop_data, priv->toplevelentry, NULL);
+            GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST |
+            GST_PAD_PROBE_TYPE_EVENT_BOTH, (GstPadProbeCallback) drop_data,
+            priv->toplevelentry, NULL);
       }
 
       /* remove event probe */
@@ -2256,8 +2273,9 @@ compare_relink_single_node (GnlComposition * comp, GNode * node,
     }
     if (!oldentry->dataprobeid) {
       oldentry->dataprobeid = gst_pad_add_probe (srcpad,
-          GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST,
-          (GstPadProbeCallback) drop_data, oldentry, NULL);
+          GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST |
+          GST_PAD_PROBE_TYPE_EVENT_BOTH, (GstPadProbeCallback) drop_data,
+          oldentry, NULL);
     }
   }
 
@@ -2413,8 +2431,9 @@ compare_deactivate_single_node (GnlComposition * comp, GNode * node,
     }
     if (entry && !entry->dataprobeid) {
       entry->dataprobeid = gst_pad_add_probe (srcpad,
-          GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST,
-          (GstPadProbeCallback) drop_data, entry, NULL);
+          GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST |
+          GST_PAD_PROBE_TYPE_EVENT_BOTH, (GstPadProbeCallback) drop_data, entry,
+          NULL);
     }
 
     /* 2. If we have to modify or we have a parent, flush downstream
@@ -2851,8 +2870,9 @@ object_pad_added (GnlObject * object G_GNUC_UNUSED, GstPad * pad,
 
   if (!entry->dataprobeid) {
     entry->dataprobeid = gst_pad_add_probe (pad,
-        GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST,
-        (GstPadProbeCallback) drop_data, entry, NULL);
+        GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST |
+        GST_PAD_PROBE_TYPE_EVENT_BOTH, (GstPadProbeCallback) drop_data, entry,
+        NULL);
   }
 }
 
