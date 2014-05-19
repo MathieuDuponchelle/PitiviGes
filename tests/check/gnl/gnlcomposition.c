@@ -28,6 +28,8 @@ static int composition_pad_added;
 static int composition_pad_removed;
 static int seek_events;
 static gulong blockprobeid = 0;
+static GMutex pad_added_lock;
+static GCond pad_added_cond;
 
 static GstPadProbeReturn
 on_source1_pad_event_cb (GstPad * pad, GstPadProbeInfo * info,
@@ -53,6 +55,9 @@ on_composition_pad_added_cb (GstElement * composition, GstPad * pad,
   GstPad *s = gst_element_get_static_pad (sink, "sink");
   gst_pad_link (pad, s);
   ++composition_pad_added;
+  g_mutex_lock (&pad_added_lock);
+  g_cond_broadcast (&pad_added_cond);
+  g_mutex_unlock (&pad_added_lock);
   gst_object_unref (s);
 }
 
@@ -171,12 +176,6 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   /* remove source1 from the composition, which will become empty and remove the
    * ghostpad */
   gst_bin_remove (GST_BIN (comp), source1);
-  /* Since the element is still active (PAUSED), there might be internal
-   * refcounts still taking place, therefore we check if it's between
-   * 1 and 2.
-   * If we were to set it to NULL, it would be guaranteed to be 1, but
-   * it would then be racy for the checks below (when we re-add it) */
-  ASSERT_OBJECT_REFCOUNT_BETWEEN (source1, "source1", 1, 2);
 
   fail_unless_equals_int (composition_pad_added, 1);
   fail_unless_equals_int (composition_pad_removed, 1);
@@ -186,6 +185,7 @@ GST_START_TEST (test_change_object_start_stop_in_current_stack)
   gst_bin_add (GST_BIN (comp), source1);
   g_signal_emit_by_name (comp, "commit", TRUE, &ret);
 
+  g_cond_wait (&pad_added_cond, &pad_added_lock);
   fail_unless_equals_int (composition_pad_added, 2);
   fail_unless_equals_int (composition_pad_removed, 1);
 
@@ -534,6 +534,8 @@ gnonlin_suite (void)
 
   suite_add_tcase (s, tc_chain);
 
+  g_cond_init (&pad_added_cond);
+  g_mutex_init (&pad_added_lock);
   tcase_add_test (tc_chain, test_change_object_start_stop_in_current_stack);
   tcase_add_test (tc_chain, test_remove_invalid_object);
   if (gst_registry_check_feature_version (gst_registry_get (), "videomixer", 0,

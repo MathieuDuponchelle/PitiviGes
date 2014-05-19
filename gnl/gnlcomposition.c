@@ -50,7 +50,8 @@ G_DEFINE_TYPE_WITH_CODE (GnlComposition, gnl_composition, GNL_TYPE_OBJECT,
 enum
 {
   PROP_0,
-  PROP_UPDATE,
+  PROP_DEACTIVATED_ELEMENTS_STATE,
+  PROP_LAST,
 };
 
 /* Properties from GnlObject */
@@ -146,11 +147,14 @@ struct _GnlCompositionPrivate
   gboolean reset_time;
 
   gboolean running;
+
+  GstState deactivated_elements_state;
 };
 
 static guint _signals[LAST_SIGNAL] = { 0 };
 
 static GParamSpec *gnlobject_properties[GNLOBJECT_PROP_LAST];
+static GParamSpec *_properties[PROP_LAST];
 
 #define OBJECT_IN_ACTIVE_SEGMENT(comp,element)      \
   ((GNL_OBJECT_START(element) < comp->priv->segment_stop) &&  \
@@ -186,8 +190,7 @@ static gint objects_stop_compare (GnlObject * a, GnlObject * b);
 static GstClockTime get_current_position (GnlComposition * comp);
 
 static gboolean update_pipeline (GnlComposition * comp,
-    GstClockTime currenttime, gboolean initial, gboolean change_state,
-    gboolean modify);
+    GstClockTime currenttime, gboolean initial, gboolean modify);
 static void no_more_pads_object_cb (GstElement * element,
     GnlComposition * comp);
 static gboolean gnl_composition_commit_func (GnlObject * object,
@@ -319,6 +322,25 @@ gnl_composition_class_init (GnlCompositionClass * klass)
       g_object_class_find_property (gobject_class, "duration");
 
   /**
+   * GnlComposition:deactivated-elements-state
+   *
+   * Get or set the #GstState in which elements that are not used
+   * in the currently configured pipeline should be set.
+   * By default the state is GST_STATE_READY to lower memory usage and avoid
+   * using all the avalaible threads from the kernel but that means that in
+   * certain case gapless will be more 'complicated' than if the state was set
+   * to GST_STATE_PAUSED.
+   */
+  _properties[PROP_DEACTIVATED_ELEMENTS_STATE] =
+      g_param_spec_enum ("deactivated-elements-state",
+      "Deactivate elements state", "The state in which elements"
+      " not used in the currently configured pipeline should"
+      " be set", GST_TYPE_STATE, GST_STATE_READY,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
+
+  g_object_class_install_properties (gobject_class, PROP_LAST, _properties);
+
+  /**
    * GnlComposition::commit
    * @comp: a #GnlComposition
    * @recurse: Whether to commit recursiverly into (GnlComposition) children of
@@ -396,6 +418,8 @@ gnl_composition_init (GnlComposition * comp)
       (g_direct_hash,
       g_direct_equal, NULL, (GDestroyNotify) hash_value_destroy);
 
+  priv->deactivated_elements_state = GST_STATE_READY;
+
   comp->priv = priv;
 
   gnl_composition_reset (comp);
@@ -462,7 +486,12 @@ static void
 gnl_composition_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
+  GnlComposition *comp = GNL_COMPOSITION (object);
+
   switch (prop_id) {
+    case PROP_DEACTIVATED_ELEMENTS_STATE:
+      comp->priv->deactivated_elements_state = g_value_get_enum (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -473,7 +502,12 @@ static void
 gnl_composition_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
+  GnlComposition *comp = GNL_COMPOSITION (object);
+
   switch (prop_id) {
+    case PROP_DEACTIVATED_ELEMENTS_STATE:
+      g_value_set_enum (value, comp->priv->deactivated_elements_state);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -855,7 +889,7 @@ update_pipeline_at_current_position (GnlComposition * comp)
 
   update_start_stop_duration (comp);
 
-  return update_pipeline (comp, curpos, TRUE, TRUE, TRUE);
+  return update_pipeline (comp, curpos, TRUE, TRUE);
 }
 
 static gboolean
@@ -1053,10 +1087,9 @@ seek_handling (GnlComposition * comp, gboolean initial, gboolean update)
   COMP_OBJECTS_LOCK (comp);
   if (update || have_to_update_pipeline (comp)) {
     if (comp->priv->segment->rate >= 0.0)
-      update_pipeline (comp, comp->priv->segment->start, initial, TRUE,
-          !update);
+      update_pipeline (comp, comp->priv->segment->start, initial, !update);
     else
-      update_pipeline (comp, comp->priv->segment->stop, initial, TRUE, !update);
+      update_pipeline (comp, comp->priv->segment->stop, initial, !update);
   } else {
     update_operations_base_time (comp, !(comp->priv->segment->rate >= 0.0));
   }
@@ -1282,6 +1315,7 @@ gnl_composition_remove_ghostpad (GnlComposition * comp)
   gnl_object_remove_ghost_pad (GNL_OBJECT (comp), priv->ghostpad);
   priv->ghostpad = NULL;
   priv->toplevelentry = NULL;
+  priv->send_stream_start = TRUE;
 }
 
 /* gnl_composition_ghost_pad_set_target:
@@ -1914,7 +1948,7 @@ gnl_composition_change_state (GstElement * element, GstStateChange transition)
 
       /* set ghostpad target */
       COMP_OBJECTS_LOCK (comp);
-      if (!(update_pipeline (comp, COMP_REAL_START (comp), TRUE, FALSE, TRUE))) {
+      if (!(update_pipeline (comp, COMP_REAL_START (comp), TRUE, TRUE))) {
         ret = GST_STATE_CHANGE_FAILURE;
         COMP_OBJECTS_UNLOCK (comp);
         goto beach;
@@ -2547,8 +2581,7 @@ compare_relink_stack (GnlComposition * comp, GNode * stack, gboolean modify)
 }
 
 static void
-unlock_activate_stack (GnlComposition * comp, GNode * node,
-    gboolean change_state, GstState state)
+unlock_activate_stack (GnlComposition * comp, GNode * node, GstState state)
 {
   GNode *child;
 
@@ -2556,12 +2589,10 @@ unlock_activate_stack (GnlComposition * comp, GNode * node,
       GST_ELEMENT_NAME ((GstElement *) (node->data)));
 
   gst_element_set_locked_state ((GstElement *) (node->data), FALSE);
-
-  if (change_state)
-    gst_element_set_state (GST_ELEMENT (node->data), state);
+  gst_element_set_state (GST_ELEMENT (node->data), state);
 
   for (child = node->children; child; child = child->next)
-    unlock_activate_stack (comp, child, change_state, state);
+    unlock_activate_stack (comp, child, state);
 }
 
 static gboolean
@@ -2625,7 +2656,7 @@ beach:
  */
 static gboolean
 update_pipeline (GnlComposition * comp, GstClockTime currenttime,
-    gboolean initial, gboolean change_state, gboolean modify)
+    gboolean initial, gboolean modify)
 {
   gboolean startchanged, stopchanged;
 
@@ -2642,8 +2673,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
 
   GST_DEBUG_OBJECT (comp,
       "currenttime:%" GST_TIME_FORMAT
-      " initial:%d , change_state:%d , modify:%d", GST_TIME_ARGS (currenttime),
-      initial, change_state, modify);
+      " initial:%d , modify:%d", GST_TIME_ARGS (currenttime), initial, modify);
 
   if (!GST_CLOCK_TIME_IS_VALID (currenttime))
     return FALSE;
@@ -2712,8 +2742,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
     for (tmp = todeactivate; tmp; tmp = tmp->next) {
       element = GST_ELEMENT_CAST (tmp->data);
 
-      if (change_state)
-        gst_element_set_state (element, state);
+      gst_element_set_state (element, priv->deactivated_elements_state);
       gst_element_set_locked_state (element, TRUE);
       entry = COMP_ENTRY (comp, element);
 
@@ -2736,7 +2765,7 @@ update_pipeline (GnlComposition * comp, GstClockTime currenttime,
   if (!samestack && stack) {
     GST_DEBUG_OBJECT (comp, "activating objects in new stack to %s",
         gst_element_state_get_name (nextstate));
-    unlock_activate_stack (comp, stack, change_state, nextstate);
+    unlock_activate_stack (comp, stack, nextstate);
     GST_DEBUG_OBJECT (comp, "Finished activating objects in new stack");
   }
 
