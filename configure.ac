@@ -112,6 +112,7 @@ AG_GST_CHECK_GST_PLUGINS_BASE($GST_API_VERSION, [$GSTPB_REQ], [yes])
 
 dnl check for uninstalled plugin directories for unit tests
 AG_GST_CHECK_GST_PLUGINS_GOOD($GST_API_VERSION, [1.2.0])
+AG_GST_CHECK_GST_PLUGINS_BAD($GST_API_VERSION, [1.3.3])
 
 dnl There are paths for documentation xrefs
 GLIB_PREFIX="`$PKG_CONFIG --variable=prefix glib-2.0`"

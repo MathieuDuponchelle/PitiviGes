@@ -10,7 +10,7 @@ TESTS_ENVIRONMENT = \
         CK_DEFAULT_TIMEOUT=120                                   \
 	$(REGISTRY_ENVIRONMENT)					\
 	GST_PLUGIN_SYSTEM_PATH_1_0=					\
-	GST_PLUGIN_PATH_1_0=$(top_builddir)/gnl:$(GST_PLUGINS_GOOD_DIR):$(GST_PLUGINS_BASE_DIR):$(GST_PLUGINS_DIR)
+	GST_PLUGIN_PATH_1_0=$(top_builddir)/gnl:$(GST_PLUGINS_GOOD_DIR):$(GST_PLUGINS_BASE_DIR):$(GST_PLUGINS_DIR):$(GST_PLUGINS_BAD_DIR)
 
 # ths core dumps of some machines have PIDs appended
 CLEANFILES = core.* test-registry.xml
