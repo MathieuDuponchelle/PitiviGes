@@ -101,7 +101,7 @@ dnl *** checks for library functions ***
 dnl *** checks for dependancy libraries ***
 
 dnl GLib is required
-AG_GST_GLIB_CHECK([2.34])
+AG_GST_GLIB_CHECK([2.32])
 
 dnl checks for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
