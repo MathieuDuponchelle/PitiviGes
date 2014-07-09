@@ -164,7 +164,8 @@ gnl_operation_dispose (GObject * object)
 
   GST_DEBUG_OBJECT (object, "Disposing of source pad");
 
-  gnl_object_ghost_pad_set_target (GNL_OBJECT (object), GNL_OBJECT(object)->srcpad, NULL);
+  gnl_object_ghost_pad_set_target (GNL_OBJECT (object),
+      GNL_OBJECT (object)->srcpad, NULL);
 
   GST_DEBUG_OBJECT (object, "Disposing of sink pad(s)");
   while (oper->sinks) {
@@ -360,7 +361,7 @@ gnl_operation_add_element (GstBin * bin, GstElement * element)
         operation->dynamicsinks = isdynamic;
 
         gnl_object_ghost_pad_set_target (GNL_OBJECT (operation),
-              GNL_OBJECT (operation)->srcpad, srcpad);
+            GNL_OBJECT (operation)->srcpad, srcpad);
 
         /* Remove the reference get_src_pad gave us */
         gst_object_unref (srcpad);
@@ -725,6 +726,45 @@ gnl_operation_cleanup (GnlObject * object)
   }
 
   return TRUE;
+}
+
+void
+gnl_operation_hard_cleanup (GnlOperation * operation)
+{
+  gboolean done = FALSE;
+
+  GValue item = { 0, };
+  GstIterator *pads;
+
+  GST_INFO_OBJECT (operation, "Hard reset of the operation");
+
+  pads = gst_element_iterate_sink_pads (GST_ELEMENT (operation));
+  while (!done) {
+    switch (gst_iterator_next (pads, &item)) {
+      case GST_ITERATOR_OK:
+      {
+        GstPad *sinkpad = g_value_get_object (&item);
+        GstPad *srcpad = gst_pad_get_peer (sinkpad);
+
+        if (srcpad) {
+          GST_ERROR ("Unlinking %" GST_PTR_FORMAT " and  %"
+              GST_PTR_FORMAT, srcpad, sinkpad);
+          gst_pad_unlink (srcpad, sinkpad);
+        }
+
+        g_value_reset (&item);
+        break;
+      }
+      case GST_ITERATOR_RESYNC:
+        gst_iterator_resync (pads);
+        break;
+      default:
+        /* ERROR and DONE */
+        done = TRUE;
+        break;
+    }
+  }
+  gnl_object_cleanup (GNL_OBJECT (operation));
 }
 
 
