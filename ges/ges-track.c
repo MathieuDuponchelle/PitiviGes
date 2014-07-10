@@ -39,6 +39,12 @@
 G_DEFINE_TYPE_WITH_CODE (GESTrack, ges_track, GST_TYPE_BIN,
     G_IMPLEMENT_INTERFACE (GES_TYPE_META_CONTAINER, NULL));
 
+static GstStaticPadTemplate ges_track_src_pad_template =
+GST_STATIC_PAD_TEMPLATE ("src",
+    GST_PAD_SRC,
+    GST_PAD_ALWAYS,
+    GST_STATIC_CAPS_ANY);
+
 /* Structure that represents gaps and keep knowledge
  * of the gaps filled in the track */
 typedef struct
@@ -94,9 +100,6 @@ static guint ges_track_signals[LAST_SIGNAL] = { 0 };
 
 static GParamSpec *properties[ARG_LAST];
 
-static void pad_added_cb (GstElement * element, GstPad * pad, GESTrack * track);
-static void
-pad_removed_cb (GstElement * element, GstPad * pad, GESTrack * track);
 static void composition_duration_cb (GstElement * composition, GParamSpec * arg
     G_GNUC_UNUSED, GESTrack * obj);
 
@@ -129,7 +132,7 @@ gap_new (GESTrack * track, GstClockTime start, GstClockTime duration)
     return NULL;
   }
 
-  if (G_UNLIKELY (gst_bin_add (GST_BIN (track->priv->composition),
+  if (G_UNLIKELY (gnl_composition_add_object (track->priv->composition,
               gnlsrc) == FALSE)) {
     GST_WARNING_OBJECT (track, "Could not add gap to the composition");
 
@@ -168,7 +171,7 @@ free_gap (Gap * gap)
   GST_DEBUG_OBJECT (track, "Removed gap with start %" GST_TIME_FORMAT
       " duration %" GST_TIME_FORMAT, GST_TIME_ARGS (gap->start),
       GST_TIME_ARGS (gap->duration));
-  gst_bin_remove (GST_BIN (track->priv->composition), gap->gnlobj);
+  gnl_composition_remove_object (track->priv->composition, gap->gnlobj);
   gst_element_set_state (gap->gnlobj, GST_STATE_NULL);
   gst_object_unref (gap->gnlobj);
 
@@ -181,6 +184,7 @@ update_gaps (GESTrack * track)
   Gap *gap;
   GList *gaps;
   GSequenceIter *it;
+  gboolean ret;
 
   GESTrackElement *trackelement;
   GstClockTime start, end, duration = 0, timeline_duration;
@@ -201,7 +205,7 @@ update_gaps (GESTrack * track)
       g_sequence_iter_is_end (it) == FALSE; it = g_sequence_iter_next (it)) {
     trackelement = g_sequence_get (it);
 
-    if (!ges_track_element_is_active(trackelement))
+    if (!ges_track_element_is_active (trackelement))
       continue;
 
     start = _START (trackelement);
@@ -235,6 +239,7 @@ update_gaps (GESTrack * track)
 
   /* 4- Remove old gaps */
   g_list_free_full (gaps, (GDestroyNotify) free_gap);
+  g_signal_emit_by_name (track->priv->composition, "commit", TRUE, &ret);
 }
 
 static inline void
@@ -258,11 +263,12 @@ sort_track_elements_cb (GESTrackElement * child,
 }
 
 static void
-pad_added_cb (GstElement * element, GstPad * pad, GESTrack * track)
+_ghost_gnlcomposition_srcpad (GESTrack * track)
 {
-  GESTrackPrivate *priv = track->priv;
   GstPad *capsfilter_sink;
   GstPad *capsfilter_src;
+  GESTrackPrivate *priv = track->priv;
+  GstPad *pad = gst_element_get_static_pad (priv->composition, "src");
 
   capsfilter_sink = gst_element_get_static_pad (priv->capsfilter, "sink");
 
@@ -277,22 +283,6 @@ pad_added_cb (GstElement * element, GstPad * pad, GESTrack * track)
   gst_object_unref (capsfilter_src);
   gst_pad_set_active (priv->srcpad, TRUE);
   gst_element_add_pad (GST_ELEMENT (track), priv->srcpad);
-
-  GST_DEBUG ("done");
-}
-
-static void
-pad_removed_cb (GstElement * element, GstPad * pad, GESTrack * track)
-{
-  GESTrackPrivate *priv = track->priv;
-
-  GST_DEBUG ("track:%p, pad %s:%s", track, GST_DEBUG_PAD_NAME (pad));
-
-  if (G_LIKELY (priv->srcpad)) {
-    gst_pad_set_active (priv->srcpad, FALSE);
-    gst_element_remove_pad (GST_ELEMENT (track), priv->srcpad);
-    priv->srcpad = NULL;
-  }
 
   GST_DEBUG ("done");
 }
@@ -343,7 +333,7 @@ remove_object_internal (GESTrack * track, GESTrackElement * object)
     GST_DEBUG ("Removing GnlObject '%s' from composition '%s'",
         GST_ELEMENT_NAME (gnlobject), GST_ELEMENT_NAME (priv->composition));
 
-    if (!gst_bin_remove (GST_BIN (priv->composition), gnlobject)) {
+    if (!gnl_composition_remove_object (priv->composition, gnlobject)) {
       GST_WARNING ("Failed to remove gnlobject from composition");
       return FALSE;
     }
@@ -427,6 +417,7 @@ ges_track_dispose (GObject * object)
 {
   GESTrack *track = (GESTrack *) object;
   GESTrackPrivate *priv = track->priv;
+  gboolean ret;
 
   /* Remove all TrackElements and drop our reference */
   g_hash_table_unref (priv->trackelements_iter);
@@ -434,11 +425,13 @@ ges_track_dispose (GObject * object)
       (GFunc) dispose_trackelements_foreach, track);
   g_sequence_free (priv->trackelements_by_start);
   g_list_free_full (priv->gaps, (GDestroyNotify) free_gap);
+  g_signal_emit_by_name (track->priv->composition, "commit", TRUE, &ret);
 
   if (priv->mixing_operation)
     gst_object_unref (priv->mixing_operation);
 
   if (priv->composition) {
+    gst_element_remove_pad (GST_ELEMENT (track), priv->srcpad);
     gst_bin_remove (GST_BIN (object), priv->composition);
     priv->composition = NULL;
   }
@@ -468,6 +461,7 @@ ges_track_constructed (GObject * object)
   if (!gst_bin_add (GST_BIN (self), self->priv->capsfilter))
     GST_ERROR ("Couldn't add capsfilter to bin !");
 
+  _ghost_gnlcomposition_srcpad (self);
   if (GES_TRACK_GET_CLASS (self)->get_mixing_element) {
     GstElement *gnlobject;
     GstElement *mixer = GES_TRACK_GET_CLASS (self)->get_mixing_element (self);
@@ -488,7 +482,7 @@ ges_track_constructed (GObject * object)
     g_object_set (gnlobject, "expandable", TRUE, NULL);
 
     if (self->priv->mixing) {
-      if (!gst_bin_add (GST_BIN (self->priv->composition), gnlobject)) {
+      if (!gnl_composition_add_object (self->priv->composition, gnlobject)) {
         GST_WARNING_OBJECT (self, "Could not add the mixer to our composition");
 
         return;
@@ -506,6 +500,7 @@ static void
 ges_track_class_init (GESTrackClass * klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GstElementClass *gstelement_class = (GstElementClass *) klass;
 
   g_type_class_add_private (klass, sizeof (GESTrackPrivate));
 
@@ -584,6 +579,9 @@ ges_track_class_init (GESTrackClass * klass)
   g_object_class_install_property (object_class, ARG_MIXING,
       properties[ARG_MIXING]);
 
+  gst_element_class_add_pad_template (gstelement_class,
+      gst_static_pad_template_get (&ges_track_src_pad_template));
+
   /**
    * GESTrack::track-element-added:
    * @object: the #GESTrack
@@ -630,10 +628,6 @@ ges_track_init (GESTrack * self)
 
   g_signal_connect (G_OBJECT (self->priv->composition), "notify::duration",
       G_CALLBACK (composition_duration_cb), self);
-  g_signal_connect (self->priv->composition, "pad-added",
-      (GCallback) pad_added_cb, self);
-  g_signal_connect (self->priv->composition, "pad-removed",
-      (GCallback) pad_removed_cb, self);
 }
 
 /**
@@ -783,13 +777,13 @@ ges_track_set_mixing (GESTrack * track, gboolean mixing)
   if (mixing) {
     /* increase ref count to hold the object */
     gst_object_ref (track->priv->mixing_operation);
-    if (!gst_bin_add (GST_BIN (track->priv->composition),
+    if (!gnl_composition_add_object (track->priv->composition,
             track->priv->mixing_operation)) {
       GST_WARNING_OBJECT (track, "Could not add the mixer to our composition");
       return;
     }
   } else {
-    if (!gst_bin_remove (GST_BIN (track->priv->composition),
+    if (!gnl_composition_remove_object (track->priv->composition,
             track->priv->mixing_operation)) {
       GST_WARNING_OBJECT (track,
           "Could not remove the mixer from our composition");
@@ -837,7 +831,7 @@ ges_track_add_element (GESTrack * track, GESTrackElement * object)
       GST_OBJECT_NAME (ges_track_element_get_gnlobject (object)),
       GST_OBJECT_NAME (track->priv->composition));
 
-  if (G_UNLIKELY (!gst_bin_add (GST_BIN (track->priv->composition),
+  if (G_UNLIKELY (!gnl_composition_add_object (track->priv->composition,
               ges_track_element_get_gnlobject (object)))) {
     GST_WARNING ("Couldn't add object to the GnlComposition");
     return FALSE;
