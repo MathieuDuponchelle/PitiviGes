@@ -41,8 +41,7 @@ check_PROGRAMS =	\
 	gnl/complex	\
 	gnl/gnlsource	\
 	gnl/gnloperation	\
-	gnl/gnlcomposition	\
-	gnl/seek
+	gnl/gnlcomposition
 
 # these tests don't even pass
 noinst_PROGRAMS =
