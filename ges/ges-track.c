@@ -149,7 +149,7 @@ gap_new (GESTrack * track, GstClockTime start, GstClockTime duration)
   new_gap->start = start;
   new_gap->duration = duration;
   new_gap->track = track;
-  new_gap->gnlobj = gst_object_ref (gnlsrc);
+  new_gap->gnlobj = gnlsrc;
 
 
   g_object_set (gnlsrc, "start", new_gap->start, "duration", new_gap->duration,
@@ -172,8 +172,6 @@ free_gap (Gap * gap)
       " duration %" GST_TIME_FORMAT, GST_TIME_ARGS (gap->start),
       GST_TIME_ARGS (gap->duration));
   gnl_composition_remove_object (track->priv->composition, gap->gnlobj);
-  gst_element_set_state (gap->gnlobj, GST_STATE_NULL);
-  gst_object_unref (gap->gnlobj);
 
   g_slice_free (Gap, gap);
 }
