@@ -182,7 +182,6 @@ update_gaps (GESTrack * track)
   Gap *gap;
   GList *gaps;
   GSequenceIter *it;
-  gboolean ret;
 
   GESTrackElement *trackelement;
   GstClockTime start, end, duration = 0, timeline_duration;
@@ -237,7 +236,6 @@ update_gaps (GESTrack * track)
 
   /* 4- Remove old gaps */
   g_list_free_full (gaps, (GDestroyNotify) free_gap);
-  g_signal_emit_by_name (track->priv->composition, "commit", TRUE, &ret);
 }
 
 static inline void
