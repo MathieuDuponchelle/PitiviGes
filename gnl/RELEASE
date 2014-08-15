@@ -1,0 +1,84 @@
+
+Release notes for GNonLin Non-Linear Editing Plug-ins 1.2.0
+
+
+The GStreamer team is proud to announce the first stable release
+in the 1.x stable series of GNonLin.
+
+
+
+This module contains a set of plug-ins for GStreamer to ease the
+creation of multimedia editors, or any other application where a
+timeline-oriented use of GStreamer makes sense.
+
+
+These elements include:
+
+gnlsource
+An element for using source elements/bins in a GnlComposition
+gnlfilesource
+A higher-level element for using a uri in a GnlComposition
+gnlcomposition
+A container element that handles GNonLin objects
+gnloperation
+An element for using filters in a GnlComposition
+
+
+  
+
+Features of this release
+    
+      * 
+
+Bugs fixed in this release
+     
+      * 596374 : GnlObject: " priority " property should be changed to int type for special -1 value
+      * 690881 : Replace AM_CONFIG_HEADER with AC_CONFIG_HEADERS in configure.ac
+      * 691041 : pitivi frozen when after drag'n drop to timeline: GstVideoTestSrc Internal data flow error
+      * 701015 : Using a g_thread for gnonlin pipeline update / forward eos on the streaming thread.
+      * 706831 : composition: Release objects lock while forwarding an event
+
+==== Download ====
+
+You can find source releases of gnonlin in the download
+directory: http://gstreamer.freedesktop.org/src/gnonlin/
+
+The git repository and details how to clone it can be found at
+http://cgit.freedesktop.org/gstreamer/gnonlin/
+
+==== Homepage ====
+
+The project's website is http://gstreamer.freedesktop.org/
+
+==== Support and Bugs ====
+
+We use GNOME's bugzilla for bug reports and feature requests:
+http://bugzilla.gnome.org/enter_bug.cgi?product=GStreamer
+
+Please submit patches via bugzilla as well.
+
+For help and support, please subscribe to and send questions to the
+gstreamer-devel mailing list (see below for details).
+
+There is also a #gstreamer IRC channel on the Freenode IRC network.
+
+==== Developers ====
+
+GStreamer is stored in Git, hosted at git.freedesktop.org, and can be cloned
+from there (see link above).
+
+Interested developers of the core library, plugins, and applications should
+subscribe to the gstreamer-devel list.
+
+        
+Applications
+GNonLin is primarily used by PiTiVi (http://www.pitivi.org/) and Jokosher (http://www.jokosher.org/).
+  
+Contributors to this release
+    
+      * Edward Hervey
+      * Sebastian Dröge
+      * Stefan Sauer
+      * Thibault Saunier
+      * Tim-Philipp Müller
+ 

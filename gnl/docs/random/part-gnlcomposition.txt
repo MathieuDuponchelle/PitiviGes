@@ -1,0 +1,81 @@
+GnlComposition
+--------------
+
+ The main goal of GnlComposition is to dynamically setup/link the
+ GnlObjects contained within based on their position properties.
+
+
+
+* Definitions
+
+  Stack:
+    A stack is a configuration of GnlObjects for a given time and
+    duration sorted as a tree (GNode) where the top-level object is
+    the most downstream object (The one whose output the composition
+    will output) and the child are the objects connected to it.
+
+    The 'current' stack is the stack currently being used to output
+    data.
+
+  Position properties
+    Properties of a GnlObject that influence how it is being used in a
+    GnlComposition.
+      * start
+      * stop
+      * active
+
+
+
+* Scheduling
+
+  The GnlComposition will check, and update if needed, the current
+  stack when:
+
+  * It starts up (READY=>PAUSED)
+  * It receives a seek event
+  * The update property is toggled back to TRUE
+  * The property of any object in the current stack is modified.
+  * When an object is added and could be put in the current stack
+  * When an object from the current stack is removed
+  * When the previous stack in time has completed
+
+  The GnlComposition will *not* check/modify the internal pipeline if
+  its 'update' property is FALSE.
+
+
+
+* Getting a new stack (get_clean_toplevel_stack())
+
+  The goal is, for a given position, to get:
+  * The list of active objects that will be used at that position
+  * The time zone over which that stack is valid
+
+  If there are no valid objects at the given position (due to a gap in
+  the timeline), then the algorithm should search for the next valid
+  position at which a stack can be created and return the stack for
+  that new position along with the updated position.
+
+
+* Comparing stacks (are_same_stacks())
+
+  Two stacks are equal if they contain the exact same tree of objects,
+  in the same order, regardless of their start/stop/priority.
+  i.e. two stacks are equal if we won't have to re-configure the
+  internal resulting pipeline.
+
+
+* Switching from one stack to another
+
+  When two stacks are different and we want to switch from one to
+  another we need to:
+
+  * figure out which elements are new and need to be activated (state
+    change).
+  * figure out which elements are no longer used and need to be
+    deactivated (state change)
+  * if needed, unlink pads and block them
+  * if needed, link pads and unblock them
+    ** Some elements will be creating source pads dynamically, so we
+       might not have them at that point, which means we need to wait
+       until they are created before linking them.
+

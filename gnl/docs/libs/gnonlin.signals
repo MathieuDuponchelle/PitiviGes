@@ -1,0 +1,17 @@
+<SIGNAL>
+<NAME>GnlOperation::input-priority-changed</NAME>
+<RETURNS>void</RETURNS>
+<FLAGS>l</FLAGS>
+GnlOperation *gnloperation
+GstPad *arg1
+guint  arg2
+</SIGNAL>
+
+<SIGNAL>
+<NAME>GnlComposition::commit</NAME>
+<RETURNS>gboolean</RETURNS>
+<FLAGS>la</FLAGS>
+GnlComposition *gnlcomposition
+gboolean  arg1
+</SIGNAL>
+
