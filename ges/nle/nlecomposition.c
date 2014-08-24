@@ -362,7 +362,7 @@ _execute_actions (NleComposition * comp)
     priv->actions = priv->actions->next;
     ACTIONS_UNLOCK (comp);
 
-    GST_INFO_OBJECT ("Invoking %p:%s",
+    GST_INFO_OBJECT (comp, "Invoking %p:%s",
         lact->data, GST_DEBUG_FUNCPTR_NAME ((ACTION_CALLBACK (lact->data))));
     g_closure_invoke (lact->data, NULL, 1, params, NULL);
   } else {
@@ -2682,9 +2682,9 @@ _activate_new_stack (NleComposition * comp)
 
 resync_state:
   gst_element_set_locked_state (priv->current_bin, FALSE);
-  GST_ERROR ("going back to parent state");
+  GST_DEBUG ("going back to parent state");
   gst_element_sync_state_with_parent (priv->current_bin);
-  GST_ERROR ("gone back to parent state");
+  GST_DEBUG ("gone back to parent state");
 
   return TRUE;
 }
