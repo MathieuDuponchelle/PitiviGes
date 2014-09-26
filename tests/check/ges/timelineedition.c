@@ -1462,6 +1462,81 @@ GST_START_TEST (test_scaling)
 
 GST_END_TEST;
 
+GST_START_TEST (test_neighbour_logic)
+{
+  GESAsset *asset;
+  GESTimeline *timeline;
+  GESLayer *layer, *layer1;
+  GESSource *source;
+
+  timeline = ges_timeline_new_audio_video ();
+
+  /* Our timeline
+   *
+   *    --0------------10-----------20-----------------------------------------
+   *        +-----------+
+   * L      |    C      |
+   *        +-----------+
+   *    -----------------------------------------------------------------------
+   *                    +------------+
+   * L1                 |     C1     |
+   *                    +------------+
+   *    -----------------------------------------------------------------------
+   */
+
+  layer = ges_timeline_append_layer (timeline);
+  layer1 = ges_timeline_append_layer (timeline);
+  asset = ges_asset_request (GES_TYPE_TEST_CLIP, NULL, NULL);
+
+  ges_layer_add_asset (layer, asset, 0, 0, 10, GES_TRACK_TYPE_VIDEO);
+  ges_layer_add_asset (layer1, asset, 10, 0, 10, GES_TRACK_TYPE_UNKNOWN);
+
+  /* Conceptually, if one expects the clip starting *next* to 0,
+   * it can't be the clip *starting* at 0.
+   */
+  source = ges_timeline_get_next_source (timeline, 0, GES_EDGE_START, GES_TRACK_TYPE_UNKNOWN);
+  fail_unless (source != NULL); 
+  CHECK_OBJECT_PROPS (source, 10, 0, 10);
+
+  source = ges_timeline_get_next_source (timeline, 9, GES_EDGE_START, GES_TRACK_TYPE_UNKNOWN);
+  fail_unless (source != NULL); 
+  CHECK_OBJECT_PROPS (source, 10, 0, 10);
+
+  /* Same here, and there's no next source starting after 10*/
+  source = ges_timeline_get_next_source (timeline, 10, GES_EDGE_START, GES_TRACK_TYPE_UNKNOWN);
+  fail_unless (source == NULL); 
+
+  /* But there is one ending after 10 */
+  source = ges_timeline_get_next_source (timeline, 10, GES_EDGE_END, GES_TRACK_TYPE_UNKNOWN);
+  fail_unless (source != NULL); 
+  CHECK_OBJECT_PROPS (source, 10, 0, 10);
+
+  /* No sources ending after 20 */
+  source = ges_timeline_get_next_source (timeline, 20, GES_EDGE_END, GES_TRACK_TYPE_UNKNOWN);
+  fail_unless (source == NULL); 
+
+  /* And c ends at 10 */
+  source = ges_timeline_get_next_source (timeline, 9, GES_EDGE_END, GES_TRACK_TYPE_UNKNOWN);
+  fail_unless (source != NULL); 
+  CHECK_OBJECT_PROPS (source, 0, 0, 10);
+
+  /* The first edge encountered is the end of c */
+  source = ges_timeline_get_next_source (timeline, 9, GES_EDGE_NONE, GES_TRACK_TYPE_UNKNOWN);
+  fail_unless (source != NULL); 
+  CHECK_OBJECT_PROPS (source, 0, 0, 10);
+
+  /* c ends at 10 but it only contains a video source */
+  source = ges_timeline_get_next_source (timeline, 9, GES_EDGE_END, GES_TRACK_TYPE_AUDIO);
+  fail_unless (source != NULL); 
+  CHECK_OBJECT_PROPS (source, 10, 0, 10);
+
+  /* Let's now test the reverse logic for the sake of it */
+
+  gst_object_unref (timeline);
+  gst_object_unref (asset);
+}
+
+GST_END_TEST;
 static Suite *
 ges_suite (void)
 {
@@ -1479,6 +1554,7 @@ ges_suite (void)
   tcase_add_test (tc_chain, test_groups);
   tcase_add_test (tc_chain, test_snapping_groups);
   tcase_add_test (tc_chain, test_scaling);
+  tcase_add_test (tc_chain, test_neighbour_logic);
 
   return s;
 }

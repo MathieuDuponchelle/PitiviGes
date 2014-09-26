@@ -25,6 +25,7 @@
 #include <gst/gst.h>
 #include <gst/pbutils/gstdiscoverer.h>
 #include <ges/ges-types.h>
+#include <ges/ges-enums.h>
 
 G_BEGIN_DECLS
 
@@ -126,6 +127,11 @@ void ges_timeline_set_auto_transition (GESTimeline * timeline, gboolean auto_tra
 GstClockTime ges_timeline_get_snapping_distance (GESTimeline * timeline);
 void ges_timeline_set_snapping_distance (GESTimeline * timeline, GstClockTime snapping_distance);
 GESTimelineElement * ges_timeline_get_element (GESTimeline * timeline, const gchar *name);
+
+GESSource *ges_timeline_get_next_source (GESTimeline *timeline,
+                                         guint64 timecode,
+                                         GESEdge edge,
+                                         GESTrackType type);
 
 G_END_DECLS
 

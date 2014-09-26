@@ -2981,6 +2981,90 @@ ges_timeline_get_tracks (GESTimeline * timeline)
 }
 
 /**
+ * ges_timeline_get_next_source:
+ * @timeline: A #GESTimeline
+ * @timecode: The timecode after which to find the next source
+ * @edge: The GESEdge to check on the source.
+ * @type: The #GESTrackType of the source to return.
+ *
+ * Returns: (transfer none): the first source for which the checked edge is
+ * after the timecode. For example, if edge is GES_EDGE_START, this function
+ * will return the first source *starting* after the timecode (Note that if a
+ * source starts at 10 and @timecode is 10, this source will not be returned,
+ * as it starts *at* 10 and not *after* 10). If there is no source matching the
+ * predicate, %NULL is returned.
+ */ 
+GESSource *
+ges_timeline_get_next_source (GESTimeline * timeline, guint64 timecode, GESEdge edge, GESTrackType type)
+{
+  GESSource *next_source = NULL;
+  GSequenceIter *iter;
+  guint64 *next_tc, *other_tc;
+
+  /* Only GESSources get inserted in the starts_ends sequence, so no need to
+   * check.
+   */
+  iter = g_sequence_search (timeline->priv->starts_ends, &timecode,
+     (GCompareDataFunc) compare_uint64, NULL);
+
+  if (edge == GES_EDGE_START) {
+    while (!g_sequence_iter_is_end (iter)) {
+      next_tc = g_sequence_get (iter);
+      next_source = g_hash_table_lookup (timeline->priv->by_object, next_tc);
+      other_tc = g_hash_table_lookup (timeline->priv->by_start, next_source);
+
+      if (type != GES_TRACK_TYPE_UNKNOWN &&
+          ges_track_element_get_track_type (GES_TRACK_ELEMENT (next_source)) != type) {
+        next_source = NULL;
+        iter = g_sequence_iter_next (iter);
+        continue;
+      }
+
+      if (*other_tc == *next_tc)
+        break;
+
+      next_source = NULL;
+      iter = g_sequence_iter_next (iter);
+    }
+  } else if (edge == GES_EDGE_END) {
+    while (!g_sequence_iter_is_end (iter)) {
+      next_tc = g_sequence_get (iter);
+      next_source = g_hash_table_lookup (timeline->priv->by_object, next_tc);
+      other_tc = g_hash_table_lookup (timeline->priv->by_end, next_source);
+
+      if (type != GES_TRACK_TYPE_UNKNOWN &&
+          ges_track_element_get_track_type (GES_TRACK_ELEMENT (next_source)) != type) {
+        next_source = NULL;
+        iter = g_sequence_iter_next (iter);
+        continue;
+      }
+
+      if (*other_tc == *next_tc) {
+        break;
+      }
+
+      next_source = NULL;
+      iter = g_sequence_iter_next (iter);
+    }
+  } else if (edge == GES_EDGE_NONE) {
+    while (!g_sequence_iter_is_end (iter)) {
+      next_tc = g_sequence_get (iter);
+      next_source = g_hash_table_lookup (timeline->priv->by_object, next_tc);
+
+      if (type != GES_TRACK_TYPE_UNKNOWN &&
+          ges_track_element_get_track_type (GES_TRACK_ELEMENT (next_source))) {
+        next_source = NULL;
+        iter = g_sequence_iter_next (iter);
+        continue;
+      }
+      break;
+    }
+  }
+
+  return next_source;
+}
+
+/**
  * ges_timeline_get_layers:
  * @timeline: a #GESTimeline
  *
