@@ -1249,8 +1249,7 @@ ges_validate_activate (GstPipeline * pipeline, const gchar * scenario,
 
   o = gst_validate_override_new ();
   gst_validate_override_change_severity (o,
-      GST_VALIDATE_ISSUE_ID_EVENT_SEEK_RESULT_POSITION_WRONG,
-      GST_VALIDATE_REPORT_LEVEL_WARNING);
+      EVENT_SEEK_RESULT_POSITION_WRONG, GST_VALIDATE_REPORT_LEVEL_WARNING);
   gst_validate_override_register_by_name ("scenarios", o);
 
   runner = gst_validate_runner_new ();
