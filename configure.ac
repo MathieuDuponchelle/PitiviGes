@@ -387,6 +387,7 @@ tests/check/Makefile
 tests/benchmarks/Makefile
 tests/examples/Makefile
 tests/scenarios/Makefile
+tests/validate/Makefile
 tools/Makefile
 docs/Makefile
 docs/version.entities
