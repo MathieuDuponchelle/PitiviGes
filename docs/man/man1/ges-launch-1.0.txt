@@ -1,0 +1,155 @@
+ges-launch-1.0(1)
+=================
+
+NAME
+----
+ges-launch-1.0 - Build and play a multimedia timeline
+
+SYNOPSIS
+--------
+[verse]
+'ges-launch-1.0'  [-l <path>|--load=<path>] [-s <path>|--save=<path>]
+		[-p <path>|--sample-path=<path>] [-r <path>|--sample-path-recurse=<path>]
+		[-o <uri>|--outputuri=<uri>] [-f <profile>|--format=<profile>]
+		[-e <profile-name>|--encoding-profile=<profile-name>]
+		[-t <track-types>|--track-types=<track-types>]
+		[-v <videosink>|--videosink=<videosink>]
+		[-a <audiosink>---audiosink=<audiosink>]
+		[-m|--mute] [--inspect-action-type[=<action-type>]]
+		[--list-transitions] [--disable-mixing]
+		[-r <times>|--repeat=<times>] [--set-scenario=<scenario-name]
+
+DESCRIPTION
+-----------
+ges-launch-1.0 creates a multimedia timeline and plays it back,
+or renders it to the specified format.
+
+It can load a timeline from an existing project, or create one
+from the specified commands, it can also update an existing project
+with the specified commands and save it.
+
+You can learn more about individual ges-launch-1.0 commands with
+"ges-launch-1.0 help command".
+
+By default, ges-launch-1.0 is in "playback-mode".
+
+OPTIONS
+-------
+
+Project-related options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+-l::
+--load=<path>::
+	Load project from file. The project can still be modified with the available commands
+	and saved again with the --save option.
+-s::
+--save=<path>::
+	Save project to file before rendering. It can then be loaded with the --load option
+
+-p::
+--sample-path::
+	If some assets are missing when loading a project file, ges-launch-1.0 will try to
+	locate them in this path. It is especially useful when sharing a project.
+
+-r::
+--sample-path-recurse::
+	Identical to --sample-path, but ges-launch-1.0 will also recurse in the subfolders
+	to look for assets.
+
+Rendering otions
+~~~~~~~~~~~~~~~~
+
+-o::
+--outputuri=<uri>::
+	If set, ges-launch-1.0 will render the specified timeline instead
+	of playing it back. The default rendering format is ogv, containing
+	theora and vorbis.
+
+-f::
+--format=<profile>::
+	Set an encoding profile on the command line. See ges-launch-1.0 help profile
+	for more information.
+	This will have no effect if no outputuri has been specified.
+
+-e::
+--encoding-profile=<profile-name>:
+	Set an encoding profile from a preset file. See ges-launch-1.0 help profile
+	for more information.
+	This will have no effect if no outputuri has been specified.
+
+-t::
+--track-types=<track-types>::
+	Specify the track types to be created. When loading a project, only relevant
+	tracks will be added to the timeline.
+
+Playback options
+~~~~~~~~~~~~~~~~
+
+-v::
+--videosink=<videosink>::
+	Set the videosink used for playback.
+
+-a::
+--audiosink=<audiosink>::
+	Set the audiosink used for playback.
+
+-m::
+--mute::
+	Mute playback output. This has no effect when rendering.
+
+Helpful options
+~~~~~~~~~~~~~~~
+
+--inspect-action-type=<action-type>::
+	Inspect the available action types that can be defined in a scenario set with --set-scenario.
+	Will list all action-types if action-type is empty.
+
+--list-transitions::
+	List all valid transition types and exit. See ges-launch-1.0 help transition
+	for more information.
+
+Generic options
+~~~~~~~~~~~~~~~
+
+--disable-mixing::
+	Do not use mixing elements to mix layers together.
+
+-r::
+--repeat=<times>::
+	Set the number of times to repeat the timeline.
+
+--set-scenario::
+	ges-launch-1.0 exposes gst-validate functionalities, such as scenarios.
+	Scenarios describe actions to execute, such as seeks or setting of properties.
+	GES implements editing-sepcific actions such as adding or removal of clips.
+	See gst-validate-1.0 --help for more info about validate and scenarios, and
+	--inspect-action-type.
+
+COMMANDS
+--------
+
+clip::
+	Add a clip to the timeline. See ges-launch-1.0 help clip for more information.
+
+transition::
+	Add a transition to the timeline. See ges-launch-1.0 help clip for more information.
+	Note that transitions are automatically added between overlapping clips.
+
+effect::
+	Add an effect to an element or to the timeline. See ges-launch-1.0 help effect
+	for more information.
+
+Authors
+-------
+GES and ges-launch-1.0 were started by Edward Hervey, and are currently maintained by Thibault Saunier
+and Mathieu Duponchelle.
+
+If you have a clone of gst-editing-services, the output of git shortlog and git blame can show
+you the authors for specific parts of the project.
+
+Reporting Bugs
+--------------
+
+Report bugs to the gstreamer bugzilla <https://bugzilla.gnome.org/enter_bug.cgi?product=GStreamer>
+and choose the "gst-editing-services" component.

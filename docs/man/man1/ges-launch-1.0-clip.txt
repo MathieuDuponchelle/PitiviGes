@@ -1,0 +1,148 @@
+ges-launch-clip(1)
+=================
+
+NAME
+----
+ges-launch-1.0-clip - Add a clip to the timeline
+
+SYNOPSIS
+--------
+[verse]
+'ges-launch-1.0 clip' 	  <path|uri> [i=<inpoint>|inpoint=<inpoint>]
+			[d=<duration>|duration=<duration>]
+			[s=<start>|start=<start>] [l=<layer>|layer=<layer>]
+
+DESCRIPTION
+-----------
+Adds a clip to the timeline.
+
+See documentation for the --track-types option to ges-launch-1.0,
+as it will affect the result of this command.
+
+MANDATORY ARGUMENTS
+-------------------
+
+path|uri::
+	Specifies the location of the sample to make a clip from.
+
+OPTIONS
+-------
+
+i::
+inpoint=<inpoint>::
+	Sets the inpoint of the clip, that is the position in the original sample
+	at which the clip will start outputting data.
+
+	It is an error to have an inpoint superior to the actual duration of the original sample.
+
+	0 by default.
+
+d::
+duration=<duration>::
+	Sets the duration of the clip, that is the duration of the media the clip will output.
+
+	It is an error to have inpoint + duration be superior to the duration of the
+	original sample.
+
+	The default is the duration of the original sample - the inpoint of the clip.
+
+s::
+start=<start>::
+	Sets the start of the clip, that is its position in the timeline.
+
+	If not specified, it will be set to the duration of the layer the clip is added on,
+	as the expected default behaviour is to queue clips one after another.
+
+	See ges-launch-1.0 help timeline for more information.
+
+l::
+layer=<layer>::
+	Sets the layer of the clip. The video stream in overlapping clips on different layers
+	will be blended together according to their alpha property, starting with the clip
+	on the last layer. An example is shown in the EXAMPLES section.
+
+	If not specified, it will be set to the last layer a clip has been added on, or
+	a first layer if no clip has been added yet.
+
+	See ges-launch-1.0 help timeline for more information.
+
+PROPERTIES
+----------
+
+See ges-launch-1.0 help set-property for more information.
+
+Video properties
+~~~~~~~~~~~~~~~~
+
+These have no effects if there is no video stream in the sample.
+
+alpha::
+	This is the amount of transparency of the clip, ranging from 0.0 to 1.0
+	Clips overlapping on different layers will be composited together, unless
+	--disable-mixing has been specified, in the order of the layers.
+
+	See ges-launch-1.0 help timeline for more information.
+
+posx::
+	This is the x position (offset) of the clip in pixels, relatively to the output frame of the
+	timeline.
+
+posy::
+	This is the y position (offset) of the clip in pixels, relatively to the output frame of the
+	timeline.
+
+width::
+	This is the width in pixels that the clip will occupy in the final output frame.
+
+height::
+	This is the height in pixels that the clip will occupy in the final output frame.
+
+Audio properties
+~~~~~~~~~~~~~~~~
+
+volume::
+	This is the volume that will be set on the audio part of the clip, ranging from
+	0.0 to 10.0, with 1.0 being the default.
+
+mute::
+	Set to true to mute the audio of the clip. Default is false.
+
+
+EXAMPLES
+--------
+
+`ges-launch-1.0 clip /path/to/media`::
+	This will simply play the sample from its beginning to its end.
+
+`ges-launch-1.0 clip /path/to/media inpoint=4.0`::
+	Assuming "media" is a 10 second long media sample, this will
+	play the sample from the 4th second to the 10th, resulting in a
+	6-seconds long playback.
+
+`ges-launch-1.0 clip /path/to/media inpoint=4.0 duration=2.0 start=4.0`::
+	Assuming "media" is an audio video sample longer than 6 seconds, this
+	will play a black frame and silence for 4 seconds, then the sample
+	from its 4th second to its sixth second, resulting in a 6-seconds
+	long playback.
+
+`ges-launch-1.0 --track-types=audio clip /path/to/media`::
+	Assuming "media" is an audio video sample, this will only play the audio
+	of the sample in its entirety.
+
+`ges-launch-1.0 clip /path/to/media1 layer=1 set-alpha 0.9 clip /path/to/media2 layer=0`::
+	Assume media1 and media2 both contain audio and video and last for 10 seconds.
+	This will first add media1 in a new layer of "priority" 1, thus implicitly creating
+	a layer of "priority" 0, the start of the clip will be 0 as no clip had been added
+	in that layer before.
+
+	It will then add media2 in the layer of "priority" 0 which was created previously,
+	the start of this new clip will also be 0 as no clip has been added in this layer before.
+
+	Both clips will thus overlap on two layers for 10 seconds.
+
+	The "alpha" property of the second clip will finally be set to a value of 0.9.
+
+	All this will result in a 10 seconds playback, where media2 is barely visible
+	through media1, which is nearly opaque. If alpha was set to 0.5, both clips
+	would be equally visible, and if it was set to 0.0, media1 would be invisible
+	and media2 completely opaque.

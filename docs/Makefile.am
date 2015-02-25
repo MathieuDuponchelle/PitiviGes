@@ -4,6 +4,10 @@ else
 DOCS_SUBDIRS = 
 endif
 
+if BUILD_MANPAGES
+DOCS_SUBDIRS += man
+endif
+
 SUBDIRS = $(DOCS_SUBDIRS)
 DIST_SUBDIRS = libs
 

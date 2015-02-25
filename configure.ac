@@ -191,6 +191,11 @@ fi
 AC_SUBST([BASH_COMPLETION_DIR])
 AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "xno"])
 
+dnl check if we can build the man pages
+AC_CHECK_PROG(ASCIIDOC, asciidoc, yes, no)
+AC_CHECK_PROG(XMLTO, xmlto, yes, no)
+AM_CONDITIONAL([BUILD_MANPAGES],[test "x$ASCIIDOC" == "xyes" && test "x$XMLTO" == "xyes"])
+
 dnl *** checks for libraries ***
 
 dnl check for libm, for sin() etc.
@@ -417,6 +422,8 @@ tools/Makefile
 docs/Makefile
 docs/version.entities
 docs/libs/Makefile
+docs/man/Makefile
+docs/man/man1/Makefile
 pkgconfig/Makefile
 pkgconfig/gst-editing-services.pc
 pkgconfig/gst-editing-services-uninstalled.pc
