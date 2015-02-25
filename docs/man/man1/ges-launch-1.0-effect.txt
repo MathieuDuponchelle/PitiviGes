@@ -1,0 +1,83 @@
+ges-launch-1.0-effect(1)
+========================
+
+NAME
+----
+ges-launch-1.0-effect - Adds an effect to a clip or a segment of the timeline
+
+SYNOPSIS
+--------
+[verse]
+'ges-launch-1.0 effect' <bin-description>
+			[d=<duration>|duration=<duration> s=<start>|start=<start>]
+			[l=<layers>|layer=<layers>]
+
+DESCRIPTION
+-----------
+Adds an effect to a clip or a segment of the timeline.
+
+Adding an effect to a clip with no compatible streams will have no effect.
+
+MANDATORY ARGUMENTS
+-------------------
+
+bin-description::
+	Specifies the description of a GStreamer a bin, in the gst-launch format.
+
+OPTIONS
+-------
+
+s::
+start=<start>::
+	Sets the start of the effect, that is its position in the timeline.
+
+	If specified, duration is mandatory.
+
+	If neither duration or start are specified, the effect will be applied
+	to the last clip added in the timeline.
+
+d::
+duration=<duration>::
+	Sets the duration of the effect.
+
+	If specified, start is mandatory.
+
+	If neither duration or start are specified, the effect will be applied
+	to the last clip added in the timeline.
+
+l::
+layers=<layers>::
+	Specifies the layer(s) on which to apply the effect. Has no effect when
+	the effect gets applied to last clip.
+
+	layers is a list of colon-delimited layer-priorities, for instance
+	layers=1:3.
+
+	If not specified, the effect will be applied to all the layers.
+
+PROPERTIES
+----------
+
+See ges-launch-1.0 help set-property for more information.
+
+Properties can be set on the effect either directly in the bin-description,
+or separately through the set-* command, which will lookup any readable
+property in any of the children of the bin, and set the provided value on
+it.
+
+Property names can be looked up with gst-inspect my_element.
+
+EXAMPLES
+--------
+
+`ges-launch-1.0 clip /path/to/media effect "agingtv"`::
+	This will apply the agingtv effect to "media" and play it back.
+
+`ges-launch-1.0 clip /path/to/media effect "agingtv" set-dusts false`::
+	This will apply the agingtv effect to "media", set the "dusts" property to false
+	and play "media" back.
+
+`ges-launch-1.0 clip /path/to/media effect "agingtv" start=2.0 duration=4.0`::
+	Assuming "media" is a 10 seconds long video sample, this will play back
+	"media" for 2 seconds normally, then for 4 seconds with agingtv applied, then
+	normally again for the last 4 seconds.
