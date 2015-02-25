@@ -146,3 +146,5 @@ EXAMPLES
 	through media1, which is nearly opaque. If alpha was set to 0.5, both clips
 	would be equally visible, and if it was set to 0.0, media1 would be invisible
 	and media2 completely opaque.
+
+include::authors.txt[]

@@ -140,13 +140,7 @@ effect::
 	Add an effect to an element or to the timeline. See ges-launch-1.0 help effect
 	for more information.
 
-Authors
--------
-GES and ges-launch-1.0 were started by Edward Hervey, and are currently maintained by Thibault Saunier
-and Mathieu Duponchelle.
-
-If you have a clone of gst-editing-services, the output of git shortlog and git blame can show
-you the authors for specific parts of the project.
+include::authors.txt[]
 
 Reporting Bugs
 --------------

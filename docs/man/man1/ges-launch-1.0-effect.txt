@@ -81,3 +81,5 @@ EXAMPLES
 	Assuming "media" is a 10 seconds long video sample, this will play back
 	"media" for 2 seconds normally, then for 4 seconds with agingtv applied, then
 	normally again for the last 4 seconds.
+
+include::authors.txt[]

@@ -35,3 +35,5 @@ OPTIONS
 all::
 	Prints all the available commands on the standard output. This
 	option overrides any given command or guide name.
+
+include::authors.txt[]
