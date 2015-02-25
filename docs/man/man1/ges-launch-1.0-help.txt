@@ -1,0 +1,37 @@
+ges-launch-1.0-help(1)
+======================
+
+NAME
+----
+ges-launch-1.0-help - Display help information about ges-launch-1.0
+
+SYNOPSIS
+--------
+[verse]
+'ges-launch-1.0 help' [all]
+	   	      [COMMAND|GUIDE]
+
+DESCRIPTION
+-----------
+
+With no options and no COMMAND or GUIDE given, the manual page of
+the 'ges-launch-1.0' command is brought up. The 'man' program is
+required for now, other viewers will be made available in the future.
+
+If the option 'all' is given, all available commands and guides is
+printed on the standard output.
+
+If a command, or a guide, is given, a manual page for that command or
+guide is brought up. The 'man' program is required for this
+purpose.
+
+Note that `ges-launch-1.0 --help` is different from `ges-launch-1.0 help`
+for legacy reasons.
+
+This page can be displayed with 'ges-launch-1.0 help help'
+
+OPTIONS
+-------
+all::
+	Prints all the available commands on the standard output. This
+	option overrides any given command or guide name.

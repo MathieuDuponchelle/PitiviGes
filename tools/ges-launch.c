@@ -602,19 +602,33 @@ _parse_timeline (int argc, char **argv)
 }
 
 static void
+_print_all_commands (void)
+{
+  /* Yeah I know very fancy */
+  g_print ("Available ges-launch-1.0 commands:\n\n");
+  g_print ("transition clip effect set-\n\n");
+  g_print ("See ges-launch-1.0 help <command> or ges-launch-1.0 help <guide> "
+      "to read about a specific command or a given guide\n");
+}
+
+static void
 _check_command_help (int argc, gchar ** argv)
 {
   if (!g_strcmp0 (argv[1], "help")) {
-    gchar *page;
+    gchar *page = NULL;
 
     if (argc == 2)
       page = g_strdup ("ges-launch-1.0");
+    else if (!g_strcmp0 (argv[2], "all"))
+      _print_all_commands ();
     else
       page = g_strconcat ("ges-launch-1.0", "-", argv[2], NULL);
 
-    execlp ("man", "man", page, NULL);
+    if (page) {
+      execlp ("man", "man", page, NULL);
+      g_free (page);
+    }
 
-    g_free (page);
     /* If an error is raised by execlp it will be displayed in the terminal */
     /* TODO: implement a fallback */
     exit (0);
