@@ -9,7 +9,7 @@ DOCS_SUBDIRS += man
 endif
 
 SUBDIRS = $(DOCS_SUBDIRS)
-DIST_SUBDIRS = libs
+DIST_SUBDIRS = libs man
 
 EXTRA_DIST = \
 	version.entities.in

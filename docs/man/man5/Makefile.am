@@ -6,6 +6,8 @@ TXT_TO_XML = $(ASCIIDOC) -b $(ASCIIDOC_DOCBOOK)
 
 man_MANS = ges-launch-1.0-timeline.5
 
+EXTRA_DIST = ges-launch-1.0-timeline.txt
+
 %.5 : %.txt
 	$(TXT_TO_XML) -d manpage -o $@ $< && \
 	$(XMLTO) man $@
