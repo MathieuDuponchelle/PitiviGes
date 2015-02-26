@@ -25,8 +25,11 @@ ges-launch-1.0 creates a multimedia timeline and plays it back,
 or renders it to the specified format.
 
 It can load a timeline from an existing project, or create one
-from the specified commands, it can also update an existing project
-with the specified commands and save it.
+from the specified commands.
+
+Updating an existing project can be done through --set-scenario
+if ges-launch-1.0 has been compiled with gst-validate, see
+ges-launch-1.0 --inspect-action-type for the available commands.
 
 You can learn more about individual ges-launch-1.0 commands with
 "ges-launch-1.0 help command".
@@ -41,8 +44,7 @@ Project-related options
 
 -l::
 --load=<path>::
-	Load project from file. The project can still be modified with the available commands
-	and saved again with the --save option.
+	Load project from file. The project be saved again with the --save option.
 -s::
 --save=<path>::
 	Save project to file before rendering. It can then be loaded with the --load option
@@ -57,8 +59,8 @@ Project-related options
 	Identical to --sample-path, but ges-launch-1.0 will also recurse in the subfolders
 	to look for assets.
 
-Rendering otions
-~~~~~~~~~~~~~~~~
+Rendering options
+~~~~~~~~~~~~~~~~~
 
 -o::
 --outputuri=<uri>::
@@ -122,7 +124,7 @@ Generic options
 --set-scenario::
 	ges-launch-1.0 exposes gst-validate functionalities, such as scenarios.
 	Scenarios describe actions to execute, such as seeks or setting of properties.
-	GES implements editing-sepcific actions such as adding or removal of clips.
+	GES implements editing-specific actions such as adding or removal of clips.
 	See gst-validate-1.0 --help for more info about validate and scenarios, and
 	--inspect-action-type.
 
