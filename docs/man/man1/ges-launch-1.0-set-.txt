@@ -1,0 +1,41 @@
+ges-launch-1.0-set-(1)
+========================
+
+NAME
+----
+ges-launch-1.0-set- - Adds an effect to a clip or a segment of the timeline
+
+SYNOPSIS
+--------
+[verse]
+'ges-launch-1.0 set-'<property-name> <value>
+
+DESCRIPTION
+-----------
+Sets the property of an object (for example a clip or an effect)
+
+Trying to set a property than can't be looked up is considered an error.
+
+By default, set- will lookup the property on the last added object.
+
+MANDATORY ARGUMENTS
+-------------------
+
+property-name::
+	Specifies the name property to set.
+
+value::
+	Specifies the value to set on the property specified by property-name.
+
+EXAMPLES
+--------
+
+`ges-launch-1.0 clip /path/to/media set-alpha 0.3`::
+	This will set the alpha property on "media" then play it back, assuming 
+	"media" contains a video stream.
+
+`ges-launch-1.0 clip /path/to/media effect "agingtv" set-dusts false`::
+	This will set the "dusts" property of the agingtv to false
+	and play the timeline back.
+
+include::authors.txt[]

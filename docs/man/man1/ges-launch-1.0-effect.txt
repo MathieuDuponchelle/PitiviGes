@@ -58,7 +58,7 @@ layers=<layers>::
 PROPERTIES
 ----------
 
-See ges-launch-1.0 help set-property for more information.
+See ges-launch-1.0 help set- for more information.
 
 Properties can be set on the effect either directly in the bin-description,
 or separately through the set-* command, which will lookup any readable

@@ -69,7 +69,7 @@ layer=<layer>::
 PROPERTIES
 ----------
 
-See ges-launch-1.0 help set-property for more information.
+See ges-launch-1.0 help set- for more information.
 
 Video properties
 ~~~~~~~~~~~~~~~~
