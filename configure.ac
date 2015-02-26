@@ -424,6 +424,7 @@ docs/version.entities
 docs/libs/Makefile
 docs/man/Makefile
 docs/man/man1/Makefile
+docs/man/man5/Makefile
 pkgconfig/Makefile
 pkgconfig/gst-editing-services.pc
 pkgconfig/gst-editing-services-uninstalled.pc
