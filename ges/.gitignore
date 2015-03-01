@@ -1,2 +1,4 @@
 *.gir
 *.typelib
+lex.priv_ges_parse_yy.c
+parse_lex.h

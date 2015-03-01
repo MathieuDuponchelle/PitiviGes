@@ -1,12 +1,19 @@
 ges-timeline(5)
 ===============
 
+ifdef::doctype-manpage[]
 NAME
 ----
 ges-launch-1.0-timeline - The GES timeline
 
 DESCRIPTION
 -----------
+endif::doctype-manpage[]
+
+ifndef::doctype-manpage[]
+The GES Timeline
+----------------
+endif::doctype-manpage[]
 
 A GES Timeline is composed of one or more layers, and produces data on one or more tracks.
 
@@ -20,45 +27,77 @@ Layers
 
 Let's imagine a timeline that contains two layers:
 
-[verse]
+ifndef::doctype-manpage[]
 
+[verse]
+This code creates a timeline
+
+[source,c]
+-------
+int main (int argc, char **argv)
+{
+	GESTimeline *timeline;
+
+	timeline = ges_timeline_new();
+}
+-------
+[source,shell]
+-------
+An empty timeline can not be created through the shell
+-------
+[source,python]
+-------
+from gi.repository import GES
+
+if __name__=="__main__":
+	timeline = GES.Timeline()
+-------
+endif::doctype-manpage[]
+
+ifdef::doctype-manpage[]
+--------
   Timeline, duration : 0 seconds                                                                 
-\+--------------------------------------------------------+                   
++--------------------------------------------------------+                   
 |                                                        |                   
-|         \+-------------------------------------------+  |                   
+|         +-------------------------------------------+  |                   
 |         |                                           |  |                   
 | Layer 1 |                                           |  |                   
 |         |                                           |  |                   
-|         \+-------------------------------------------+  |                   
+|         +-------------------------------------------+  |                   
 |                                                        |
-|         \+-------------------------------------------+  |                   
+|         +-------------------------------------------+  |                   
 |         |                                           |  |                   
 | Layer 2 |                                           |  |                   
 |         |                                           |  |                   
-|         \+-------------------------------------------+  |                   
+|         +-------------------------------------------+  |                   
 |                                                        |                   
-\+--------------------------------------------------------+                   
++--------------------------------------------------------+                   
+--------
+endif::doctype-manpage[]
 
 If we add two clips in layer 1 and layer 2, each starting at 0 with a duration of 10
 seconds, our timeline now looks like this:
 
-[verse]
+ifdef::doctype-manpage[]
+--------
   Timeline, duration : 10 seconds
-\+--------------------------------------------------------+                   
++--------------------------------------------------------+                   
 |                                                        |                   
-|         \+-------------------------------------------+  |                   
-|         | \+=======================================+ |  |                   
+|         +-------------------------------------------+  |                   
+|         | +=======================================+ |  |                   
 | Layer 1 | |              Clip 1                   | |  |                   
-|         | \+=======================================+ |  |                   
-|         \+-------------------------------------------+  |                   
+|         | +=======================================+ |  |                   
+|         +-------------------------------------------+  |                   
 |                                                        |
-|         \+-------------------------------------------+  |                   
-|         | \+=======================================+ |  |                   
+|         +-------------------------------------------+  |                   
+|         | +=======================================+ |  |                   
 | Layer 2 | |              Clip 2                   | |  |                   
-|         | \+=======================================+ |  |                   
-|         \+-------------------------------------------+  |                   
+|         | +=======================================+ |  |                   
+|         +-------------------------------------------+  |                   
 |                                                        |                   
-\+--------------------------------------------------------+                  
++--------------------------------------------------------+                  
+--------
+endif::doctype-manpage[]
 
 In that timeline, Clip 2 is said to have the highest "priority". In the case of video streams,
 it means that it will be rendered on top of Clip 1, which in turn signifies that if
@@ -76,23 +115,29 @@ doesn't output anything. That's what Tracks are for.
 
 If we add a video track to our timeline, it can be represented that way:
 
-[verse]
+ifdef::doctype-manpage[]
+--------
   Timeline, duration : 10 seconds
-\+--------------------------------------------------------+                   
++--------------------------------------------------------+                   
 |                                                        |                   
-|         \+-------------------------------------------+  |                   
-|         | \+=======================================+ |  |                   
+|         +-------------------------------------------+  |                   
+|         | +=======================================+ |  |                   
 | Layer 1 | |              Clip 1                   | |  |                   
-|         | \+=======================================+ |  |                   
-|         \+-------------------------------------------+  |                   
+|         | +=======================================+ |  |                   
+|         +-------------------------------------------+  |                   
 |                                                        |--------> Video Track
-|         \+-------------------------------------------+  |                   
-|         | \+=======================================+ |  |                   
+|         +-------------------------------------------+  |                   
+|         | +=======================================+ |  |                   
 | Layer 2 | |              Clip 2                   | |  |                   
-|         | \+=======================================+ |  |                   
-|         \+-------------------------------------------+  |                   
+|         | +=======================================+ |  |                   
+|         +-------------------------------------------+  |                   
 |                                                        |                   
-\+--------------------------------------------------------+                  
++--------------------------------------------------------+                  
+--------
+endif::doctype-manpage[]
+ifndef::doctype-manpage[]
+image::timeline-3.png[]
+endif::doctype-manpage[]
 
 Assuming both clips contain video streams, our timeline will now output the result of their
 compositing together on the video track. Any audio streams they contain are ignored.
@@ -106,4 +151,6 @@ might store English, Dutch and French audio tracks.
 By default ges-launch-1.0 will assume the user wants exactly one audio track and one video track,
 this can be modified through the --track-types argument to ges-launch-1.0 .
 
+ifdef::doctype-manpage[]
 include::../man1/authors.txt[]
+endif::doctype-manpage[]

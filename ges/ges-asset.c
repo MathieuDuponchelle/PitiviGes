@@ -28,6 +28,7 @@
  * This means that assets will represent for example a #GESUriClips, #GESBaseEffect etc,
  * and then you can extract objects of those types with the appropriate parameters from the asset
  * using the #ges_asset_extract method:
+ * lol
  *
  * |[
  * GESAsset *effect_asset;
