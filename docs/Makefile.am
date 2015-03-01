@@ -4,8 +4,12 @@ else
 DOCS_SUBDIRS = 
 endif
 
+if HAVE_INTROSPECTION
+DOCS_SUBDIRS += future
+endif
+
 SUBDIRS = $(DOCS_SUBDIRS)
-DIST_SUBDIRS = libs
+DIST_SUBDIRS = libs future
 
 EXTRA_DIST = \
 	version.entities.in

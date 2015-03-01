@@ -415,6 +415,7 @@ tests/validate/Makefile
 tests/validate/scenarios/Makefile
 tools/Makefile
 docs/Makefile
+docs/future/Makefile
 docs/version.entities
 docs/libs/Makefile
 pkgconfig/Makefile
