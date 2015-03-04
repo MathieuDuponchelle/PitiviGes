@@ -113,7 +113,7 @@ def render_class(class_, output):
 
 def render_function(function, output):
     output.write ("##" + function.name + "\n")
-    output.write ("**" + function.prototype + "**\n")
+    output.write ("**" + function.prototype + "**\n\n")
     for description in function.parameter_descriptions:
         output.write (description + "\n")
     output.write (function.description + "\n")
@@ -155,6 +155,12 @@ class Page:
         self.node = node
         self.name = node.attrib["id"]
         self.description = ""
+        links = custom_findall(node, "info/link")
+        self.next_ = None
+        self.prev_ = None
+        for link in links:
+            if link.attrib['type'] == 'next':
+                self.next_ = link.attrib ["xref"]
 
 
 class Class (Page):
@@ -203,12 +209,51 @@ class AggregatedPages(object):
             return
         class_ = Class(self.master_page)
         output = os.path.join (output, class_.name + ".markdown")
+        functions = dict({})
         with open (output, "w") as f:
             render_class(class_, f)
             for page in self.slave_pages:
                 function = Function(page)
+                functions[function.name] = function
+            functions = self.sort_functions(functions)
+            for function in functions:
                 render_function(function, f)
 
+    def sort_functions(self, functions):
+        sorted_functions = []
+        unsorted_functions = []
+
+        for name, function in functions.iteritems():
+            if function.next_:
+                try:
+                    next_ = functions[function.next_]
+                    function.next_ = next_
+                    next_.prev_ = function
+                except KeyError:
+                    function.next_ = None
+                    sorted_functions.append (function)
+                    continue
+
+        for name, function in functions.iteritems():
+            if function.next_:
+                i = 0
+                found = False
+                for f in sorted_functions:
+                    if f == function.next_:
+                        found = True
+                        break
+                    i+= 1
+
+                if not found:
+                    sorted_functions.insert (i, function.next_)
+                sorted_functions.insert (i, function)
+
+            elif function.prev_:
+                continue
+            else:
+                unsorted_functions.append (function)
+
+        return sorted_functions + unsorted_functions
 
 class Parser(object):
 
@@ -227,7 +272,10 @@ class Parser(object):
     def _parse_page(self, root):
         id_ = root.attrib["id"]
         type_ = root.attrib["style"]
-        link = custom_find(root, "info/link")
+        links = custom_findall(root, "info/link")
+        for link in links:
+            if link.attrib["type"] == "guide":
+                break
         if type_ not in ["class", "method", "function"]:
             return
         if "Class" in id_ or "Private" in id_:  # UGLY
