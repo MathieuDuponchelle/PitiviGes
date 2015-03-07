@@ -1,3 +1,5 @@
+DOCTOOL_OPTIONS = --link-to-gtk-doc --online
+
 PAGES_DIRECTORY = pages
 HTML_DIRECTORY = html
 MARKDOWN_DIRECTORY = markdown
@@ -41,6 +43,6 @@ markdown.stamp: pages.stamp
 pages.stamp: $(top_builddir)/ges/GES-1.0.gir
 	@touch pages.tmp
 	@echo "Generating documentation pages ..."
-	@$(DOCTOOL) $(top_builddir)/ges/GES-1.0.gir --language="C" -o $(PAGES_DIRECTORY)
+	@$(DOCTOOL) $(DOCTOOL_OPTIONS) $(top_builddir)/ges/GES-1.0.gir --language="C" -o $(PAGES_DIRECTORY)
 	@echo "Generated documentation pages"
 	@mv -f pages.tmp pages.stamp
