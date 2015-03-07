@@ -44,7 +44,7 @@ def render_link(node):
             text = node.text
         else:
             text = href
-        result = "[" + text + "](" + href.lower() + ")"
+        result = "[" + text + "](" + href + ")"
 
     if node.tail:
         result += node.tail.replace("#", "(FIXME broken link)")
@@ -107,12 +107,12 @@ def render_parameter_description(param):
 
 
 def render_class(class_, output):
-    output.write ("#" + class_.name + "\n")
+    output.write ("##" + class_.name + "\n")
     output.write (class_.description + "\n")
 
 
 def render_function(function, output):
-    output.write ("##" + function.name + "\n")
+    output.write ("###" + function.name + "\n")
     output.write ("**" + function.prototype + "**\n\n")
     for description in function.parameter_descriptions:
         output.write (description + "\n")
@@ -276,7 +276,7 @@ class Parser(object):
         for link in links:
             if link.attrib["type"] == "guide":
                 break
-        if type_ not in ["class", "method", "function"]:
+        if type_ not in ["class", "method", "function", "constructor"]:
             return
         if "Class" in id_ or "Private" in id_:  # UGLY
             return
