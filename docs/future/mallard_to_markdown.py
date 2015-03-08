@@ -221,7 +221,7 @@ class AggregatedPages(object):
 
     def sort_functions(self, functions):
         sorted_functions = []
-        unsorted_functions = []
+        first = None
 
         for name, function in functions.iteritems():
             if function.next_:
@@ -231,29 +231,26 @@ class AggregatedPages(object):
                     next_.prev_ = function
                 except KeyError:
                     function.next_ = None
-                    sorted_functions.append (function)
                     continue
 
-        for name, function in functions.iteritems():
-            if function.next_:
-                i = 0
-                found = False
-                for f in sorted_functions:
-                    if f == function.next_:
-                        found = True
-                        break
-                    i+= 1
+        # Find the head, function's list can't contain gaps
+        for function in functions.itervalues():
+            if not function.prev_ and function.next_:
+                first = function
+                break
 
-                if not found:
-                    sorted_functions.insert (i, function.next_)
-                sorted_functions.insert (i, function)
+        function = first
+        if function:
+            sorted_functions.append (function)
+            while function.next_:
+                sorted_functions.append (function.next_)
+                function = function.next_
 
-            elif function.prev_:
-                continue
-            else:
-                unsorted_functions.append (function)
+        for function in functions.itervalues():
+            if function not in sorted_functions:
+                sorted_functions.append (function)
 
-        return sorted_functions + unsorted_functions
+        return sorted_functions
 
 class Parser(object):
 
