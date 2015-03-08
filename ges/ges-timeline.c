@@ -2508,7 +2508,7 @@ timeline_fill_gaps (GESTimeline * timeline)
 
 /**** API *****/
 /**
- * ges_timeline_new:
+ * ges_timeline_new: (next ges_timeline_new_audio_video)
  *
  * Creates a new empty #GESTimeline.
  *
@@ -2528,7 +2528,7 @@ ges_timeline_new (void)
 }
 
 /**
- * ges_timeline_new_from_uri:
+ * ges_timeline_new_from_uri: (next ges_timeline_load_from_uri)
  * @uri: the URI to load from
  * @error: (out) (allow-none): An error to be set in case something wrong happens or %NULL
  *
@@ -2550,7 +2550,7 @@ ges_timeline_new_from_uri (const gchar * uri, GError ** error)
 }
 
 /**
- * ges_timeline_load_from_uri:
+ * ges_timeline_load_from_uri: (next ges_timeline_save_to_uri)
  * @timeline: an empty #GESTimeline into which to load the formatter
  * @uri: The URI to load from
  * @error: (out) (allow-none): An error to be set in case something wrong happens or %NULL
@@ -2579,7 +2579,7 @@ ges_timeline_load_from_uri (GESTimeline * timeline, const gchar * uri,
 }
 
 /**
- * ges_timeline_save_to_uri:
+ * ges_timeline_save_to_uri: (next ges_timeline_add_layer)
  * @timeline: a #GESTimeline
  * @uri: The location to save to
  * @formatter_asset: (allow-none): The formatter asset to use or %NULL. If %NULL,
@@ -2620,7 +2620,7 @@ ges_timeline_save_to_uri (GESTimeline * timeline, const gchar * uri,
 }
 
 /**
- * ges_timeline_append_layer:
+ * ges_timeline_append_layer: (next ges_timeline_remove_layer)
  * @timeline: a #GESTimeline
  *
  * Append a newly created #GESLayer to @timeline
@@ -2645,7 +2645,7 @@ ges_timeline_append_layer (GESTimeline * timeline)
 }
 
 /**
- * ges_timeline_add_layer:
+ * ges_timeline_add_layer: (next ges_timeline_append_layer)
  * @timeline: a #GESTimeline
  * @layer: the #GESLayer to add
  *
@@ -2719,7 +2719,7 @@ ges_timeline_add_layer (GESTimeline * timeline, GESLayer * layer)
 }
 
 /**
- * ges_timeline_remove_layer:
+ * ges_timeline_remove_layer: (next ges_timeline_get_layers)
  * @timeline: a #GESTimeline
  * @layer: the #GESLayer to remove
  *
@@ -2775,7 +2775,7 @@ ges_timeline_remove_layer (GESTimeline * timeline, GESLayer * layer)
 }
 
 /**
- * ges_timeline_add_track:
+ * ges_timeline_add_track: (next ges_timeline_remove_track)
  * @timeline: a #GESTimeline
  * @track: the #GESTrack to add
  *
@@ -2861,7 +2861,7 @@ ges_timeline_add_track (GESTimeline * timeline, GESTrack * track)
 }
 
 /**
- * ges_timeline_remove_track:
+ * ges_timeline_remove_track: (next ges_timeline_get_tracks)
  * @timeline: a #GESTimeline
  * @track: the #GESTrack to remove
  *
@@ -2941,7 +2941,7 @@ ges_timeline_remove_track (GESTimeline * timeline, GESTrack * track)
 }
 
 /**
- * ges_timeline_get_track_for_pad:
+ * ges_timeline_get_track_for_pad: (next ges_timeline_get_pad_for_track)
  * @timeline: The #GESTimeline
  * @pad: The #GstPad
  *
@@ -2970,7 +2970,7 @@ ges_timeline_get_track_for_pad (GESTimeline * timeline, GstPad * pad)
 }
 
 /**
- * ges_timeline_get_pad_for_track:
+ * ges_timeline_get_pad_for_track: (next ges_timeline_set_snapping_distance)
  * @timeline: The #GESTimeline
  * @track: The #GESTrack
  *
@@ -3003,7 +3003,7 @@ ges_timeline_get_pad_for_track (GESTimeline * timeline, GESTrack * track)
 }
 
 /**
- * ges_timeline_get_tracks:
+ * ges_timeline_get_tracks: (next ges_timeline_commit)
  * @timeline: a #GESTimeline
  *
  * Returns the list of #GESTrack used by the Timeline.
@@ -3020,7 +3020,7 @@ ges_timeline_get_tracks (GESTimeline * timeline)
 }
 
 /**
- * ges_timeline_get_layers:
+ * ges_timeline_get_layers: (next ges_timeline_add_track)
  * @timeline: a #GESTimeline
  *
  * Get the list of #GESLayer present in the Timeline.
@@ -3093,7 +3093,7 @@ ges_timeline_commit_unlocked (GESTimeline * timeline)
 }
 
 /**
- * ges_timeline_commit:
+ * ges_timeline_commit (next ges_timeline_is_empty):
  * @timeline: a #GESTimeline
  *
  * Commit all the pending changes of the clips contained in the
@@ -3197,7 +3197,7 @@ ges_timeline_commit_sync (GESTimeline * timeline)
 }
 
 /**
- * ges_timeline_get_duration:
+ * ges_timeline_get_duration (next ges_timeline_get_track_for_pad):
  * @timeline: a #GESTimeline
  *
  * Get the current duration of @timeline
@@ -3230,7 +3230,7 @@ ges_timeline_get_auto_transition (GESTimeline * timeline)
 }
 
 /**
- * ges_timeline_set_auto_transition:
+ * ges_timeline_set_auto_transition: (next ges_timeline_get_auto_transition)
  * @timeline: a #GESLayer
  * @auto_transition: whether the auto_transition is active
  *
@@ -3257,7 +3257,7 @@ ges_timeline_set_auto_transition (GESTimeline * timeline,
 }
 
 /**
- * ges_timeline_get_snapping_distance:
+ * ges_timeline_get_snapping_distance: (next ges_timeline_set_auto_transition)
  * @timeline: a #GESTimeline
  *
  * Gets the configured snapping distance of the timeline. See
@@ -3276,7 +3276,7 @@ ges_timeline_get_snapping_distance (GESTimeline * timeline)
 }
 
 /**
- * ges_timeline_set_snapping_distance:
+ * ges_timeline_set_snapping_distance: (next ges_timeline_get_snapping_distance)
  * @timeline: a #GESLayer
  * @snapping_distance: whether the snapping_distance is active
  *
@@ -3293,7 +3293,7 @@ ges_timeline_set_snapping_distance (GESTimeline * timeline,
 }
 
 /**
- * ges_timeline_get_element:
+ * ges_timeline_get_element (next ges_timeline_get_duration):
  * @timeline: a #GESTimeline
  *
  * Gets a #GESTimelineElement contained in the timeline
@@ -3317,7 +3317,7 @@ ges_timeline_get_element (GESTimeline * timeline, const gchar * name)
 }
 
 /**
- * ges_timeline_is_empty:
+ * ges_timeline_is_empty (next ges_timeline_get_element):
  * @timeline: a #GESTimeline
  *
  * Check whether a #GESTimelineElement is empty or not

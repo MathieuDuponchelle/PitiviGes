@@ -34,7 +34,7 @@
 static GstElementFactory *compositor_factory = NULL;
 
 /**
- * ges_timeline_new_audio_video:
+ * ges_timeline_new_audio_video: (next ges_timeline_new_from_uri)
  * 
  * Creates a new #GESTimeline containing a raw audio and a
  * raw video track.
