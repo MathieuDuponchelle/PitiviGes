@@ -72,6 +72,11 @@ def render_paragraph():
     return "\n\n"
 
 
+def render_section (node, level):
+    title = custom_find (node, "title").text
+    return "\n\n###" + level * "#" + title + "\n"
+
+
 def render_text(node):
     if node.text:
         return node.text.replace("#", "(FIXME broken link)")
@@ -119,10 +124,14 @@ def render_function(function, output):
     output.write (function.description + "\n")
 
 
-def _parse_description(node, description, is_parameter=False):
+def _parse_description(node, description, is_parameter=False, sections_level=0):
     tag = node.tag.split('}')[1]
-    if tag not in ["page", "p"]:
+    if tag not in ["page", "p", "section"]:
         return description
+
+    if tag == "section":
+        sections_level += 1
+        description += render_section (node, sections_level)
 
     if node.text:
         if not is_parameter:
@@ -135,8 +144,10 @@ def _parse_description(node, description, is_parameter=False):
         if ctag == "link":
             description += render_link(n)
         elif ctag == "code":
-            description += render_code(n, is_reference=(tag != "page"))
-        description = _parse_description(n, description, is_parameter)
+            description += render_code(n, is_reference=(tag != "page" and tag \
+                != "section"))
+        description = _parse_description(n, description, is_parameter,
+                sections_level=sections_level)
 
     description += render_tail(node)
     return description
@@ -161,7 +172,6 @@ class Page:
         for link in links:
             if link.attrib['type'] == 'next':
                 self.next_ = link.attrib ["xref"]
-
 
 class Class (Page):
 
