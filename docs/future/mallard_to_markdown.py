@@ -4,6 +4,8 @@ import argparse
 import os
 import errno
 
+mime_map={"text/x-csrc": "c"}
+
 def ensure_path(path):
     try:
         os.makedirs(path)
@@ -52,15 +54,30 @@ def render_link(node):
 
 
 def render_code(node, is_reference=False):
+    mime = ""
+    if "mime" in node.attrib:
+        mime = node.attrib["mime"]
+    if mime in mime_map:
+        mime = mime_map[mime]
+    else:
+        mime = ""
+
     result = ""
+
     if not is_reference:
-        result += "\n\n```c"
+        if mime:
+            result += "\n\n```" + mime
+        else:
+            result += '\n\n<pre class="inlined_code">'
     else:
         result += "**"
     if node.text:
         result += node.text
     if not is_reference:
-        result += "\n```"
+        if mime:
+            result += "\n```"
+        else:
+            result += "</pre>"
     else:
         result += "**"
     if node.tail:
