@@ -134,10 +134,14 @@ def render_parameter_description(param):
     result = "*" + param.name + "*: "
     if param.description is not None:
         result += _parse_description(
-            param.description, "", is_parameter=True)
+            param.description, "", add_new_lines=False)
     else:
         result += "FIXME empty description"
     return result
+
+
+def render_note(node):
+    return "\n\n> "
 
 
 def render_class(class_, output):
@@ -164,9 +168,9 @@ def _parse_code (node):
             description += render_link(n)
     return description
 
-def _parse_description(node, description, is_parameter=False, sections_level=0):
+def _parse_description(node, description, add_new_lines=True, sections_level=0):
     tag = node.tag.split('}')[1]
-    if tag not in ["page", "p", "section"]:
+    if tag not in ["page", "p", "section", "note"]:
         return description
 
     if tag == "section":
@@ -174,12 +178,13 @@ def _parse_description(node, description, is_parameter=False, sections_level=0):
         description += render_section (node, sections_level)
 
     if node.text:
-        if not is_parameter:
+        if add_new_lines:
             description += render_paragraph()
 
     description += render_text(node)
 
     for n in node:
+        old_add_new_lines = add_new_lines
         ctag = n.tag.split('}')[1]
         if ctag == "link":
             description += render_link(n)
@@ -189,9 +194,13 @@ def _parse_description(node, description, is_parameter=False, sections_level=0):
             description += _parse_code (n)
             description += render_code_end(n, is_reference=(tag != "page" and tag \
                 != "section"))
+        elif ctag == "note":
+            description += render_note(n)
+            add_new_lines = False
 
-        description = _parse_description(n, description, is_parameter,
+        description = _parse_description(n, description, add_new_lines,
                 sections_level=sections_level)
+        add_new_lines = old_add_new_lines
 
     description += render_tail(node)
     return description
