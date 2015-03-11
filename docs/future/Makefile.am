@@ -1,4 +1,4 @@
-DOCTOOL_OPTIONS = --link-to-gtk-doc --online
+DOCTOOL_OPTIONS = --link-to-gtk-doc --online -M $(top_srcdir)
 
 PAGES_DIRECTORY = pages
 HTML_DIRECTORY = html

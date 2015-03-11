@@ -25,19 +25,114 @@
  * SECTION:gestimeline
  * @short_description: Multimedia timeline
  *
- * #GESTimeline is the central object for any multimedia timeline.
+ * A #GESTimeline is composed of one or more #GESLayers, and produces data on one or
+ * more #GESTracks.
  *
- * Contains a list of #GESLayer which users should use to arrange the
- * various clips through time.
+ * A #GESTrack represents a media type, for example audio, video or text. For the
+ * moment only audio and video tracks are supported.
  *
- * The output type is determined by the #GESTrack that are set on
- * the #GESTimeline.
+ * #GESLayers contain #GESClips, and represent the relative priorities of these clips.
  *
- * To save/load a timeline, you can use the ges_timeline_load_from_uri() and
- * ges_timeline_save_to_uri() methods to use the default format. If you wish
+ * # Layers
  *
- * Note that any change you make in the timeline will not actually be taken
- * into account until you call the #ges_timeline_commit method.
+ * {{ tests/examples/create_timeline_with_n_layers.markdown }}
+ *
+ * Let's imagine a timeline that contains two layers:
+ *
+ * |[
+ *   Timeline, duration : 0 seconds
+ * +--------------------------------------------------------+
+ * |                                                        |
+ * |         +-------------------------------------------+  |
+ * |         |                                           |  |
+ * | Layer 1 |                                           |  |
+ * |         |                                           |  |
+ * |         +-------------------------------------------+  |
+ * |                                                        |
+ * |         +-------------------------------------------+  |
+ * |         |                                           |  |
+ * | Layer 2 |                                           |  |
+ * |         |                                           |  |
+ * |         +-------------------------------------------+  |
+ * |                                                        |
+ * +--------------------------------------------------------+
+ * ]|
+ *
+ * {{ tests/examples/add_one_clip_in_each_layer.markdown }}
+ *
+ * If we add two clips in layer 1 and layer 2, each starting at 0 with a
+ * duration of 10 seconds, our timeline now looks like this:
+ *
+ * |[
+ *
+ *   Timeline, duration : 10 seconds
+ * +--------------------------------------------------------+
+ * |                                                        |
+ * |         +-------------------------------------------+  |
+ * |         | +=======================================+ |  |
+ * | Layer 1 | |              Clip 1                   | |  |
+ * |         | +=======================================+ |  |
+ * |         +-------------------------------------------+  |
+ * |                                                        |
+ * |         +-------------------------------------------+  |
+ * |         | +=======================================+ |  |
+ * | Layer 2 | |              Clip 2                   | |  |
+ * |         | +=======================================+ |  |
+ * |         +-------------------------------------------+  |
+ * |                                                        |
+ * +--------------------------------------------------------+
+ *
+ * ]|
+ *
+ * In that timeline, Clip 1 is said to have the highest "priority". In the case
+ * of video streams, it means that it will be rendered on top of Clip 2, which in turn signifies
+ * that if Clip 1 and Clip 2 share the same width and height, Clip 2 will be completely
+ * invisible.
+ *
+ * In the case of video streams, one can therefore think of the layer priority as a z-index.
+ *
+ * # Tracks
+ *
+ * Let's continue with that timeline. For now it indeed mixes various layers together, but it
+ * doesn't output anything. That's what #GESTracks are for.
+ *
+ * {{ tests/examples/add_one_video_track.markdown }}
+ *
+ * If we add a video track to our timeline, it can be represented that way:
+ *
+ * |[
+ *
+ *   Timeline, duration : 10 seconds
+ * +--------------------------------------------------------+
+ * |                                                        |
+ * |         +-------------------------------------------+  |
+ * |         | +=======================================+ |  |
+ * | Layer 1 | |              Clip 1                   | |  |
+ * |         | +=======================================+ |  |
+ * |         +-------------------------------------------+  |
+ * |                                                        |--------> Video Track
+ * |         +-------------------------------------------+  |
+ * |         | +=======================================+ |  |
+ * | Layer 2 | |              Clip 2                   | |  |
+ * |         | +=======================================+ |  |
+ * |         +-------------------------------------------+  |
+ * |                                                        |
+ * +--------------------------------------------------------+
+ *
+ * ]|
+ *
+ * {{ tests/examples/full_timeline_tutorial.markdown }}
+ *
+ * Assuming both clips contain video streams, our timeline will now output the
+ * result of their compositing together on the video track. Any audio streams they contain are
+ * ignored.
+ *
+ * One can of course add an audio track to get audio output.
+ *
+ * Having multiple tracks with the same type, for example 3 audio tracks, is
+ * useful if one wants to link the timeline to a container that can store various languages, for
+ * example a DVD creator might store English, Dutch and French audio tracks.
+ *
  */
 
 #include "ges-internal.h"
@@ -2626,8 +2721,7 @@ ges_timeline_save_to_uri (GESTimeline * timeline, const gchar * uri,
  * Append a newly created #GESLayer to @timeline
  * Note that you do not own any reference to the returned layer.
  *
- * Returns: (transfer none): The newly created #GESLayer, or the last (empty)
- * #GESLayer of @timeline.
+ * Returns: (transfer none): The newly created #GESLayer.
  */
 GESLayer *
 ges_timeline_append_layer (GESTimeline * timeline)
@@ -3093,7 +3187,7 @@ ges_timeline_commit_unlocked (GESTimeline * timeline)
 }
 
 /**
- * ges_timeline_commit (next ges_timeline_is_empty):
+ * ges_timeline_commit: (next ges_timeline_is_empty)
  * @timeline: a #GESTimeline
  *
  * Commit all the pending changes of the clips contained in the
@@ -3197,7 +3291,7 @@ ges_timeline_commit_sync (GESTimeline * timeline)
 }
 
 /**
- * ges_timeline_get_duration (next ges_timeline_get_track_for_pad):
+ * ges_timeline_get_duration: (next ges_timeline_get_track_for_pad)
  * @timeline: a #GESTimeline
  *
  * Get the current duration of @timeline
@@ -3293,7 +3387,7 @@ ges_timeline_set_snapping_distance (GESTimeline * timeline,
 }
 
 /**
- * ges_timeline_get_element (next ges_timeline_get_duration):
+ * ges_timeline_get_element: (next ges_timeline_get_duration)
  * @timeline: a #GESTimeline
  *
  * Gets a #GESTimelineElement contained in the timeline
@@ -3317,7 +3411,7 @@ ges_timeline_get_element (GESTimeline * timeline, const gchar * name)
 }
 
 /**
- * ges_timeline_is_empty (next ges_timeline_get_element):
+ * ges_timeline_is_empty: (next ges_timeline_get_element)
  * @timeline: a #GESTimeline
  *
  * Check whether a #GESTimelineElement is empty or not
