@@ -55,7 +55,7 @@ def render_link(node):
     return result
 
 
-def render_code(node, is_reference=False):
+def render_code_start(node, is_reference=False):
     mime = ""
     if "mime" in node.attrib:
         mime = node.attrib["mime"]
@@ -73,8 +73,18 @@ def render_code(node, is_reference=False):
             result += '\n\n<pre class="inlined_code">'
     else:
         result += "**"
-    if node.text:
-        result += node.text
+    return result
+
+def render_code_end (node, is_reference=False):
+    mime = ""
+    result = ""
+
+    if "mime" in node.attrib:
+        mime = node.attrib["mime"]
+    if mime in mime_map:
+        mime = mime_map[mime]
+    else:
+        mime = ""
     if not is_reference:
         if mime:
             result += "\n```"
@@ -142,6 +152,17 @@ def render_function(function, output):
         output.write (description + "\n")
     output.write (function.description + "\n")
 
+# Reduced parsing, only look out for links.
+def _parse_code (node):
+    description = ""
+
+    if node.text:
+        description += node.text
+    for n in node:
+        ctag = n.tag.split('}')[1]
+        if ctag == "link":
+            description += render_link(n)
+    return description
 
 def _parse_description(node, description, is_parameter=False, sections_level=0):
     tag = node.tag.split('}')[1]
@@ -163,8 +184,12 @@ def _parse_description(node, description, is_parameter=False, sections_level=0):
         if ctag == "link":
             description += render_link(n)
         elif ctag == "code":
-            description += render_code(n, is_reference=(tag != "page" and tag \
+            description += render_code_start(n, is_reference=(tag != "page" and tag \
                 != "section"))
+            description += _parse_code (n)
+            description += render_code_end(n, is_reference=(tag != "page" and tag \
+                != "section"))
+
         description = _parse_description(n, description, is_parameter,
                 sections_level=sections_level)
 
