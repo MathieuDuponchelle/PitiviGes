@@ -151,7 +151,8 @@ def render_class(class_, output):
 
 def render_function(function, output):
     output.write ("###" + function.name + "\n")
-    output.write ("**" + function.prototype + "**\n\n")
+    output.write (function.synopsis + "\n")
+    output.write (function.python_synopsis + "\n")
     for description in function.parameter_descriptions:
         output.write (description + "\n")
     output.write (function.description + "\n")
@@ -167,6 +168,16 @@ def _parse_code (node):
         if ctag == "link":
             description += render_link(n)
     return description
+
+def parse_synopsis (node):
+    result = ""
+    synopsis = custom_find(node, "synopsis/code")
+    if synopsis is not None:
+        result += render_code_start(synopsis)
+        result += _parse_code (synopsis)
+        result += render_code_end(synopsis)
+
+    return result
 
 def _parse_description(node, description, add_new_lines=True, sections_level=0):
     tag = node.tag.split('}')[1]
@@ -189,11 +200,11 @@ def _parse_description(node, description, add_new_lines=True, sections_level=0):
         if ctag == "link":
             description += render_link(n)
         elif ctag == "code":
-            description += render_code_start(n, is_reference=(tag != "page" and tag \
-                != "section"))
+            description += render_code_start(n, is_reference=(tag not in \
+                ["page", "section"]))
             description += _parse_code (n)
-            description += render_code_end(n, is_reference=(tag != "page" and tag \
-                != "section"))
+            description += render_code_end(n, is_reference=(tag not in ["page",\
+                "section"]))
         elif ctag == "note":
             description += render_note(n)
             add_new_lines = False
@@ -231,14 +242,19 @@ class Class (Page):
     def __init__(self, node):
         Page.__init__(self, node)
 
-        self.description = _parse_description(self.node, "")
+        self.description += _parse_description(self.node, "")
 
 
 class Function(Page):
 
-    def __init__(self, node):
+    def __init__(self, node, python_node=None):
         Page.__init__(self, node)
-        self.description += self.name
+        self.synopsis = parse_synopsis (node)
+        if python_node is not None:
+            self.python_synopsis = parse_synopsis (python_node)
+        else:
+            self.python_synopsis = ""
+        self.filename = None
 
         params = []
         param_nodes = custom_findall(node, "terms/item")
@@ -252,7 +268,7 @@ class Function(Page):
             self.parameter_descriptions.append(
                 render_parameter_description(param))
 
-        self.description = _parse_description(self.node, "")
+        self.description += _parse_description(self.node, "")
 
 
 class AggregatedPages(object):
@@ -261,13 +277,14 @@ class AggregatedPages(object):
         self.master_page = None
         self.slave_pages = []
 
-    def add_slave_page(self, page):
+    def add_slave_page(self, page, filename):
+        page.filename = filename
         self.slave_pages.append(page)
 
     def set_master_page(self, page):
         self.master_page = page
 
-    def parse(self, output):
+    def parse(self, output, python_pages):
         if self.master_page is None:
             return
         class_ = Class(self.master_page)
@@ -276,7 +293,14 @@ class AggregatedPages(object):
         with open (output, "w") as f:
             render_class(class_, f)
             for page in self.slave_pages:
-                function = Function(page)
+                try:
+                    python_tree = ET.parse (os.path.join(python_pages,
+                        os.path.basename(page.filename)))
+                    python_page = python_tree.getroot()
+                    function = Function(page, python_page)
+                except IOError:
+                    function = Function(page)
+
                 functions[function.name] = function
             functions = self.sort_functions(functions)
             for function in functions:
@@ -317,19 +341,19 @@ class AggregatedPages(object):
 
 class Parser(object):
 
-    def __init__(self, files, output):
+    def __init__(self, files, output, python_pages=""):
         self.__pages = {}
 
         self._trees = dict({})
         for f in files:
             tree = ET.parse(f)
             root = tree.getroot()
-            self._parse_page(root)
+            self._parse_page(root, f)
 
         for page in self.__pages.values():
-            page.parse(output)
+            page.parse(output, python_pages)
 
-    def _parse_page(self, root):
+    def _parse_page(self, root, f):
         id_ = root.attrib["id"]
         type_ = root.attrib["style"]
         links = custom_findall(root, "info/link")
@@ -354,13 +378,17 @@ class Parser(object):
         if type_ == "class":
             pages.set_master_page(root)
         else:
-            pages.add_slave_page(root)
+            pages.add_slave_page(root, f)
 
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-o", "--output",
             action="store", dest="output",
+            default="",
+            help = "Directory to write output to")
+    arg_parser.add_argument("-p", "--python-pages",
+            action="store", dest="python_pages",
             default="",
             help = "Directory to write output to")
     arg_parser.add_argument ("files", nargs = '+',
@@ -375,4 +403,4 @@ if __name__ == "__main__":
     except OSError as e:
         print ("The output location is invalid : ", e)
         exit(0)
-    parser = Parser(args.files, args.output)
+    parser = Parser(args.files, args.output, args.python_pages)
