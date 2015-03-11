@@ -4,7 +4,9 @@ import argparse
 import os
 import errno
 
-mime_map={"text/x-csrc": "c"}
+mime_map={"text/x-csrc": "c",
+        "text/x-python": "python",
+        "application/x-shellscript": "shell"}
 
 def ensure_path(path):
     try:
