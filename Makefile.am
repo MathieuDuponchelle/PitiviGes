@@ -1,6 +1,12 @@
 DISTCHECK_CONFIGURE_FLAGS=--enable-gtk-doc
 
-SUBDIRS = ges tests tools common m4 pkgconfig docs bindings
+if BUILD_EXAMPLES
+EXAMPLES_SUBDIRS= examples
+else
+EXAMPLES_SUBDIRS=
+endif
+
+SUBDIRS = ges tests tools common m4 pkgconfig docs bindings $(EXAMPLES_SUBDIRS)
 
 DIST_SUBDIRS = $(SUBDIRS)
 

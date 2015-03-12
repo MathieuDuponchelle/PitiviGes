@@ -5,7 +5,7 @@
 #include "play_timeline.c"
 
 int
-main (int ac, char **av)
+main (int argc, char **argv)
 {
   GESTimeline *timeline;
 

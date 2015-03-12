@@ -1,8 +1,8 @@
 |[<!-- language="c" -->
-{{ tests/examples/add_one_video_track.c }}
+{{ examples/c/full_timeline_tutorial.c }}
 ]|
 |[<!-- language="python" -->
-{{ tests/examples/add_one_video_track.py }}
+{{ examples/python/full_timeline_tutorial.py }}
 ]|
 |[<!-- language="shell" -->
 FIXME

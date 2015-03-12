@@ -35,7 +35,7 @@
  *
  * # Layers
  *
- * {{ tests/examples/create_timeline_with_n_layers.markdown }}
+ * {{ examples/create_timeline_with_n_layers.markdown }}
  *
  * Let's imagine a timeline that contains two layers:
  *
@@ -58,7 +58,7 @@
  * +--------------------------------------------------------+
  * ]|
  *
- * {{ tests/examples/add_one_clip_in_each_layer.markdown }}
+ * {{ examples/add_one_clip_in_each_layer.markdown }}
  *
  * If we add two clips in layer 1 and layer 2, each starting at 0 with a
  * duration of 10 seconds, our timeline now looks like this:
@@ -96,7 +96,7 @@
  * Let's continue with that timeline. For now it indeed mixes various layers together, but it
  * doesn't output anything. That's what #GESTracks are for.
  *
- * {{ tests/examples/add_one_video_track.markdown }}
+ * {{ examples/add_one_video_track.markdown }}
  *
  * If we add a video track to our timeline, it can be represented that way:
  *
@@ -121,7 +121,7 @@
  *
  * ]|
  *
- * {{ tests/examples/full_timeline_tutorial.markdown }}
+ * {{ examples/full_timeline_tutorial.markdown }}
  *
  * Assuming both clips contain video streams, our timeline will now output the
  * result of their compositing together on the video track. Any audio streams they contain are

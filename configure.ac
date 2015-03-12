@@ -416,7 +416,10 @@ ges/Makefile
 tests/Makefile
 tests/check/Makefile
 tests/benchmarks/Makefile
-tests/examples/Makefile
+examples/Makefile
+examples/python/Makefile
+examples/c/Makefile
+examples/shell/Makefile
 tests/validate/Makefile
 tests/validate/scenarios/Makefile
 tools/Makefile
@@ -431,6 +434,5 @@ bindings/Makefile
 bindings/python/Makefile
 bindings/python/gi/Makefile
 bindings/python/gi/overrides/Makefile
-bindings/python/examples/Makefile
 )
 AC_OUTPUT
