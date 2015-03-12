@@ -34,10 +34,12 @@ html.stamp: pages.stamp
 	@mv -f html.tmp html.stamp
 	@echo "Built html documentation"
 
-markdown.stamp: pages.stamp
+markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(top_srcdir)/docs/future/*.markdown
 	@touch markdown.tmp
 	@echo "Building markdown documentation ..."
 	$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o $(MARKDOWN_DIRECTORY) --python-pages $(PYTHON_PAGES_DIRECTORY)
+	cp $(top_srcdir)/docs/future/*.markdown $(MARKDOWN_DIRECTORY)
+	cp $(top_srcdir)/docs/future/*.md $(MARKDOWN_DIRECTORY)
 	@mv -f markdown.tmp markdown.stamp
 	@echo "Built markdown documentation ..."
 
