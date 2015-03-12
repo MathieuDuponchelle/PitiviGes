@@ -154,8 +154,8 @@ def render_function(function, output):
     output.write (function.synopsis + "\n")
     output.write (function.python_synopsis + "\n")
     for description in function.parameter_descriptions:
-        output.write (description + "\n")
-    output.write (function.description + "\n")
+        output.write(description + "\n")
+    output.write(function.description + "\n")
 
 # Reduced parsing, only look out for links.
 def _parse_code (node):
@@ -237,7 +237,7 @@ class Page:
             if link.attrib['type'] == 'next':
                 self.next_ = link.attrib ["xref"]
 
-class Class (Page):
+class Class(Page):
 
     def __init__(self, node):
         Page.__init__(self, node)
@@ -384,23 +384,23 @@ class Parser(object):
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("-o", "--output",
-            action="store", dest="output",
-            default="",
-            help = "Directory to write output to")
+                            action="store", dest="output",
+                            default="",
+                            help = "Directory to write output to")
     arg_parser.add_argument("-p", "--python-pages",
-            action="store", dest="python_pages",
-            default="",
-            help = "Directory to write output to")
+                            action="store", dest="python_pages",
+                            default="",
+                            help = "Directory to write output to")
     arg_parser.add_argument ("files", nargs = '+',
-            help = "The files to convert to markdown")
+                            help = "The files to convert to markdown")
     args = arg_parser.parse_args()
     if not args.files:
-        print ("please specify files to convert")
-        exit (0)
+        print("please specify files to convert")
+        exit(0)
 
     try:
-        ensure_path (args.output)
+        ensure_path(args.output)
     except OSError as e:
-        print ("The output location is invalid : ", e)
+        print("The output location is invalid : ", e)
         exit(0)
     parser = Parser(args.files, args.output, args.python_pages)
