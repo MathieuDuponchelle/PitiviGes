@@ -5,9 +5,10 @@ import os
 import errno
 import pygraphviz as pg
 
-mime_map={"text/x-csrc": "c",
-        "text/x-python": "python",
-        "application/x-shellscript": "shell"}
+mime_map = {"text/x-csrc": "c",
+            "text/x-python": "python",
+            "application/x-shellscript": "shell"}
+
 
 def ensure_path(path):
     try:
@@ -15,6 +16,7 @@ def ensure_path(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+
 
 def namespace_tag(tag):
     new_tag = ""
@@ -76,7 +78,8 @@ def render_code_start(node, is_reference=False):
         result += "**"
     return result
 
-def render_code_end (node, is_reference=False):
+
+def render_code_end(node, is_reference=False):
     mime = ""
     result = ""
 
@@ -102,10 +105,9 @@ def render_paragraph():
     return "\n\n"
 
 
-def render_section (node, level):
-    title = custom_find (node, "title").text
+def render_section(node, level):
+    title = custom_find(node, "title").text
     return "\n\n###" + level * "#" + title + "\n"
-
 
 def render_text(node):
     if node.text:
@@ -145,21 +147,15 @@ def render_note(node):
     return "\n\n> "
 
 
-def render_class(class_, output):
-    output.write ("##" + class_.name + "\n")
-    output.write (class_.description + "\n")
+def render_title(title, level=3):
+    return "#" * level + title + "\n"
 
+def render_line(line):
+    return "%s\n" % line
 
-def render_function(function, output):
-    output.write ("###" + function.name + "\n")
-    output.write (function.synopsis + "\n")
-    output.write (function.python_synopsis + "\n")
-    for description in function.parameter_descriptions:
-        output.write(description + "\n")
-    output.write(function.description + "\n")
 
 # Reduced parsing, only look out for links.
-def _parse_code (node):
+def _parse_code(node):
     description = ""
 
     if node.text:
@@ -178,7 +174,7 @@ def _parse_description(node, description, add_new_lines=True, sections_level=0):
 
     if tag == "section":
         sections_level += 1
-        description += render_section (node, sections_level)
+        description += render_title(custom_find(node, "title").text, sections_level + 3)
 
     if node.text:
         if add_new_lines:
@@ -192,17 +188,17 @@ def _parse_description(node, description, add_new_lines=True, sections_level=0):
         if ctag == "link":
             description += render_link(n)
         elif ctag == "code":
-            description += render_code_start(n, is_reference=(tag not in \
-                ["page", "section"]))
-            description += _parse_code (n)
-            description += render_code_end(n, is_reference=(tag not in ["page",\
-                "section"]))
+            description += render_code_start(n, is_reference=(tag not in
+                                                              ["page", "section"]))
+            description += _parse_code(n)
+            description += render_code_end(n, is_reference=(tag not in ["page",
+                                                                        "section"]))
         elif ctag == "note":
             description += render_note(n)
             add_new_lines = False
 
         description = _parse_description(n, description, add_new_lines,
-                sections_level=sections_level)
+                                         sections_level=sections_level)
         add_new_lines = old_add_new_lines
 
     description += render_tail(node)
@@ -217,7 +213,6 @@ class Parameter:
 
 
 class Page:
-
     def __init__(self, node):
         self.node = node
         self.name = node.attrib["id"]
@@ -234,11 +229,10 @@ class Page:
         raise NotImplementedError
 
     def render(self):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class Class(Page):
-
     def __init__(self, node):
         Page.__init__(self, node)
 
@@ -346,6 +340,7 @@ class Class(Page):
 
 
 class Function(Page):
+    PRIORITY = 1
 
     def __init__(self, node, python_node=None):
         Page.__init__(self, node)
@@ -401,7 +396,7 @@ class Property(Page):
     def render(self):
         name = custom_find(self.node, "title").text
 
-        return render_line(render_title(name) + "(GObject property)" + self.description)
+        return render_line(render_title(name) + self.description)
 
     def parse_synopsis(self, node):
         return ""
@@ -411,69 +406,52 @@ class AggregatedPages(object):
 
     def __init__(self):
         self.master_page = None
-        self.slave_pages = []
+        self.symbols = []
 
-    def add_slave_page(self, page, filename):
+    def add_slave_page(self, page, filename, python_pages):
         page.filename = filename
-        self.slave_pages.append(page)
+        if page.attrib["style"] in ["method", "function", "constructor"]:
+            try:
+                python_tree = ET.parse(os.path.join(python_pages,
+                                                    os.path.basename(page.filename)))
+                python_page = python_tree.getroot()
+                symbol = Function(page, python_page)
+            except IOError:
+                symbol = Function(page)
+        elif page.attrib["style"] in ["property"]:
+            symbol = Property(page)
+        else:
+            print("Style not handled yet: %s" % page.attrib["style"])
+            return
+
+        if not self.master_page:
+            self.symbols.append(symbol)
+        else:
+            self.master_page.add_symbol(symbol)
 
     def set_master_page(self, page):
-        self.master_page = page
+        self.master_page = Class(page)
+        for s in self.symbols:
+            self.master_page.add_symbol(s)
 
-    def parse(self, output, python_pages):
+    def parse(self, output):
         if self.master_page is None:
             return
-        class_ = Class(self.master_page)
-        output = os.path.join (output, class_.name + ".markdown")
-        functions = dict({})
-        with open (output, "w") as f:
-            render_class(class_, f)
-            for page in self.slave_pages:
-                try:
-                    python_tree = ET.parse (os.path.join(python_pages,
-                        os.path.basename(page.filename)))
-                    python_page = python_tree.getroot()
-                    function = Function(page, python_page)
-                except IOError:
-                    function = Function(page)
 
-                functions[function.name] = function
-            functions = self.sort_functions(functions)
-            for function in functions:
-                render_function(function, f)
+        output = os.path.join(output, self.master_page.name + ".markdown")
+        with open(output, "w") as f:
+            f.write(self.master_page.render())
+            seen_properties = False
+            seen_methods = False
+            for symbol in self.master_page.get_symbols():
+                if not seen_properties and isinstance(symbol, Property):
+                    f.write("<h3 id='gobject-properties'><u>GObject properties:</u></h3>\n")
+                    seen_properties = True
+                elif not seen_methods and isinstance(symbol, Function):
+                    f.write("<h3 id='methods'><u>Methods:</u></h3>\n")
+                    seen_methods = True
+                f.write(symbol.render())
 
-    def sort_functions(self, functions):
-        sorted_functions = []
-        first = None
-
-        for name, function in functions.iteritems():
-            if function.next_:
-                try:
-                    next_ = functions[function.next_]
-                    function.next_ = next_
-                    next_.prev_ = function
-                except KeyError:
-                    function.next_ = None
-                    continue
-
-        # Find the head, function's list can't contain gaps
-        for function in functions.itervalues():
-            if not function.prev_ and function.next_:
-                first = function
-                break
-
-        function = first
-        if function:
-            sorted_functions.append (function)
-            while function.next_:
-                sorted_functions.append (function.next_)
-                function = function.next_
-
-        for function in functions.itervalues():
-            if function not in sorted_functions:
-                sorted_functions.append (function)
-
-        return sorted_functions
 
 class Parser(object):
 
@@ -484,19 +462,19 @@ class Parser(object):
         for f in files:
             tree = ET.parse(f)
             root = tree.getroot()
-            self._parse_page(root, f)
+            self._parse_page(root, f, python_pages)
 
         for page in self.__pages.values():
-            page.parse(output, python_pages)
+            page.parse(output)
 
-    def _parse_page(self, root, f):
+    def _parse_page(self, root, f, python_pages):
         id_ = root.attrib["id"]
         type_ = root.attrib["style"]
         links = custom_findall(root, "info/link")
         for link in links:
             if link.attrib["type"] == "guide":
                 break
-        if type_ not in ["class", "method", "function", "constructor"]:
+        if type_ not in ["class", "method", "function", "constructor", "property"]:
             return
         if "Class" in id_ or "Private" in id_:  # UGLY
             return
@@ -514,7 +492,7 @@ class Parser(object):
         if type_ == "class":
             pages.set_master_page(root)
         else:
-            pages.add_slave_page(root, f)
+            pages.add_slave_page(root, f, python_pages)
 
 
 if __name__ == "__main__":
@@ -522,13 +500,13 @@ if __name__ == "__main__":
     arg_parser.add_argument("-o", "--output",
                             action="store", dest="output",
                             default="",
-                            help = "Directory to write output to")
+                            help="Directory to write output to")
     arg_parser.add_argument("-p", "--python-pages",
                             action="store", dest="python_pages",
                             default="",
-                            help = "Directory to write output to")
-    arg_parser.add_argument ("files", nargs = '+',
-                            help = "The files to convert to markdown")
+                            help="Directory to write output to")
+    arg_parser.add_argument("files", nargs='+',
+                            help="The files to convert to markdown")
     args = arg_parser.parse_args()
     if not args.files:
         print("please specify files to convert")
