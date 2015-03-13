@@ -58,6 +58,8 @@
  * +--------------------------------------------------------+
  * ]|
  *
+ * > After modifying a timeline, you need to commit it to have the changes taken into account.
+ *
  * {{ examples/add_one_clip_in_each_layer.markdown }}
  *
  * If we add two clips in layer 1 and layer 2, each starting at 0 with a
@@ -120,6 +122,8 @@
  * +--------------------------------------------------------+
  *
  * ]|
+ *
+ * > Playback and Rendering are documented in a separate section.
  *
  * {{ examples/full_timeline_tutorial.markdown }}
  *
@@ -2683,7 +2687,9 @@ ges_timeline_load_from_uri (GESTimeline * timeline, const gchar * uri,
  * @overwrite: %TRUE to overwrite file if it exists
  * @error: (out) (allow-none): An error to be set in case something wrong happens or %NULL
  *
- * Saves the timeline to the given location
+ * {{ examples/save_and_load_timeline.markdown }}
+ *
+ * Saves the timeline to the given location.
  *
  * Returns: TRUE if the timeline was successfully saved to the given location,
  * else FALSE.

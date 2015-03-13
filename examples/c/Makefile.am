@@ -18,6 +18,7 @@ noinst_PROGRAMS = 	\
 	assets \
 	multifilesrc \
 	full_timeline_tutorial \
+	save_and_load_timeline \
 	$(graphical)
 
 EXTRA_DIST=add_one_video_track.c \
