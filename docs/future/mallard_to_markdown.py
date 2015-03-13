@@ -38,14 +38,14 @@ def render_link(node):
     if "xref" in node.keys():
         xref = node.attrib["xref"]
         if node.text:
-            text = node.text
+            text = node.text.replace("#", "(FIXME broken link")
         else:
             text = xref
         result = "[" + text + "](#" + xref.lower() + ")"
     elif "href" in node.keys():
         href = node.attrib["href"]
         if node.text:
-            text = node.text
+            text = node.text.replace("#", "(FIXME broken link")
         else:
             text = href
         result = "[" + text + "](" + href + ")"
