@@ -3,6 +3,7 @@ from xml.etree.ElementTree import QName
 import argparse
 import os
 import errno
+import pygraphviz as pg
 
 mime_map={"text/x-csrc": "c",
         "text/x-python": "python",
@@ -169,15 +170,6 @@ def _parse_code (node):
             description += render_link(n)
     return description
 
-def parse_synopsis (node):
-    result = ""
-    synopsis = custom_find(node, "synopsis/code")
-    if synopsis is not None:
-        result += render_code_start(synopsis)
-        result += _parse_code (synopsis)
-        result += render_code_end(synopsis)
-
-    return result
 
 def _parse_description(node, description, add_new_lines=True, sections_level=0):
     tag = node.tag.split('}')[1]
@@ -230,12 +222,20 @@ class Page:
         self.node = node
         self.name = node.attrib["id"]
         self.description = ""
+        self.synopsis = self.parse_synopsis(node)
         links = custom_findall(node, "info/link")
         self.next_ = None
         self.prev_ = None
         for link in links:
             if link.attrib['type'] == 'next':
-                self.next_ = link.attrib ["xref"]
+                self.next_ = link.attrib["xref"]
+
+    def parse_synopsis(self, node):
+        raise NotImplementedError
+
+    def render(self):
+        raise NotImplemented
+
 
 class Class(Page):
 
@@ -243,15 +243,114 @@ class Class(Page):
         Page.__init__(self, node)
 
         self.description += _parse_description(self.node, "")
+        self.symbols = []
+        self.functions = {}
+
+    def walk_hierarchy (self, node, graph, target, parent=None):
+        items = custom_findall(node, "item")
+        for n in items:
+            link = custom_find(n, "link")
+            ref=""
+            try:
+                ref = link.attrib["href"]
+            except KeyError:
+                try:
+                    ref = link.attrib["xref"]
+                    ref = "#" + ref.lower()
+                except KeyError:
+                    pass
+
+            graph.add_node (link.text, URL=ref, style="rounded", shape="box")
+
+            if parent:
+                graph.add_edge (parent, link.text)
+
+            if link.text == target:
+                return
+
+            items = custom_findall(n, "item")
+            if items:
+                self.walk_hierarchy(n, graph, target, parent=link.text)
+            else:
+                graph.add_edge (link.text, target)
+
+    def parse_synopsis(self, node):
+        graph = pg.AGraph(directed=True, strict=True)
+        hierarchy = custom_find(node, "synopsis/tree")
+        if hierarchy is None:
+            return ""
+        self.walk_hierarchy(hierarchy, graph, self.name)
+        name = 'markdown/%s.svg' % (self.name, )
+        graph.draw(name, prog="dot")
+        result = '<p class="graphviz">\n'
+        split = open(name).read().split("\n")[3:]
+        result += '\n'.join(split)
+        result += '</p>'
+        return result
+
+    def add_symbol(self, symbol):
+        if isinstance(symbol, Function):
+            self.functions[symbol.name] = symbol
+        else:
+            self.symbols.append(symbol)
+
+    def get_symbols(self):
+        funcs = self.__get_sorted_functions()
+
+        symbols = self.symbols
+        symbols.extend(funcs)
+
+        symbols.sort(key=lambda page: page.PRIORITY)
+
+        return symbols
+
+    def __get_sorted_functions(self):
+        sorted_functions = []
+        first = None
+
+        for name, function in self.functions.iteritems():
+            if function.next_:
+                try:
+                    next_ = self.functions[function.next_]
+                    function.next_ = next_
+                    next_.prev_ = function
+                except KeyError:
+                    function.next_ = None
+                    continue
+
+        # Find the head, function's list can't contain gaps
+        for function in self.functions.itervalues():
+            if not function.prev_ and function.next_:
+                first = function
+                break
+
+        function = first
+        if function:
+            sorted_functions.append(function)
+            while function.next_:
+                sorted_functions.append(function.next_)
+                function = function.next_
+
+        for function in self.functions.itervalues():
+            if function not in sorted_functions:
+                sorted_functions.append(function)
+
+        return sorted_functions
+
+    def render(self):
+        out = ""
+        out += render_line(render_title(self.name, 2))
+        out += render_line(self.synopsis)
+        out += self.description
+        return out
 
 
 class Function(Page):
 
     def __init__(self, node, python_node=None):
         Page.__init__(self, node)
-        self.synopsis = parse_synopsis (node)
         if python_node is not None:
-            self.python_synopsis = parse_synopsis (python_node)
+            self.python_synopsis = self.parse_synopsis(python_node)
         else:
             self.python_synopsis = ""
         self.filename = None
@@ -269,6 +368,43 @@ class Function(Page):
                 render_parameter_description(param))
 
         self.description += _parse_description(self.node, "")
+
+    def parse_synopsis(self, node):
+        result = ""
+        synopsis = custom_find(node, "synopsis/code")
+        if synopsis is not None:
+            result += render_code_start(synopsis)
+            result += _parse_code(synopsis)
+            result += render_code_end(synopsis)
+
+        return result
+
+    def render(self):
+        out = render_title(self.name)
+        out += render_line(self.synopsis)
+        out += render_line(self.python_synopsis)
+        for description in self.parameter_descriptions:
+            out += render_line(description)
+
+        out += render_line(self.description)
+
+        return out
+
+
+class Property(Page):
+    PRIORITY = 0
+
+    def __init__(self, node):
+        Page.__init__(self, node)
+        self.description = _parse_description(self.node, "")
+
+    def render(self):
+        name = custom_find(self.node, "title").text
+
+        return render_line(render_title(name) + "(GObject property)" + self.description)
+
+    def parse_synopsis(self, node):
+        return ""
 
 
 class AggregatedPages(object):
