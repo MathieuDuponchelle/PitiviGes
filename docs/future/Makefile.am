@@ -2,8 +2,8 @@ DOCTOOL_OPTIONS = --link-to-gtk-doc --online -M $(top_srcdir) --sections-file ge
 
 PAGES_DIRECTORY = pages
 PYTHON_PAGES_DIRECTORY = python_pages
+BUILT_MARKDOWN_DIRECTORY = built_markdown
 HTML_DIRECTORY = html
-MARKDOWN_DIRECTORY = markdown
 
 DOCTOOL = g-ir-doc-tool
 
@@ -23,7 +23,7 @@ all-local: $(DOCS)
 
 clean-local:
 	@echo "Cleaning up documentation ..."
-	@rm -rf $(PAGES_DIRECTORY) $(HTML_DIRECTORY) $(MARKDOWN_DIRECTORY) html.stamp markdown.stamp pages.stamp
+	@rm -rf $(PAGES_DIRECTORY) $(HTML_DIRECTORY) $(BUILT_MARKDOWN_DIRECTORY) html.stamp markdown.stamp pages.stamp
 	@echo "Cleaned up documentation"
 
 html.stamp: pages.stamp
@@ -34,12 +34,11 @@ html.stamp: pages.stamp
 	@mv -f html.tmp html.stamp
 	@echo "Built html documentation"
 
-markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(top_srcdir)/docs/future/*.markdown
+markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(top_srcdir)/docs/future/markdown/*
 	@touch markdown.tmp
 	@echo "Building markdown documentation ..."
-	$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o $(MARKDOWN_DIRECTORY) --python-pages $(PYTHON_PAGES_DIRECTORY)
-	cp $(top_srcdir)/docs/future/*.markdown $(MARKDOWN_DIRECTORY)
-	cp $(top_srcdir)/docs/future/*.md $(MARKDOWN_DIRECTORY)
+	$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o $(BUILT_MARKDOWN_DIRECTORY) --python-pages $(PYTHON_PAGES_DIRECTORY)
+	cp $(top_srcdir)/docs/future/markdown/* $(BUILT_MARKDOWN_DIRECTORY)
 	@mv -f markdown.tmp markdown.stamp
 	@echo "Built markdown documentation ..."
 
