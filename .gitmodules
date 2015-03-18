@@ -4,3 +4,4 @@
 [submodule "docs/future/slate"]
 	path = docs/future/slate
 	url = https://github.com/MathieuDuponchelle/slate.git
+	ignore = all
