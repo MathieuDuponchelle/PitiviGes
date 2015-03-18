@@ -37,8 +37,11 @@ html.stamp: pages.stamp
 markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(top_srcdir)/docs/future/markdown/*
 	@touch markdown.tmp
 	@echo "Building markdown documentation ..."
-	$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o $(BUILT_MARKDOWN_DIRECTORY) --python-pages $(PYTHON_PAGES_DIRECTORY)
-	cp $(top_srcdir)/docs/future/markdown/* $(BUILT_MARKDOWN_DIRECTORY)
+	@$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o $(BUILT_MARKDOWN_DIRECTORY) --python-pages $(PYTHON_PAGES_DIRECTORY)
+	@cp $(top_srcdir)/docs/future/markdown/* $(BUILT_MARKDOWN_DIRECTORY)
+	@mkdir -p slate/source/includes
+	@cp $(BUILT_MARKDOWN_DIRECTORY)/*.markdown slate/source/includes/
+	@cp $(BUILT_MARKDOWN_DIRECTORY)/index.md slate/source/
 	@mv -f markdown.tmp markdown.stamp
 	@echo "Built markdown documentation ..."
 
