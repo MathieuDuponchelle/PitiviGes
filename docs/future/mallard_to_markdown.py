@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import QName
 import argparse
@@ -274,11 +276,12 @@ class Class(Page):
         if hierarchy is None:
             return ""
         self.walk_hierarchy(hierarchy, graph, self.name)
-        name = 'markdown/%s.svg' % (self.name, )
+        name = '%s.svg' % (self.name, )
         graph.draw(name, prog="dot")
         result = '<p class="graphviz">\n'
         split = open(name).read().split("\n")[3:]
-        result += '\n'.join(split)
+        os.unlink(name)
+        result += ''.join(split)
         result += '</p>'
         return result
 
