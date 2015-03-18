@@ -39,12 +39,6 @@ yelp_html.stamp: pages.stamp
 	@mv -f yelp_html.tmp yelp_html.stamp
 	@echo "Built yelp html documentation"
 
-rake_html.stamp: pages.stamp
-	@touch rake_html.tmp
-	@echo "Building rake html documentation ..."
-	@cd slate && rake build && cd .. && cp -r slate/build $(RAKE_HTML_DIRECTORY)
-	@mv -f rake_html.tmp rake_html.stamp
-	@echo "Built rake html documentation"
 
 markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(top_srcdir)/docs/future/markdown/*
 	@touch markdown.tmp
@@ -56,6 +50,13 @@ markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(t
 	@cp $(BUILT_MARKDOWN_DIRECTORY)/index.md slate/source/
 	@mv -f markdown.tmp markdown.stamp
 	@echo "Built markdown documentation ..."
+
+rake_html.stamp: markdown.stamp
+	@touch rake_html.tmp
+	@echo "Building rake html documentation ..."
+	@cd slate && rake build && cd .. && cp -r slate/build $(RAKE_HTML_DIRECTORY)
+	@mv -f rake_html.tmp rake_html.stamp
+	@echo "Built rake html documentation"
 
 pages.stamp: $(top_builddir)/ges/GES-1.0.gir
 	@touch pages.tmp

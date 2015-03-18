@@ -246,11 +246,11 @@ class Class(Page):
         self.symbols = []
         self.functions = {}
 
-    def walk_hierarchy (self, node, graph, target, parent=None):
+    def walk_hierarchy(self, node, graph, target, parent=None):
         items = custom_findall(node, "item")
         for n in items:
             link = custom_find(n, "link")
-            ref=""
+            ref = ""
             try:
                 ref = link.attrib["href"]
             except KeyError:
@@ -260,10 +260,10 @@ class Class(Page):
                 except KeyError:
                     pass
 
-            graph.add_node (link.text, URL=ref, style="rounded", shape="box")
+            graph.add_node(link.text, URL=ref, style="rounded", shape="box")
 
             if parent:
-                graph.add_edge (parent, link.text)
+                graph.add_edge(parent, link.text)
 
             if link.text == target:
                 return
@@ -272,7 +272,7 @@ class Class(Page):
             if items:
                 self.walk_hierarchy(n, graph, target, parent=link.text)
             else:
-                graph.add_edge (link.text, target)
+                graph.add_edge(link.text, target)
 
     def parse_synopsis(self, node):
         if not HAVE_PYGRAPHVIZ:
@@ -395,6 +395,29 @@ class Function(Page):
 
         return out
 
+class VirtualFunction(Function):
+    PRIORITY = 2
+
+    def __init__(self, node, python_node=None):
+        Function.__init__(self, node, python_node)
+        self.name = self.name.replace("-", ".do_")
+
+    def parse_synopsis(self, node):
+        result = ""
+        synopsis = custom_find(node, "synopsis/code")
+        if synopsis is not None:
+            result += render_code_start(synopsis)
+            if mime_map[synopsis.attrib["mime"]] == "c":
+                code = synopsis.text
+                tmp = code.split(" ")
+                tmp[1] = self.name.replace("-", "Class->").replace('.', '')
+                code = "\n" + ' '.join(tmp).replace("\n", "\n" + "      ").lstrip()
+                result += render_line(code)
+            else:
+                result += _parse_code(synopsis)
+            result += render_code_end(synopsis)
+
+        return result
 
 class Property(Page):
     PRIORITY = 0
@@ -430,6 +453,8 @@ class AggregatedPages(object):
                 symbol = Function(page)
         elif page.attrib["style"] in ["property"]:
             symbol = Property(page)
+        elif page.attrib["style"] in ["vfunc"]:
+            symbol = VirtualFunction(page)
         else:
             print("Style not handled yet: %s" % page.attrib["style"])
             return
@@ -453,6 +478,7 @@ class AggregatedPages(object):
             f.write(self.master_page.render())
             seen_properties = False
             seen_methods = False
+            seen_vfuncs = False
             for symbol in self.master_page.get_symbols():
                 if not seen_properties and isinstance(symbol, Property):
                     f.write("<h3 id='gobject-properties'><u>GObject properties:</u></h3>\n")
@@ -460,6 +486,9 @@ class AggregatedPages(object):
                 elif not seen_methods and isinstance(symbol, Function):
                     f.write("<h3 id='methods'><u>Methods:</u></h3>\n")
                     seen_methods = True
+                elif not seen_vfuncs and isinstance(symbol, VirtualFunction):
+                    f.write("<h3 id='vfuncs'><u>Virtual Methods:</u></h3>\n")
+                    seen_vfuncs = True
                 f.write(symbol.render())
 
 
@@ -485,8 +514,9 @@ class Parser(object):
             if link.attrib["type"] == "guide":
                 break
         if type_ not in ["class", "method", "function", "constructor",
-                "property", "interface"]:
+                         "property", "interface", "vfunc"]:
             return
+
         if "Class" in id_ or "Private" in id_:  # UGLY
             return
 
