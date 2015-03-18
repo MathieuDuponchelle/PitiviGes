@@ -2,17 +2,22 @@ DOCTOOL_OPTIONS = --link-to-gtk-doc --online -M $(top_srcdir) --sections-file ge
 
 PAGES_DIRECTORY = pages
 PYTHON_PAGES_DIRECTORY = python_pages
+YELP_HTML_DIRECTORY = yelp_html
+RAKE_HTML_DIRECTORY = rake_html
 BUILT_MARKDOWN_DIRECTORY = built_markdown
-HTML_DIRECTORY = html
 
 DOCTOOL = g-ir-doc-tool
 
 EXTRA_DIST = mallard_to_markdown.py
 
 if BUILD_YELP_HTML
-DOCS = html.stamp
+DOCS = yelp_html.stamp
 else
 DOCS =
+endif
+
+if BUILD_RAKE_HTML
+DOCS += rake_html.stamp
 endif
 
 if ENABLE_MARKDOWN
@@ -23,16 +28,23 @@ all-local: $(DOCS)
 
 clean-local:
 	@echo "Cleaning up documentation ..."
-	@rm -rf $(PAGES_DIRECTORY) $(HTML_DIRECTORY) $(BUILT_MARKDOWN_DIRECTORY) html.stamp markdown.stamp pages.stamp
+	@rm -rf $(PAGES_DIRECTORY) $(HTML_DIRECTORY) $(BUILT_MARKDOWN_DIRECTORY) rake_html.stamp yelp_html.stamp markdown.stamp pages.stamp
 	@echo "Cleaned up documentation"
 
-html.stamp: pages.stamp
-	@touch html.tmp
-	@echo "Building html documentation ..."
-	@mkdir -p html && cd html && \
+yelp_html.stamp: pages.stamp
+	@touch yelp_html.tmp
+	@echo "Building yelp html documentation ..."
+	@mkdir -p yelp_html && cd yelp_html && \
 	yelp-build html ../$(PAGES_DIRECTORY) && cd ..
-	@mv -f html.tmp html.stamp
-	@echo "Built html documentation"
+	@mv -f yelp_html.tmp yelp_html.stamp
+	@echo "Built yelp html documentation"
+
+rake_html.stamp: pages.stamp
+	@touch rake_html.tmp
+	@echo "Building rake html documentation ..."
+	@cd slate && rake build && cd .. && cp -r slate/build $(RAKE_HTML_DIRECTORY)
+	@mv -f rake_html.tmp rake_html.stamp
+	@echo "Built rake html documentation"
 
 markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(top_srcdir)/docs/future/markdown/*
 	@touch markdown.tmp

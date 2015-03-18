@@ -1,3 +1,4 @@
 *.stamp
 built_markdown
-html
+yelp_html
+rake_html

@@ -147,6 +147,10 @@ dnl check if we can build the html future doc
 AC_CHECK_PROG(YELP_TOOLS, yelp-build, yes, no)
 AM_CONDITIONAL([BUILD_YELP_HTML],[test "x$YELP_TOOLS" == "xyes"])
 
+dnl check if we can build the html future doc
+AC_CHECK_PROG(RAKE, rake, yes, no)
+AM_CONDITIONAL([BUILD_RAKE_HTML],[test "x$RAKE" == "xyes"])
+
 dnl check for pygobject
 AC_SUBST(PYGOBJECT_REQ, 4.22)
 PKG_CHECK_MODULES(PYGOBJECT, pygobject-3.0 >= $PYGOBJECT_REQ,
