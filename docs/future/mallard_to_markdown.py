@@ -484,7 +484,8 @@ class Parser(object):
         for link in links:
             if link.attrib["type"] == "guide":
                 break
-        if type_ not in ["class", "method", "function", "constructor", "property"]:
+        if type_ not in ["class", "method", "function", "constructor",
+                "property", "interface"]:
             return
         if "Class" in id_ or "Private" in id_:  # UGLY
             return
@@ -499,7 +500,7 @@ class Parser(object):
             pages = AggregatedPages()
             self.__pages[xref] = pages
 
-        if type_ == "class":
+        if type_ == "class" or type_ == "interface":
             pages.set_master_page(root)
         else:
             pages.add_slave_page(root, f, python_pages)

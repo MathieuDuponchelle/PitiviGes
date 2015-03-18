@@ -61,8 +61,8 @@ includes:
   - GES.VideoTransition
 
   - Project_Management
-  - GES.ExtractableInterface
-  - GES.MetaContainerInterface
+  - GES.Extractable
+  - GES.MetaContainer
   - GES.Asset
   - GES.ClipAsset
   - GES.UriClipAsset
