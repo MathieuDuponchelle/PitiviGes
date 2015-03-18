@@ -23,7 +23,14 @@ then
   echo "+ Setting up common submodule"
   git submodule init
 fi
-git submodule update
+
+if test ! -f docs/future/slate/README.md;
+then
+  echo "+ Setting up slate submodule"
+  git submodule init
+fi
+
+git submodule update --remote
 
 # source helper functions
 if test ! -f common/gst-autogen.sh;
