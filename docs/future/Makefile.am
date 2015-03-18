@@ -1,4 +1,4 @@
-DOCTOOL_OPTIONS = --link-to-gtk-doc --online -M $(top_srcdir)
+DOCTOOL_OPTIONS = --link-to-gtk-doc --online -M $(top_srcdir) --sections-file ges.sections.txt
 
 PAGES_DIRECTORY = pages
 PYTHON_PAGES_DIRECTORY = python_pages
