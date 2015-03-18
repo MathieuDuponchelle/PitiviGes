@@ -5,7 +5,11 @@ from xml.etree.ElementTree import QName
 import argparse
 import os
 import errno
-import pygraphviz as pg
+try:
+    import pygraphviz as pg
+    HAVE_PYGRAPHVIZ = True
+except ImportError:
+    HAVE_PYGRAPHVIZ = False
 
 mime_map = {"text/x-csrc": "c",
             "text/x-python": "python",
@@ -271,6 +275,9 @@ class Class(Page):
                 graph.add_edge (link.text, target)
 
     def parse_synopsis(self, node):
+        if not HAVE_PYGRAPHVIZ:
+            return ""
+
         graph = pg.AGraph(directed=True, strict=True)
         hierarchy = custom_find(node, "synopsis/tree")
         if hierarchy is None:
@@ -520,4 +527,9 @@ if __name__ == "__main__":
     except OSError as e:
         print("The output location is invalid : ", e)
         exit(0)
+    if not HAVE_PYGRAPHVIZ:
+        print """
+        You don't have pygraphviz, class hierarchy diagrams will not be
+        generated
+        """
     parser = Parser(args.files, args.output, args.python_pages)
