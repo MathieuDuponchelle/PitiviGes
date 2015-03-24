@@ -65,12 +65,15 @@ int
 main (int argc, gchar ** argv)
 {
   GESLauncher *launcher;
+  gint ret;
 
   _check_command_help (argc, argv);
   setlocale (LC_ALL, "");
 
   launcher = ges_launcher_new ();
 
-  g_application_run (G_APPLICATION (launcher), argc, argv);
-  return EXIT_SUCCESS;
+  ret = g_application_run (G_APPLICATION (launcher), argc, argv);
+  if (ret)
+    return ret;
+  return ges_launcher_get_exit_status (launcher);
 }

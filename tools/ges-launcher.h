@@ -66,7 +66,7 @@ struct _GESLauncherClass {
 GType ges_launcher_get_type (void);
 
 GESLauncher* ges_launcher_new (void);
-
+gint ges_launcher_get_exit_status (GESLauncher *self);
 
 G_END_DECLS
 

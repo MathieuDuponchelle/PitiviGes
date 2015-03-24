@@ -380,7 +380,7 @@ _save_timeline (GESLauncher * self)
   return TRUE;
 }
 
-static void
+static gboolean
 _run_pipeline (GESLauncher * self)
 {
   GstBus *bus;
@@ -390,12 +390,12 @@ _run_pipeline (GESLauncher * self)
     if (ges_validate_activate (GST_PIPELINE (self->priv->pipeline),
             opts->scenario, &opts->needs_set_state) == FALSE) {
       g_error ("Could not activate scenario %s", opts->scenario);
-      return;
+      return FALSE;
     }
 
     if (!_timeline_set_user_options (self, self->priv->timeline, NULL)) {
       g_error ("Could not properly set tracks");
-      return;
+      return FALSE;
     }
   }
 
@@ -408,10 +408,12 @@ _run_pipeline (GESLauncher * self)
         && gst_element_set_state (GST_ELEMENT (self->priv->pipeline),
             GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE) {
       g_error ("Failed to start the pipeline\n");
-      return;
+      return FALSE;
     }
   }
   g_application_hold (G_APPLICATION (self));
+
+  return TRUE;
 }
 
 static gboolean
@@ -456,7 +458,7 @@ _set_rendering_details (GESLauncher * self)
         || !ges_pipeline_set_mode (self->priv->pipeline,
             opts->smartrender ? GES_PIPELINE_MODE_SMART_RENDER :
             GES_PIPELINE_MODE_RENDER)) {
-      exit (1);
+      return FALSE;
     }
 
     gst_encoding_profile_unref (prof);
@@ -632,7 +634,7 @@ _local_command_line (GApplication * application, gchar ** arguments[],
   if (!g_option_context_parse (ctx, &argc, &argv, &error)) {
     g_printerr ("Error initializing: %s\n", error->message);
     g_option_context_free (ctx);
-    exit (1);
+    *exit_status = 1;
   }
 
   if (inspect_action_type) {
@@ -644,6 +646,7 @@ _local_command_line (GApplication * application, gchar ** arguments[],
       && (argc <= 1)) {
     g_printf ("%s", g_option_context_get_help (ctx, TRUE, NULL));
     g_option_context_free (ctx);
+    *exit_status = 1;
     return TRUE;
   }
 
@@ -683,18 +686,22 @@ _startup (GApplication * application)
   }
 
   if (!_create_pipeline (self, opts->sanitized_timeline))
-    goto done;
+    goto failure;
 
   if (!_set_playback_details (self))
-    goto done;
+    goto failure;
 
   if (!_set_rendering_details (self))
-    goto done;
+    goto failure;
 
-  _run_pipeline (self);
+  if (!_run_pipeline (self))
+    goto failure;
 
 done:
-  G_APPLICATION_CLASS (ges_launcher_parent_class)->startup (application);
+  return G_APPLICATION_CLASS (ges_launcher_parent_class)->startup (application);
+
+failure:
+  self->priv->seenerrors = TRUE;
 }
 
 static void
@@ -736,6 +743,12 @@ ges_launcher_init (GESLauncher * self)
       GES_TYPE_LAUNCHER, GESLauncherPrivate);
   self->priv->parsed_options.track_types =
       GES_TRACK_TYPE_AUDIO | GES_TRACK_TYPE_VIDEO;
+}
+
+gint
+ges_launcher_get_exit_status (GESLauncher * self)
+{
+  return self->priv->seenerrors;
 }
 
 GESLauncher *
