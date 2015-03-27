@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import QName
 import argparse
 import os
+import re
 import errno
 try:
     import pygraphviz as pg
@@ -153,7 +154,19 @@ def render_note(node):
     return "\n\n> "
 
 
-def render_title(title, level=3):
+def render_title(title, level=3, c_name=None, python_name=None,
+        shell_name=None):
+    res = "<h" + str(level) + ' id="' + title.lower() + '"'
+    if c_name:
+        res += ' c_name="' + c_name + '"'
+    if python_name:
+        res += ' python_name="' + python_name + '"'
+    if shell_name:
+        res += ' shell_name="' + shell_name + '"'
+    res += '>'
+    res += title
+    res += "</h" + str(level) + ">\n"
+    return res
     return "#" * level + title + "\n"
 
 def render_line(line):
@@ -343,7 +356,11 @@ class Class(Page):
 
     def render(self):
         out = ""
-        out += render_line(render_title(self.name, 2))
+        c_name = re.sub("[.]", "", self.name)
+        shell_name = re.sub("GES.", "The", self.name)
+        shell_name = re.sub('([a-z0-9])([A-Z])', r'\1 \2', shell_name)
+        out += render_line(render_title(self.name, level=2, c_name=c_name,
+            python_name=self.name, shell_name = shell_name))
         out += render_line(self.synopsis)
         out += self.description
         return out
@@ -385,7 +402,13 @@ class Function(Page):
         return result
 
     def render(self):
-        out = render_title(self.name)
+        c_name = re.sub("[.]", "_", self.name)
+        c_name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2',
+                c_name)
+        c_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', c_name).lower()
+        c_name = re.sub('__', r'_', c_name).lower()
+        out = render_title(self.name, c_name=c_name, python_name=self.name,
+                shell_name=self.name)
         out += render_line(self.synopsis)
         out += render_line(self.python_synopsis)
         for description in self.parameter_descriptions:
