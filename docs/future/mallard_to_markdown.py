@@ -193,7 +193,7 @@ class MarkdownRenderer(Renderer):
             result += _parse_description(
                 param.description, self, "", add_new_lines=False)
         else:
-            result += "FIXME empty description"
+            result += "FIXME empty description\n"
         return result
 
     def render_note(self, node):
@@ -490,8 +490,12 @@ class Function(Page):
 
         params = []
         param_nodes = custom_findall(node, "terms/item")
+        f = True
         for n in param_nodes:
             param = Parameter(node, n)
+            if f:
+                param.name = "self"
+                f = False
 
             if param.valid:
                 params.append(param)
@@ -641,7 +645,6 @@ class AggregatedPages(object):
                 l = re.sub("^( )*$", "", l)
                 if l == "":
                     n_newline += 1
-                    print("nnl %s" % n_newline)
                     if n_newline > 1:
                         continue
                 else:
