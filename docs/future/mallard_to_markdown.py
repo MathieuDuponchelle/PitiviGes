@@ -167,7 +167,6 @@ def render_title(title, level=3, c_name=None, python_name=None,
     res += title
     res += "</h" + str(level) + ">\n"
     return res
-    return "#" * level + title + "\n"
 
 def render_line(line):
     return "%s\n" % line
@@ -226,9 +225,14 @@ def _parse_description(node, description, add_new_lines=True, sections_level=0):
 
 class Parameter:
 
-    def __init__(self, node):
+    def __init__(self, parent, node):
         self.name = custom_find(node, "title/code").text
         self.description = custom_find(node, "p")
+
+        self.valid = True
+        if self.name == "Returns" and self.description is None:
+            if custom_find(parent, "synopsis/code").text.replace("\n", "").split(" ")[0] == "void":
+                self.valid = False
 
 
 class Page:
@@ -380,7 +384,10 @@ class Function(Page):
         params = []
         param_nodes = custom_findall(node, "terms/item")
         for n in param_nodes:
-            params.append(Parameter(n))
+            param = Parameter(node, n)
+
+            if param.valid:
+                params.append(param)
 
         self.prototype = render_prototype(params)
 
