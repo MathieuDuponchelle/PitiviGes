@@ -28,7 +28,7 @@ all-local: $(DOCS)
 
 clean-local:
 	@echo "Cleaning up documentation ..."
-	@rm -rf $(PAGES_DIRECTORY) $(HTML_DIRECTORY) $(BUILT_MARKDOWN_DIRECTORY) rake_html.stamp yelp_html.stamp markdown.stamp pages.stamp
+	@rm -rf $(PAGES_DIRECTORY) $(HTML_DIRECTORY) $(BUILT_MARKDOWN_DIRECTORY) $(RAKE_HTML_DIRECTORY) rake_html.stamp yelp_html.stamp markdown.stamp pages.stamp
 	@echo "Cleaned up documentation"
 
 yelp_html.stamp: pages.stamp
@@ -43,17 +43,18 @@ yelp_html.stamp: pages.stamp
 markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(top_srcdir)/docs/future/markdown/*
 	@touch markdown.tmp
 	@echo "Building markdown documentation ..."
-	@$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o $(BUILT_MARKDOWN_DIRECTORY) --python-pages $(PYTHON_PAGES_DIRECTORY)
+	@$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o $(BUILT_MARKDOWN_DIRECTORY) --python-pages $(PYTHON_PAGES_DIRECTORY) --target-format=markdown
 	@cp $(top_srcdir)/docs/future/markdown/* $(BUILT_MARKDOWN_DIRECTORY)
-	@mkdir -p slate/source/includes
-	@cp $(BUILT_MARKDOWN_DIRECTORY)/*.markdown slate/source/includes/
-	@cp $(BUILT_MARKDOWN_DIRECTORY)/index.md slate/source/
 	@mv -f markdown.tmp markdown.stamp
 	@echo "Built markdown documentation ..."
 
 rake_html.stamp: markdown.stamp
 	@touch rake_html.tmp
 	@echo "Building rake html documentation ..."
+	@mkdir -p slate/source/includes
+	@$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o slate/source/includes/ --python-pages $(PYTHON_PAGES_DIRECTORY) --target-format=slate
+	@cp $(top_srcdir)/docs/future/markdown/index.md slate/source/
+	@cp $(top_srcdir)/docs/future/markdown/* slate/source/includes/
 	@cd slate && rake build && cd .. && cp -r slate/build $(RAKE_HTML_DIRECTORY)
 	@mv -f rake_html.tmp rake_html.stamp
 	@echo "Built rake html documentation"
