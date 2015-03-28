@@ -408,13 +408,15 @@ class Function(Page):
 
         return result
 
-    def render(self):
+    def get_c_name(self):
         c_name = re.sub("[.]", "_", self.name)
         c_name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2',
                 c_name)
         c_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', c_name).lower()
         c_name = re.sub('__', r'_', c_name).lower()
-        out = render_title(self.name, c_name=c_name, python_name=self.name,
+
+    def render(self):
+        out = render_title(self.name, c_name=self.get_c_name(), python_name=self.name,
                 shell_name=self.name)
         out += render_line(self.synopsis)
         out += render_line(self.python_synopsis)
@@ -431,6 +433,9 @@ class VirtualFunction(Function):
     def __init__(self, node, python_node=None):
         Function.__init__(self, node, python_node)
         self.name = self.name.replace("-", ".do_")
+
+    def get_c_name(self):
+        return self.name.replace(".do_", "Class:").replace('.', '')
 
     def parse_synopsis(self, node):
         result = ""
