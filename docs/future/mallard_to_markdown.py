@@ -72,6 +72,12 @@ class Renderer:
     def render_code_end(self, node, is_reference=False):
         raise NotImplementedError
 
+    def render_prototype_start(self):
+        raise NotImplementedError
+
+    def render_prototype_end(self):
+        raise NotImplementedError
+
     def render_paragraph(self):
         raise NotImplementedError
 
@@ -214,6 +220,12 @@ class MarkdownRenderer(Renderer):
     def render_subsection(self, id, name):
         return "###%s\n\n" % (name)
 
+    def render_prototype_start(self):
+        return ""
+
+    def render_prototype_end(self):
+        return ""
+
 
 class SlateRenderer(MarkdownRenderer):
     render_markup = False
@@ -279,6 +291,11 @@ class SlateRenderer(MarkdownRenderer):
         rand_name = lambda x: ''.join(choice(chars) for i in range(x))
         return "<h3 id='%s' class='subsection'><u>%s</u></h3>\n" % (rand_name(6), name)
 
+    def render_prototype_start(self):
+        return "\n\n<div class='prototype_start'></div>\n\n"
+
+    def render_prototype_end(self):
+        return "\n\n<div class='prototype_end'></div>\n\n"
 
 # Reduced parsing, only look out for links.
 def _parse_code(node, renderer):
@@ -576,12 +593,15 @@ class Function(Page):
         else:
             shell_name = None
 
-        out = self.renderer.render_title(self.name, c_name=c_name,
+        out = ""
+        out += self.renderer.render_prototype_start()
+        out += self.renderer.render_title(self.name, c_name=c_name,
                 python_name=python_name, shell_name=shell_name)
         out += self.renderer.render_line(self.synopsis)
         out += self.renderer.render_line(self.python_synopsis)
         for description in self.parameter_descriptions:
             out += self.renderer.render_line(description)
+        out += self.renderer.render_prototype_end()
 
         out += self.renderer.render_line(self.description)
 
