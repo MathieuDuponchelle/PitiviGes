@@ -6,6 +6,9 @@ import argparse
 import os
 import re
 import errno
+from random import choice
+import string
+
 try:
     import pygraphviz as pg
     HAVE_PYGRAPHVIZ = True
@@ -272,7 +275,9 @@ class SlateRenderer(MarkdownRenderer):
         return result
 
     def render_subsection(self, id, name):
-        return "<h3 id='%s'><u>%s</u></h3>\n" % (id, name)
+        chars = string.letters
+        rand_name = lambda x: ''.join(choice(chars) for i in range(x))
+        return "<h3 id='%s' class='subsection'><u>%s</u></h3>\n" % (rand_name(6), name)
 
 
 # Reduced parsing, only look out for links.
@@ -353,10 +358,26 @@ class Page:
             if link.attrib['type'] == 'next':
                 self.next_ = link.attrib["xref"]
 
+    def get_code_languages (self):
+        languages = set({})
+        code_samples = self.node.findall(".//{http://projectmallard.org/1.0/}code")
+        for sample in code_samples:
+            try:
+                mime = sample.attrib["mime"]
+            except KeyError:
+                continue
+            try:
+                language = mime_map[mime]
+            except KeyError:
+                continue
+            languages.add(language)
+
+        return languages
+
     def parse_synopsis(self, node):
         raise NotImplementedError
 
-    def render(self):
+    def render(self, languages=None):
         raise NotImplementedError
 
 
@@ -463,14 +484,22 @@ class Class(Page):
 
         return sorted_functions
 
-    def render(self):
+    def render(self, languages):
         out = ""
         c_name = re.sub("[.]", "", self.name)
-        shell_name = re.sub("GES.", "The", self.name)
-        shell_name = re.sub('([a-z0-9])([A-Z])', r'\1 \2', shell_name)
-        "\n\n\n\n"
+        if "python" in languages:
+            python_name = self.name
+        else:
+            python_name = None
+        if "shell" in languages:
+            shell_name = re.sub("GES.", "The", self.name)
+            shell_name = re.sub('([a-z0-9])([A-Z])', r'\1 \2', shell_name)
+        else:
+            shell_name = None
+
         out += self.renderer.render_line(self.renderer.render_title(self.name, level=2, c_name=c_name,
-                                         python_name=self.name, shell_name=shell_name))
+                                            python_name=python_name,
+                                            shell_name=shell_name))
         if self.renderer.render_markup:
             out += self.renderer.render_line(self.synopsis)
         out += self.description
@@ -482,6 +511,8 @@ class Function(Page):
 
     def __init__(self, node, renderer, python_node=None):
         Page.__init__(self, node, renderer)
+        self.languages = None
+        self.python_node = python_node
         if python_node is not None:
             self.python_synopsis = self.parse_synopsis(python_node)
         else:
@@ -509,6 +540,12 @@ class Function(Page):
 
         self.description += _parse_description(self.node, self.renderer, "")
 
+    def get_code_languages (self):
+        languages = Page.get_code_languages(self)
+        if self.python_node is not None:
+            languages.add("python")
+        return languages
+
     def parse_synopsis(self, node):
         result = ""
         synopsis = custom_find(node, "synopsis/code")
@@ -528,8 +565,19 @@ class Function(Page):
         return c_name
 
     def render(self):
-        out = self.renderer.render_title(self.name, c_name=self.get_c_name(), python_name=self.name,
-                                         shell_name=self.name)
+        languages = self.get_code_languages()
+        c_name = self.get_c_name()
+        if "python" in languages:
+            python_name = self.name
+        else:
+            python_name = None
+        if "shell" in languages:
+            shell_name = self.name
+        else:
+            shell_name = None
+
+        out = self.renderer.render_title(self.name, c_name=c_name,
+                python_name=python_name, shell_name=shell_name)
         out += self.renderer.render_line(self.synopsis)
         out += self.renderer.render_line(self.python_synopsis)
         for description in self.parameter_descriptions:
@@ -542,8 +590,8 @@ class Function(Page):
 class VirtualFunction(Function):
     PRIORITY = 2
 
-    def __init__(self, node, python_node=None):
-        Function.__init__(self, node, python_node)
+    def __init__(self, node, renderer, python_node=None):
+        Function.__init__(self, node, renderer, python_node)
         self.name = self.name.replace("-", ".do_")
 
     def get_c_name(self):
@@ -561,7 +609,7 @@ class VirtualFunction(Function):
                 code = "\n" + ' '.join(tmp).replace("\n", "\n" + "      ").lstrip()
                 result += self.renderer.render_line(code)
             else:
-                result += _parse_code(synopsis)
+                result += _parse_code(synopsis, self.renderer)
             result += self.renderer.render_code_end(synopsis)
 
         return result
@@ -569,14 +617,33 @@ class VirtualFunction(Function):
 class Property(Page):
     PRIORITY = 0
 
-    def __init__(self, node, renderer):
+    def __init__(self, node, renderer, python_node=None):
         Page.__init__(self, node, renderer)
+        self.python_node = python_node
         self.description = _parse_description(self.node, self.renderer, "")
+
+    def get_code_languages (self):
+        languages = Page.get_code_languages(self)
+        if self.python_node is not None:
+            languages.add("python")
+        return languages
 
     def render(self):
         name = custom_find(self.node, "title").text
 
-        return self.renderer.render_line(self.renderer.render_title(name) + self.description)
+        languages = self.get_code_languages()
+        c_name = name
+        if "python" in languages:
+            python_name = name
+        else:
+            python_name = None
+        if "shell" in languages:
+            shell_name = self.name
+        else:
+            shell_name = None
+
+        return self.renderer.render_line(self.renderer.render_title(name,
+            c_name=c_name, python_name=python_name, shell_name=shell_name) + self.description)
 
     def parse_synopsis(self, node):
         return ""
@@ -588,34 +655,48 @@ class AggregatedPages(object):
         self.master_page = None
         self.symbols = []
         self.renderer = renderer
+        self.languages = set({})
 
     def add_slave_page(self, page, filename, python_pages):
         page.filename = filename
-        if page.attrib["style"] in ["method", "function", "constructor"]:
-            try:
-                python_tree = ET.parse(os.path.join(python_pages,
+        try:
+            python_tree = ET.parse(os.path.join(python_pages,
                                                     os.path.basename(page.filename)))
-                python_page = python_tree.getroot()
-                symbol = Function(page, self.renderer, python_page)
-            except IOError:
-                symbol = Function(page, self.renderer)
+            python_page = python_tree.getroot()
+        except IOError:
+            python_page = None
+
+        if page.attrib["style"] in ["method", "function", "constructor"]:
+            symbol = Function(page, self.renderer, python_page)
         elif page.attrib["style"] in ["property"]:
-            symbol = Property(page, self.renderer)
+            symbol = Property(page, self.renderer, python_page)
         elif page.attrib["style"] in ["vfunc"]:
-            symbol = VirtualFunction(page, self.renderer)
+            symbol = VirtualFunction(page, self.renderer, python_page)
         else:
             print("Style not handled yet: %s" % page.attrib["style"])
             return
 
+        self.languages = self.languages.union(symbol.get_code_languages())
         if not self.master_page:
             self.symbols.append(symbol)
         else:
             self.master_page.add_symbol(symbol)
 
-    def set_master_page(self, page):
+    def set_master_page(self, page, filename, python_pages):
         self.master_page = Class(page, self.renderer)
+        if os.path.exists(os.path.join(python_pages,
+            os.path.basename(filename))):
+            self.languages.add("python")
+        self.languages = self.languages.union(self.master_page.get_code_languages())
         for s in self.symbols:
             self.master_page.add_symbol(s)
+
+    def languages_for_priority(self, symbols, priority):
+        languages = set({})
+        for symbol in symbols:
+            if symbol.PRIORITY == priority:
+                languages = languages.union(symbol.get_code_languages())
+        return languages
 
     def parse(self, output):
         if self.master_page is None:
@@ -623,7 +704,7 @@ class AggregatedPages(object):
 
         output = os.path.join(output, self.master_page.name + ".markdown")
         with open(output, "w") as f:
-            res = self.master_page.render()
+            res = self.master_page.render(self.languages)
             seen_properties = False
             seen_methods = False
             seen_vfuncs = False
@@ -693,7 +774,7 @@ class Parser(object):
             self.__pages[xref] = pages
 
         if type_ == "class" or type_ == "interface":
-            pages.set_master_page(root)
+            pages.set_master_page(root, f, python_pages)
         else:
             pages.add_slave_page(root, f, python_pages)
 
