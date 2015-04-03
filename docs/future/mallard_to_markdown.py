@@ -206,7 +206,7 @@ class MarkdownRenderer(Renderer):
                      shell_name=None):
 
         if True:  # FIXME do the thinkg
-            return "#" * level + title
+            return "\n\n" + "#" * level + title
 
     def render_line(self, line):
         return "%s\n" % line
