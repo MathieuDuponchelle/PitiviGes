@@ -5,5 +5,5 @@
 {{ examples/python/add_one_video_track.py }}
 ]|
 |[<!-- language="shell" -->
-FIXME
+{{ examples/shell/add_one_video_track.sh }}
 ]|
