@@ -8,5 +8,5 @@
 {{ examples/python/save_and_load_timeline.py }}
 ]|
 |[<!-- language="shell" -->
-FIXME
+{{ examples/shell/save_and_load_timeline.sh }}
 ]|
