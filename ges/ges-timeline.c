@@ -2823,7 +2823,9 @@ ges_timeline_add_layer (GESTimeline * timeline, GESLayer * layer)
  * @timeline: a #GESTimeline
  * @layer: the #GESLayer to remove
  *
- * Removes the @layer from the @timeline. The reference that the @timeline holds on
+ * {{ examples/remove_layer.markdown }}
+ *
+ * Remove the @layer from the @timeline. The reference that the @timeline holds on
  * the @layer will be dropped. If you wish to use the @layer after calling this
  * method, you need to take a reference before calling.
  *

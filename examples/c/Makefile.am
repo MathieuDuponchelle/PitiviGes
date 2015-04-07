@@ -19,6 +19,7 @@ noinst_PROGRAMS = 	\
 	multifilesrc \
 	full_timeline_tutorial \
 	save_and_load_timeline \
+	remove_layer \
 	$(graphical)
 
 
