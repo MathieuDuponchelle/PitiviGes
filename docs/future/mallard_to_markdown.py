@@ -538,12 +538,8 @@ class Function(Page):
 
         params = []
         param_nodes = custom_findall(node, "terms/item")
-        f = True
         for n in param_nodes:
             param = Parameter(node, n)
-            if f:
-                param.name = "self"
-                f = False
 
             if param.valid:
                 params.append(param)
@@ -649,7 +645,7 @@ class Property(Page):
         return languages
 
     def render(self):
-        name = custom_find(self.node, "title").text
+        name = custom_find(self.node, "title").text.replace(":", "-")
 
         languages = self.get_code_languages()
         c_name = name
