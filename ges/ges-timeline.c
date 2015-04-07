@@ -587,7 +587,7 @@ ges_timeline_class_init (GESTimelineClass * klass)
   /**
    * GESTimeline:auto-transition:
    *
-   * Sets whether transitions are added automagically when clips overlap.
+   * Set whether transitions are added automagically when clips overlap.
    */
   g_object_class_install_property (object_class, PROP_AUTO_TRANSITION,
       g_param_spec_boolean ("auto-transition", "Auto-Transition",
@@ -596,8 +596,8 @@ ges_timeline_class_init (GESTimelineClass * klass)
   /**
    * GESTimeline:snapping-distance:
    *
-   * Distance (in nanoseconds) from which a moving object will snap
-   * with it neighboors. 0 means no snapping.
+   * Distance (in nanoseconds) from which a moving object will "snap"
+   * with its neighbors. 0 means no snapping.
    */
   properties[PROP_SNAPPING_DISTANCE] =
       g_param_spec_uint64 ("snapping-distance", "Snapping distance",
@@ -659,7 +659,7 @@ ges_timeline_class_init (GESTimelineClass * klass)
    * @timeline: the #GESTimeline
    * @obj1: the first #GESTrackElement that was snapping.
    * @obj2: the second #GESTrackElement that was snapping.
-   * @position: the position where the two objects finally snapping.
+   * @position: the position where the two objects first snapped.
    *
    * Will be emitted when the 2 #GESTrackElement first snapped
    */
@@ -674,9 +674,9 @@ ges_timeline_class_init (GESTimelineClass * klass)
    * @timeline: the #GESTimeline
    * @obj1: the first #GESTrackElement that was snapping.
    * @obj2: the second #GESTrackElement that was snapping.
-   * @position: the position where the two objects finally snapping.
+   * @position: the position where the two objects finally snappend.
    *
-   * Will be emitted when the 2 #GESTrackElement ended to snap
+   * Will be emitted when the 2 #GESTrackElement finished snapping together.
    */
   ges_timeline_signals[SNAPING_ENDED] =
       g_signal_new ("snapping-ended", G_TYPE_FROM_CLASS (klass),
@@ -2609,7 +2609,7 @@ timeline_fill_gaps (GESTimeline * timeline)
 /**
  * ges_timeline_new:
  *
- * Creates a new empty #GESTimeline.
+ * Create a new empty #GESTimeline.
  *
  * Returns: The new timeline.
  */
@@ -2631,10 +2631,10 @@ ges_timeline_new (void)
  * @uri: the URI to load from
  * @error: (out) (allow-none): An error to be set in case something wrong happens or %NULL
  *
- * Creates a timeline from the given URI.
+ * Create a timeline from the given URI.
  *
- * Returns: A new timeline if the uri was loaded successfully, or NULL if the
- * uri could not be loaded
+ * Returns: A new timeline if the uri was loaded successfully, or %NULL if the
+ * uri could not be loaded.
  */
 GESTimeline *
 ges_timeline_new_from_uri (const gchar * uri, GError ** error)
@@ -2650,13 +2650,13 @@ ges_timeline_new_from_uri (const gchar * uri, GError ** error)
 
 /**
  * ges_timeline_load_from_uri:
- * @timeline: an empty #GESTimeline into which to load the formatter
+ * @timeline: an empty #GESTimeline into which to load the serialized timeline
  * @uri: The URI to load from
  * @error: (out) (allow-none): An error to be set in case something wrong happens or %NULL
  *
- * Loads the contents of URI into the given timeline.
+ * Load the contents of @uri into the given timeline.
  *
- * Returns: TRUE if the timeline was loaded successfully, or FALSE if the uri
+ * Returns: %TRUE if the timeline was loaded successfully, or %FALSE if the uri
  * could not be loaded.
  */
 gboolean
@@ -2680,19 +2680,19 @@ ges_timeline_load_from_uri (GESTimeline * timeline, const gchar * uri,
 /**
  * ges_timeline_save_to_uri:
  * @timeline: a #GESTimeline
- * @uri: The location to save to
+ * @uri: The URI to save to
  * @formatter_asset: (allow-none): The formatter asset to use or %NULL. If %NULL,
- * will try to save in the same format as the one from which the timeline as been loaded
- * or default to the formatter with highest rank
+ * will try to save in the same format as the one from which the timeline has been loaded
+ * or default to the formatter with the highest rank
  * @overwrite: %TRUE to overwrite file if it exists
  * @error: (out) (allow-none): An error to be set in case something wrong happens or %NULL
  *
  * {{ examples/save_and_load_timeline.markdown }}
  *
- * Saves the timeline to the given location.
+ * Save the timeline to the given location.
  *
- * Returns: TRUE if the timeline was successfully saved to the given location,
- * else FALSE.
+ * Returns: %TRUE if the timeline was successfully saved to the given location,
+ * else %FALSE.
  */
 gboolean
 ges_timeline_save_to_uri (GESTimeline * timeline, const gchar * uri,
@@ -2752,7 +2752,7 @@ ges_timeline_append_layer (GESTimeline * timeline)
  * Add the layer to the timeline. The reference to the @layer will be stolen
  * by the @timeline.
  *
- * Returns: TRUE if the layer was properly added, else FALSE.
+ * Returns: %TRUE if the layer was properly added, else %FALSE.
  */
 gboolean
 ges_timeline_add_layer (GESTimeline * timeline, GESLayer * layer)
@@ -2823,11 +2823,11 @@ ges_timeline_add_layer (GESTimeline * timeline, GESLayer * layer)
  * @timeline: a #GESTimeline
  * @layer: the #GESLayer to remove
  *
- * Removes the layer from the timeline. The reference that the @timeline holds on
- * the layer will be dropped. If you wish to use the @layer after calling this
+ * Removes the @layer from the @timeline. The reference that the @timeline holds on
+ * the @layer will be dropped. If you wish to use the @layer after calling this
  * method, you need to take a reference before calling.
  *
- * Returns: TRUE if the layer was properly removed, else FALSE.
+ * Returns: %TRUE if the layer was properly removed, else %FALSE.
  */
 
 gboolean
@@ -2879,10 +2879,10 @@ ges_timeline_remove_layer (GESTimeline * timeline, GESLayer * layer)
  * @timeline: a #GESTimeline
  * @track: the #GESTrack to add
  *
- * Add a track to the timeline. The reference to the track will be stolen by the
- * pipeline.
+ * Add the @track to the timeline. The reference to the @track will be stolen by the
+ * @timeline.
  *
- * Returns: TRUE if the track was properly added, else FALSE.
+ * Returns: %TRUE if the track was properly added, else %FALSE.
  */
 
 /* FIXME: create track elements for clips which have already been
@@ -2969,7 +2969,7 @@ ges_timeline_add_track (GESTimeline * timeline, GESTrack * track)
  * @track will be removed. If you wish to use the @track after calling this
  * function you must ensure that you have a reference to it.
  *
- * Returns: TRUE if the @track was properly removed, else FALSE.
+ * Returns: %TRUE if the @track was properly removed, else %FALSE.
  */
 
 /* FIXME: release any track elements associated with this layer. currenly this
@@ -3106,9 +3106,9 @@ ges_timeline_get_pad_for_track (GESTimeline * timeline, GESTrack * track)
  * ges_timeline_get_tracks:
  * @timeline: a #GESTimeline
  *
- * Returns the list of #GESTrack used by the Timeline.
+ * Get the list of #GESTracks used by the Timeline.
  *
- * Returns: (transfer full) (element-type GESTrack): A list of #GESTrack.
+ * Returns: (transfer full) (element-type GESTrack): A list of #GESTracks.
  * The caller should unref each track once he is done with them.
  */
 GList *
@@ -3123,11 +3123,11 @@ ges_timeline_get_tracks (GESTimeline * timeline)
  * ges_timeline_get_layers:
  * @timeline: a #GESTimeline
  *
- * Get the list of #GESLayer present in the Timeline.
+ * Get the list of #GESLayers present in the Timeline.
  *
  * Returns: (transfer full) (element-type GESLayer): the list of
- * #GESLayer present in the Timeline sorted by priority.
- * The caller should unref each Layer once he is done with them.
+ * #GESLayers present in the @timeline sorted by priority.
+ * The caller should unref each layer once he is done with them.
  */
 GList *
 ges_timeline_get_layers (GESTimeline * timeline)
@@ -3302,7 +3302,7 @@ ges_timeline_commit_sync (GESTimeline * timeline)
  *
  * Get the current duration of @timeline
  *
- * Returns: The current duration of @timeline
+ * Returns: The current duration of @timeline, in nanoseconds
  */
 GstClockTime
 ges_timeline_get_duration (GESTimeline * timeline)
@@ -3316,8 +3316,9 @@ ges_timeline_get_duration (GESTimeline * timeline)
  * ges_timeline_get_auto_transition:
  * @timeline: a #GESTimeline
  *
- * Gets whether transitions are automatically added when objects
+ * Get whether transitions are automatically added when objects
  * overlap or not.
+ * See the documentation of #GESTimeline:auto-transition for more information.
  *
  * Returns: %TRUE if transitions are automatically added, else %FALSE.
  */
@@ -3331,11 +3332,11 @@ ges_timeline_get_auto_transition (GESTimeline * timeline)
 
 /**
  * ges_timeline_set_auto_transition:
- * @timeline: a #GESLayer
- * @auto_transition: whether the auto_transition is active
+ * @timeline: a #GESTimeline
+ * @auto_transition: whether to activate auto transitions.
  *
- * Sets the layer to the given @auto_transition. See the documentation of the
- * property auto_transition for more information.
+ * Activate or deactivate auto transitions on @timeline. See the documentation of
+ * #GESTimeline:auto-transition for more information.
  */
 void
 ges_timeline_set_auto_transition (GESTimeline * timeline,
@@ -3360,11 +3361,11 @@ ges_timeline_set_auto_transition (GESTimeline * timeline,
  * ges_timeline_get_snapping_distance:
  * @timeline: a #GESTimeline
  *
- * Gets the configured snapping distance of the timeline. See
- * the documentation of the property snapping_distance for more
+ * Get the configured snapping distance of the @timeline. See
+ * the documentation of #GESTimeline:snapping-distance for more
  * information.
  *
- * Returns: The @snapping_distance property of the timeline
+ * Returns: The @snapping_distance property of the @timeline
  */
 GstClockTime
 ges_timeline_get_snapping_distance (GESTimeline * timeline)
@@ -3377,11 +3378,11 @@ ges_timeline_get_snapping_distance (GESTimeline * timeline)
 
 /**
  * ges_timeline_set_snapping_distance:
- * @timeline: a #GESLayer
- * @snapping_distance: whether the snapping_distance is active
+ * @timeline: a #GESTimeline
+ * @snapping_distance: The snapping distance to set.
  *
- * Sets the @snapping_distance of the timeline. See the documentation of the
- * property snapping_distance for more information.
+ * Set the snapping distance of the @timeline. See the documentation of
+ * #GESTimeline:snapping-distance for more information.
  */
 void
 ges_timeline_set_snapping_distance (GESTimeline * timeline,
@@ -3395,11 +3396,12 @@ ges_timeline_set_snapping_distance (GESTimeline * timeline,
 /**
  * ges_timeline_get_element:
  * @timeline: a #GESTimeline
+ * @name: The name of the #GESTimelineElement to look for
  *
- * Gets a #GESTimelineElement contained in the timeline
+ * Get a #GESTimelineElement contained in the @timeline named @name.
  *
- * Returns: (transfer full): The #GESTimelineElement or %NULL if
- * not found.
+ * Returns: (transfer full): The #GESTimelineElement or %NULL if no element
+ * with the given @name was found in the @timeline.
  */
 GESTimelineElement *
 ges_timeline_get_element (GESTimeline * timeline, const gchar * name)
@@ -3420,9 +3422,9 @@ ges_timeline_get_element (GESTimeline * timeline, const gchar * name)
  * ges_timeline_is_empty:
  * @timeline: a #GESTimeline
  *
- * Check whether a #GESTimelineElement is empty or not
+ * Check whether a #GESTimeline is empty or not.
  *
- * Returns: %TRUE if the timeline is empty %FALSE otherwize
+ * Returns: %TRUE if the timeline is empty, %FALSE otherwise.
  */
 gboolean
 ges_timeline_is_empty (GESTimeline * timeline)
@@ -3447,10 +3449,10 @@ ges_timeline_is_empty (GESTimeline * timeline)
 
 /**
  * ges_timeline_get_layer:
- * @timeline: The #GESTimeline to retrive a layer from
+ * @timeline: The #GESTimeline to retrieve a layer from
  * @priority: The priority of the layer to find
  *
- * Retrieve the layer with @priority as a priority
+ * Retrieve the #GESLayer with @priority
  *
  * Returns: A #GESLayer or %NULL if no layer with @priority was found
  *
