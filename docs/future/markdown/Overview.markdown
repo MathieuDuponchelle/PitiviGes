@@ -5,7 +5,12 @@
 ```c
 /*
  * Here you will find all the examples, as well as the function prototypes in
- * C. You may want to click the "Python" or the shell tab now.
+ * C.
+ *
+ * All the functions defined here are implemented in the GES examples folder,
+ * and exported in the "examples.h" header file, which other example can include.
+ *
+ * You may want to click the "Python" or the shell tab now.
  */
 ```
 

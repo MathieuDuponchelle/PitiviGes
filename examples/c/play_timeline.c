@@ -1,6 +1,6 @@
-#include <ges/ges.h>
+#include "examples.h"
 
-static void
+void
 play_timeline (GESTimeline * timeline)
 {
   GMainLoop *loop = g_main_loop_new (NULL, FALSE);

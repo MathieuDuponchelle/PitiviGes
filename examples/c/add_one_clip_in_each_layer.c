@@ -1,6 +1,6 @@
-#include <ges/ges.h>
+#include "examples.h"
 
-static void
+void
 add_one_clip_in_each_layer (GESTimeline * timeline, GstClockTime duration)
 {
   GList *tmp, *layers = ges_timeline_get_layers (timeline);

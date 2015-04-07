@@ -1,8 +1,4 @@
-#include <ges/ges.h>
-#include "add_one_clip_in_each_layer.c"
-#include "add_one_video_track.c"
-#include "create_timeline_with_n_layers.c"
-#include "play_timeline.c"
+#include "examples.h"
 
 int
 main (int argc, char **argv)

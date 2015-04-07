@@ -1,6 +1,6 @@
-#include <ges/ges.h>
+#include "examples.h"
 
-static GESTimeline *
+GESTimeline *
 create_timeline_with_n_layers (guint n_layers)
 {
   GESTimeline *timeline = ges_timeline_new ();
