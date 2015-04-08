@@ -63,6 +63,11 @@ G_DEFINE_TYPE_WITH_CODE (GESTimeline, ges_timeline, GST_TYPE_BIN,
     G_IMPLEMENT_INTERFACE (GES_TYPE_META_CONTAINER,
         ges_meta_container_interface_init));
 
+typedef struct
+{
+  GMutex lock;
+  GCond cond;
+} TimelineCommitedCond;
 
 GST_DEBUG_CATEGORY_STATIC (ges_timeline_debug);
 #undef GST_CAT_DEFAULT
