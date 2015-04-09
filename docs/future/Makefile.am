@@ -51,6 +51,7 @@ markdown.stamp: pages.stamp $(top_srcdir)/docs/future/mallard_to_markdown.py $(t
 rake_html.stamp: markdown.stamp
 	@touch rake_html.tmp
 	@echo "Building rake html documentation ..."
+	@rm -rf rake_html/build
 	@mkdir -p slate/source/includes
 	@$(PYTHON) $(top_srcdir)/docs/future/mallard_to_markdown.py $(PAGES_DIRECTORY)/* -o slate/source/includes/ --python-pages $(PYTHON_PAGES_DIRECTORY) --target-format=slate
 	@cp $(top_srcdir)/docs/future/markdown/index.md slate/source/
