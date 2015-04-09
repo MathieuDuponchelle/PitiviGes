@@ -3207,17 +3207,17 @@ ges_timeline_commit_unlocked (GESTimeline * timeline)
  * directly executed in the non-linear engine. Call this method once you are
  * done with a set of changes and want it to be executed.
  *
- * The GESTimeline::commited signal will be emitted when the (possibly updated)
+ * The #GESTimeline::commited signal will be emitted when the (possibly updated)
  * #GstPipeline is ready to output data again, except if the state of the
- * timeline was #GST_STATE_READY or #GST_STATE_NULL.
+ * timeline was %GST_STATE_READY or %GST_STATE_NULL.
  *
  * Note that all the pending changes will automatically be executed when the
- * timeline goes from #GST_STATE_READY to #GST_STATE_PAUSED, which usually is
+ * timeline goes from %GST_STATE_READY to %GST_STATE_PAUSED, which usually is
  * triggered by corresponding state changes in a containing #GESPipeline.
  *
  * You should not try to change the state of the timeline, seek it or add
  * tracks to it during a commit operation, that is between a call to this
- * function and after receiving the GESTimeline::commited signal.
+ * function and after receiving the #GESTimeline::commited signal.
  *
  * See #ges_timeline_commit_sync if you don't want to bother with waiting
  * for the signal.
@@ -3248,19 +3248,21 @@ commited_cb (GESTimeline * timeline)
  * ges_timeline_commit_sync:
  * @timeline: a #GESTimeline
  *
+ * {{ examples/commit_timeline.markdown }}
+ *
  * Commit all the pending changes of the #GESClips contained in the
  * @timeline.
  *
  * Will return once the update is complete, that is when the
  * (possibly updated) #GstPipeline is ready to output data again, or if the
- * state of the timeline was #GST_STATE_READY or #GST_STATE_NULL.
+ * state of the timeline was %GST_STATE_READY or %GST_STATE_NULL.
  *
  * This function will wait for any pending state change of the timeline by
- * calling #gst_element_get_state with a #GST_CLOCK_TIME_NONE timeout, you
+ * calling gst_element_get_state() with a %GST_CLOCK_TIME_NONE timeout, you
  * should not try to change the state from another thread before this function
  * has returned.
  *
- * See #ges_timeline_commit for more information.
+ * See ges_timeline_commit() for more information.
  *
  * Returns: %TRUE if pending changes were commited or %FALSE if nothing needed
  * to be commited
@@ -3458,7 +3460,7 @@ ges_timeline_is_empty (GESTimeline * timeline)
  *
  * Retrieve the #GESLayer with @priority
  *
- * Returns: A #GESLayer or %NULL if no layer with @priority was found
+ * Returns: (transfer full): A #GESLayer or %NULL if no layer with @priority was found
  *
  * Since 1.6
  */

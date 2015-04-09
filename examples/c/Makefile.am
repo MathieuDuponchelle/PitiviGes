@@ -21,6 +21,7 @@ noinst_PROGRAMS = 	\
 	save_and_load_timeline \
 	remove_layer \
 	remove_track \
+	commit_timeline \
 	$(graphical)
 
 

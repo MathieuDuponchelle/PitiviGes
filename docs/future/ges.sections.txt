@@ -486,6 +486,7 @@
       <SYMBOL>ges_timeline_remove_track</SYMBOL>
       <SYMBOL>ges_timeline_get_tracks</SYMBOL>
       <SYMBOL>ges_timeline_commit</SYMBOL>
+      <SYMBOL>ges_timeline_commit_sync</SYMBOL>
       <SYMBOL>ges_timeline_is_empty</SYMBOL>
       <SYMBOL>ges_timeline_get_element</SYMBOL>
       <SYMBOL>ges_timeline_get_duration</SYMBOL>

@@ -12,4 +12,8 @@ GESTimeline * create_timeline_with_n_layers (guint n_layers);
 
 void          play_timeline                 (GESTimeline * timeline);
 
+void          play_pipeline                 (GESPipeline *pipeline);
+
+GESPipeline * prepare_pipeline              (GESTimeline *timeline);
+
 #endif /* __GES_EXAMPLES_H__ */ 
