@@ -2967,6 +2967,8 @@ ges_timeline_add_track (GESTimeline * timeline, GESTrack * track)
  * @timeline: a #GESTimeline
  * @track: the #GESTrack to remove
  *
+ * {{ examples/remove_track.markdown }}
+ *
  * Remove the @track from the @timeline. The reference stolen when adding the
  * @track will be removed. If you wish to use the @track after calling this
  * function you must ensure that you have a reference to it.

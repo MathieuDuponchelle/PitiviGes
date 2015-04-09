@@ -4,7 +4,9 @@ EXTRA_DIST=full_timeline_tutorial.markdown \
 	   add_one_video_track.markdown \
 	   add_one_clip_in_each_layer.markdown \
 	   create_timeline_with_n_layers.markdown \
-	   save_and_load_timeline.markdown
+	   save_and_load_timeline.markdown \
+	   remove_layer.markdown \
+	   remove_track.markdown
 
 AM_CFLAGS =  -I$(top_srcdir) $(GST_PBUTILS_CFLAGS) $(GST_CFLAGS) $(GTK_CFLAGS)
 AM_LDFLAGS = -export-dynamic

@@ -20,6 +20,7 @@ noinst_PROGRAMS = 	\
 	full_timeline_tutorial \
 	save_and_load_timeline \
 	remove_layer \
+	remove_track \
 	$(graphical)
 
 

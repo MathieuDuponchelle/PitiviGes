@@ -14,5 +14,10 @@ def play_timeline(timeline):
 
     pipeline.set_timeline (timeline)
     pipeline.set_state (Gst.State.PLAYING)
-    loop.run()
+
+    try:
+        loop.run()
+    except KeyboardInterrupt:
+        pass
+
     pipeline.set_state (Gst.State.NULL)

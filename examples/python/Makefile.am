@@ -5,4 +5,5 @@ EXTRA_DIST=full_timeline_tutorial.markdown \
 	   create_timeline_with_n_layers.py \
 	   play_timeline.py \
 	   save_and_load_timeline.py \
-	   remove_layer.py
+	   remove_layer.py \
+	   remove_track.py
