@@ -1,4 +1,5 @@
 EXTRA_DIST=full_timeline_tutorial.markdown \
+           get_timeline_element_by_name.py \
 	   full_timeline_tutorial.py \
 	   add_one_video_track.py \
 	   add_one_clip_in_each_layer.py \

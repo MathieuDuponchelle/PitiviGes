@@ -3404,6 +3404,8 @@ ges_timeline_set_snapping_distance (GESTimeline * timeline,
  * @timeline: a #GESTimeline
  * @name: The name of the #GESTimelineElement to look for
  *
+ * {{ examples/get_timeline_element_by_name.markdown }}
+ *
  * Get a #GESTimelineElement contained in the @timeline named @name.
  *
  * Returns: (transfer full): The #GESTimelineElement or %NULL if no element

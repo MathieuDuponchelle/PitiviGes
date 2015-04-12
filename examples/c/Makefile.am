@@ -5,6 +5,7 @@ graphical=
 endif
 
 noinst_PROGRAMS = 	\
+        get_timeline_element_by_name \
 	concatenate	\
 	simple1		\
 	test1		\

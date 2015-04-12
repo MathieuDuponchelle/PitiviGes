@@ -17,3 +17,4 @@ remove_track
 commit_timeline
 assets
 example.xges
+get_timeline_element_by_name
