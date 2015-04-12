@@ -6,7 +6,8 @@ EXTRA_DIST=full_timeline_tutorial.markdown \
 	   create_timeline_with_n_layers.markdown \
 	   save_and_load_timeline.markdown \
 	   remove_layer.markdown \
-	   remove_track.markdown
+	   remove_track.markdown \
+	   add_example.py
 
 AM_CFLAGS =  -I$(top_srcdir) $(GST_PBUTILS_CFLAGS) $(GST_CFLAGS) $(GTK_CFLAGS)
 AM_LDFLAGS = -export-dynamic
