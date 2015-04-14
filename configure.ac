@@ -141,13 +141,18 @@ else
   AC_MSG_RESULT(no python)
 fi
 
+dnl check if we have a recent introspection for future doc.
+g-ir-doc-tool --help 2>&1 | grep "link-to-gtk-doc" 2>&1 > /dev/null
+AM_CONDITIONAL([HAVE_RECENT_INTROSPECTION],[test $? == 0])
+
+
 AM_CONDITIONAL([ENABLE_MARKDOWN],[test "x$HAVE_PYTHON" != "xno"])
 
 dnl check if we can build the html future doc
 AC_CHECK_PROG(YELP_TOOLS, yelp-build, yes, no)
 AM_CONDITIONAL([BUILD_YELP_HTML],[test "x$YELP_TOOLS" == "xyes"])
 
-dnl check if we can build the html future doc
+dnl check if we can build the rake html future doc
 AC_CHECK_PROG(RAKE, rake, yes, no)
 AM_CONDITIONAL([BUILD_RAKE_HTML],[test "x$RAKE" == "xyes"])
 

@@ -4,7 +4,7 @@ else
 DOCS_SUBDIRS = 
 endif
 
-if HAVE_INTROSPECTION
+if HAVE_RECENT_INTROSPECTION
 DOCS_SUBDIRS += future
 endif
 
