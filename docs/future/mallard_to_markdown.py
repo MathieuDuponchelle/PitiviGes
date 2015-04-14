@@ -630,6 +630,12 @@ class VirtualFunction(Function):
 
         return result
 
+class Signal(Function):
+    PRIORITY = 3
+
+    def __init__(self, node, renderer, python_node=None):
+        Function.__init__(self, node, renderer, python_node)
+
 class Property(Page):
     PRIORITY = 0
 
@@ -688,6 +694,8 @@ class AggregatedPages(object):
             symbol = Property(page, self.renderer, python_page)
         elif page.attrib["style"] in ["vfunc"]:
             symbol = VirtualFunction(page, self.renderer, python_page)
+        elif page.attrib["style"] in ["signal"]:
+            symbol = Signal(page, self.renderer, python_page)
         else:
             print("Style not handled yet: %s" % page.attrib["style"])
             return
@@ -724,6 +732,7 @@ class AggregatedPages(object):
             seen_properties = False
             seen_methods = False
             seen_vfuncs = False
+            seen_signals = False
             for symbol in self.master_page.get_symbols():
                 if not seen_properties and isinstance(symbol, Property):
                     res += self.renderer.render_subsection('gobject-properties', "GObject properties:")
@@ -734,6 +743,9 @@ class AggregatedPages(object):
                 elif not seen_vfuncs and isinstance(symbol, VirtualFunction):
                     res += self.renderer.render_subsection('vfuncs', "Virtual Methods:")
                     seen_vfuncs = True
+                elif not seen_signals and isinstance(symbol, Signal):
+                    res += self.renderer.render_subsection('signals', "Signals:")
+                    seen_signals = True
                 res += symbol.render()
 
             clean_res = ""
@@ -773,7 +785,7 @@ class Parser(object):
             if link.attrib["type"] == "guide":
                 break
         if type_ not in ["class", "method", "function", "constructor",
-                         "property", "interface", "vfunc"]:
+                         "property", "interface", "vfunc", "signal"]:
             return
 
         if "Class" in id_ or "Private" in id_:  # UGLY
