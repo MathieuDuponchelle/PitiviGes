@@ -225,6 +225,14 @@ PKG_CHECK_MODULES(GIO, gio-2.0 >= 2.16, HAVE_GIO=yes, HAVE_GIO=no)
 AC_SUBST(GIO_CFLAGS)
 AC_SUBST(GIO_LIBS)
 
+PKG_CHECK_MODULES(GRILO, grilo-0.2, HAVE_GRILO=yes, HAVE_GRILO=no)
+AC_SUBST(GRILO_CFLAGS)
+AC_SUBST(GRILO_LIBS)
+
+if test "x$HAVE_GRILO" != "xyes"; then
+  AC_ERROR([grilo is required for asset management])
+fi
+
 dnl checks for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
 AG_GST_CHECK_GST($GST_API_VERSION, [$GST_REQ], yes)
