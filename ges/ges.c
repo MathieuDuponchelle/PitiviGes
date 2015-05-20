@@ -32,6 +32,8 @@
 
 #include <stdlib.h>
 #include <ges/ges.h>
+#include <grilo.h>
+
 #include "ges/gstframepositionner.h"
 #include "ges-internal.h"
 #include "ges/nle/nle.h"
@@ -58,6 +60,19 @@ static struct _elements_entry _elements[] = {
   {NULL, 0}
 };
 
+static void
+initialize_grilo (void)
+{
+  GError *error = NULL;
+  GrlRegistry *registry;
+
+  grl_init (NULL, NULL);
+  registry = grl_registry_get_default ();
+
+  grl_registry_load_all_plugins (registry, &error);
+  g_assert_no_error (error);
+}
+
 /**
  * ges_init:
  *
@@ -79,6 +94,8 @@ ges_init (void)
     GST_DEBUG ("already initialized ges");
     return TRUE;
   }
+
+  initialize_grilo ();
 
   /* register clip classes with the system */
 
