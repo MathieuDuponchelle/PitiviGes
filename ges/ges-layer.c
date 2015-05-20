@@ -626,7 +626,16 @@ ges_layer_add_asset (GESLayer * layer,
       GST_TIME_ARGS (inpoint), GST_TIME_ARGS (duration), track_types,
       ges_track_type_name (track_types));
 
-  clip = GES_CLIP (ges_asset_extract (asset, NULL));
+  if (g_type_is_a (ges_asset_get_extractable_type (asset), GES_TYPE_URI_CLIP)) {
+    GstDiscovererInfo *info =
+        ges_uri_clip_asset_get_info (GES_URI_CLIP_ASSET (asset));
+
+    GST_ERROR ("extracting a uri clip");
+    clip = GES_CLIP (ges_uri_clip_new (gst_discoverer_info_get_uri (info)));
+    GST_ERROR ("extracted the uri clip");
+  } else {
+    clip = GES_CLIP (ges_asset_extract (asset, NULL));
+  }
 
   if (!GST_CLOCK_TIME_IS_VALID (start)) {
     start = ges_layer_get_duration (layer);

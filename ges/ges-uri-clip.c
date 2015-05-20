@@ -26,6 +26,8 @@
  * the URI points to a file of some type.
  */
 
+#include <grilo.h>
+
 #include "ges-internal.h"
 #include "ges-uri-clip.h"
 #include "ges-source-clip.h"
@@ -37,6 +39,9 @@
 #include "ges-image-source.h"
 #include "ges-audio-test-source.h"
 #include "ges-multi-file-source.h"
+
+#define GSTREAMER_PLUGIN_ID "grl-gstreamer"
+#define FILESYSTEM_PLUGIN_ID "grl-filesystem"
 
 static void ges_extractable_interface_init (GESExtractableInterface * iface);
 
@@ -296,6 +301,36 @@ ges_extractable_interface_init (GESExtractableInterface * iface)
   iface->set_asset = extractable_set_asset;
 }
 
+static GrlMedia *
+grl_media_from_uri (const gchar * uri)
+{
+  GrlMedia *media = NULL;
+  GError *error = NULL;
+  GrlOperationOptions *options;
+  GrlRegistry *registry = grl_registry_get_default ();
+  GrlSource *source;
+  GrlKeyID disco_key_id =
+      grl_registry_lookup_metadata_key (registry, "discovery");
+  GList *keys = grl_metadata_key_list_new (GRL_METADATA_KEY_EXTERNAL_URL,
+      GRL_METADATA_KEY_URL,
+      disco_key_id,
+      GRL_METADATA_KEY_INVALID);
+
+  g_assert (disco_key_id != GRL_METADATA_KEY_INVALID);
+  registry = grl_registry_get_default ();
+  source = grl_registry_lookup_source (registry, FILESYSTEM_PLUGIN_ID);
+  options = grl_operation_options_new (NULL);
+  grl_operation_options_set_count (options, 1);
+  grl_operation_options_set_resolution_flags (options, GRL_RESOLVE_FULL);
+
+  media = grl_source_get_media_from_uri_sync (source,
+      uri, keys, options, &error);
+
+  g_assert (media);
+
+  return media;
+}
+
 static void
 ges_uri_clip_init (GESUriClip * self)
 {
@@ -470,12 +505,16 @@ ges_uri_clip_create_track_element (GESClip * clip, GESTrackType type)
  * error.
  */
 GESUriClip *
-ges_uri_clip_new (gchar * uri)
+ges_uri_clip_new (const gchar * uri)
 {
   GESUriClip *res = NULL;
+  GrlMedia *media;
 
-  if (gst_uri_is_valid (uri))
+  if (gst_uri_is_valid (uri)) {
+    media = grl_media_from_uri (uri);
+    GST_ERROR ("we got ourselves a nice media : %p\n", media);
     res = g_object_new (GES_TYPE_URI_CLIP, "uri", uri, NULL);
+  }
 
   return res;
 }
