@@ -147,7 +147,7 @@ _project_loaded_cb (GESProject * project, GESTimeline * timeline,
     GESLauncher * self)
 {
   ParsedOptions *opts = &self->priv->parsed_options;
-  GST_INFO ("Project loaded, playing it");
+  GST_ERROR ("Project loaded, playing it");
 
   if (opts->save_path) {
     gchar *uri;
@@ -175,12 +175,20 @@ _project_loaded_cb (GESProject * project, GESTimeline * timeline,
 
   _timeline_set_user_options (self, timeline, ges_project_get_uri (project));
 
+  if (!ges_pipeline_set_timeline (self->priv->pipeline, timeline)) {
+    g_error ("Could not set timeline on pipeline");
+    self->priv->seenerrors = TRUE;
+    g_application_release (G_APPLICATION (self));
+    return;
+  }
+
   if (ges_project_get_uri (project)
       && ges_validate_activate (GST_PIPELINE (self->priv->pipeline),
           opts->scenario, &opts->needs_set_state) == FALSE) {
     g_error ("Could not activate scenario %s", opts->scenario);
     self->priv->seenerrors = TRUE;
     g_application_release (G_APPLICATION (self));
+    return;
   }
 
   if (opts->needs_set_state
@@ -476,10 +484,12 @@ _create_pipeline (GESLauncher * self, const gchar * serialized_timeline)
 
   self->priv->pipeline = ges_pipeline_new ();
 
+  GST_ERROR ("creating timeline");
   if (!_create_timeline (self, serialized_timeline, uri, opts->scenario)) {
     GST_ERROR ("Could not create the timeline");
     goto failure;
   }
+  GST_ERROR ("created timeline");
 
   if (!opts->load_path)
     ges_timeline_commit (self->priv->timeline);
@@ -506,8 +516,13 @@ _create_pipeline (GESLauncher * self, const gchar * serialized_timeline)
     ges_pipeline_preview_set_video_sink (self->priv->pipeline, sink);
   }
 
+  GST_ERROR ("adding timeline to pipeline %p %p", self->priv->pipeline,
+      self->priv->timeline);
   /* Add the timeline to that pipeline */
-  if (!ges_pipeline_set_timeline (self->priv->pipeline, self->priv->timeline))
+
+  if (!opts->load_path
+      && !ges_pipeline_set_timeline (self->priv->pipeline,
+          self->priv->timeline))
     goto failure;
 
 done:
@@ -518,6 +533,7 @@ done:
 
 failure:
   {
+    GST_ERROR ("failing");
     if (self->priv->timeline)
       gst_object_unref (self->priv->timeline);
     if (self->priv->pipeline)
