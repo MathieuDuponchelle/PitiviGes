@@ -259,41 +259,7 @@ _parse_asset (GMarkupParseContext * context, const gchar * element_name,
     const gchar ** attribute_names, const gchar ** attribute_values,
     GESXmlFormatter * self, GError ** error)
 {
-  GType extractable_type;
-  const gchar *id, *extractable_type_name, *metadatas = NULL, *properties =
-      NULL;
-
-  if (!g_markup_collect_attributes (element_name, attribute_names,
-          attribute_values, error, G_MARKUP_COLLECT_STRING, "id", &id,
-          G_MARKUP_COLLECT_STRING, "extractable-type-name",
-          &extractable_type_name,
-          COLLECT_STR_OPT, "properties", &properties,
-          COLLECT_STR_OPT, "metadatas", &metadatas, G_MARKUP_COLLECT_INVALID))
-    return;
-
-  extractable_type = g_type_from_name (extractable_type_name);
-  if (extractable_type == G_TYPE_NONE)
-    g_set_error (error, G_MARKUP_ERROR,
-        G_MARKUP_ERROR_INVALID_CONTENT,
-        "element '%s' invalid extractable_type %s'",
-        element_name, extractable_type_name);
-  else if (!g_type_is_a (extractable_type, GES_TYPE_EXTRACTABLE))
-    g_set_error (error, G_MARKUP_ERROR,
-        G_MARKUP_ERROR_INVALID_CONTENT,
-        "element '%s', %s not an extractable_type'",
-        element_name, extractable_type_name);
-  else {
-    GstStructure *props = NULL;
-    if (properties)
-      props = gst_structure_from_string (properties, NULL);
-
-    ges_base_xml_formatter_add_asset (GES_BASE_XML_FORMATTER (self), id,
-        extractable_type, props, metadatas, error);
-    if (props)
-      gst_structure_free (props);
-  }
 }
-
 
 static inline void
 _parse_track (GMarkupParseContext * context, const gchar * element_name,
