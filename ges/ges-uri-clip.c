@@ -33,7 +33,6 @@
 #include "ges-source-clip.h"
 #include "ges-video-uri-source.h"
 #include "ges-audio-uri-source.h"
-#include "ges-track-element-asset.h"
 #include "ges-image-source.h"
 #include "ges-audio-test-source.h"
 #include "ges-multi-file-source.h"

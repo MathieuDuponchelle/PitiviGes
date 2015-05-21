@@ -46,7 +46,6 @@
 #include <ges/ges-group.h>
 #include <ges/ges-screenshot.h>
 #include <ges/ges-asset.h>
-#include <ges/ges-track-element-asset.h>
 #include <ges/ges-project.h>
 #include <ges/ges-extractable.h>
 #include <ges/ges-base-xml-formatter.h>
