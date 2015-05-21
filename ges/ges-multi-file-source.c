@@ -29,28 +29,10 @@
 #include "ges-internal.h"
 #include "ges-track-element.h"
 #include "ges-multi-file-source.h"
-#include "ges-extractable.h"
-#include "ges-uri-asset.h"
 #include "ges-internal.h"
 
-/* Extractable interface implementation */
-
-static gchar *
-ges_extractable_check_id (GType type, const gchar * id, GError ** error)
-{
-  return g_strdup (id);
-}
-
-static void
-ges_extractable_interface_init (GESExtractableInterface * iface)
-{
-  iface->check_id = ges_extractable_check_id;
-}
-
-G_DEFINE_TYPE_WITH_CODE (GESMultiFileSource, ges_multi_file_source,
-    GES_TYPE_VIDEO_SOURCE,
-    G_IMPLEMENT_INTERFACE (GES_TYPE_EXTRACTABLE,
-        ges_extractable_interface_init));
+G_DEFINE_TYPE (GESMultiFileSource, ges_multi_file_source,
+    GES_TYPE_VIDEO_SOURCE);
 
 struct _GESMultiFileSourcePrivate
 {
@@ -166,30 +148,13 @@ ges_multi_file_source_create_source (GESTrackElement * track_element)
 {
   GESMultiFileSource *self;
   GstElement *bin, *src, *decodebin;
-  GstCaps *disc_caps;
-  GstDiscovererStreamInfo *stream_info;
   GValue fps = G_VALUE_INIT;
   GstCaps *caps;
-  GESUriSourceAsset *asset;
   GESMultiFileURI *uri_data;
 
   self = (GESMultiFileSource *) track_element;
 
-  asset =
-      GES_URI_SOURCE_ASSET (ges_extractable_get_asset (GES_EXTRACTABLE (self)));
-
-  if (asset != NULL) {
-    stream_info = ges_uri_source_asset_get_stream_info (asset);
-    g_assert (stream_info);
-    disc_caps = gst_discoverer_stream_info_get_caps (stream_info);
-    caps = gst_caps_copy (disc_caps);
-    GST_DEBUG ("Got some nice caps %s", gst_caps_to_string (disc_caps));
-    gst_object_unref (stream_info);
-    gst_caps_unref (disc_caps);
-  } else {
-    caps = gst_caps_new_empty ();
-    GST_WARNING ("Could not extract asset.");
-  }
+  caps = gst_caps_new_empty ();
 
   g_value_init (&fps, GST_TYPE_FRACTION);
   gst_value_set_fraction (&fps, 25, 1);

@@ -33,26 +33,17 @@
 #include "ges-source-clip.h"
 #include "ges-video-uri-source.h"
 #include "ges-audio-uri-source.h"
-#include "ges-uri-asset.h"
 #include "ges-track-element-asset.h"
-#include "ges-extractable.h"
 #include "ges-image-source.h"
 #include "ges-audio-test-source.h"
 #include "ges-multi-file-source.h"
 
-#define GSTREAMER_PLUGIN_ID "grl-gstreamer"
 #define FILESYSTEM_PLUGIN_ID "grl-filesystem"
-
-static void ges_extractable_interface_init (GESExtractableInterface * iface);
 
 #define parent_class ges_uri_clip_parent_class
 
-G_DEFINE_TYPE_WITH_CODE (GESUriClip, ges_uri_clip,
-    GES_TYPE_SOURCE_CLIP,
-    G_IMPLEMENT_INTERFACE (GES_TYPE_EXTRACTABLE,
-        ges_extractable_interface_init));
+G_DEFINE_TYPE (GESUriClip, ges_uri_clip, GES_TYPE_SOURCE_CLIP);
 
-GESExtractableInterface *parent_extractable_iface;
 
 struct _GESUriClipPrivate
 {
@@ -199,108 +190,6 @@ ges_uri_clip_class_init (GESUriClipClass * klass)
   timobj_class->create_track_element = ges_uri_clip_create_track_element;
 }
 
-static gchar *
-extractable_check_id (GType type, const gchar * id)
-{
-  const gchar *testing_directory;
-
-  testing_directory = g_getenv ("GES_TESTING_ASSETS_DIRECTORY");
-
-  /* Testing purposes, user can specify a directory to look up for script */
-  if (testing_directory != NULL) {
-    gchar **tokens;
-    gchar *location = NULL;
-    guint i;
-
-    GST_DEBUG ("Checking if the testing directory contains needed media");
-
-    tokens = g_strsplit (id, "media", 2);
-    for (i = 0; tokens[i]; i++)
-      if (i == 1)
-        location = tokens[1];
-
-    if (location == NULL)
-      GST_WARNING ("The provided id doesn't have a media subdirectory");
-    else {
-      gchar *actual_id =
-          g_strconcat ("file://", testing_directory, "/media/", location, NULL);
-
-      if (gst_uri_is_valid (actual_id)) {
-        GST_DEBUG ("Returning new id %s instead of id %s", actual_id, id);
-        g_strfreev (tokens);
-        return (actual_id);
-      } else
-        GST_WARNING ("The constructed id %s was not valid, trying %s anyway",
-            actual_id, id);
-
-      g_free (actual_id);
-    }
-
-    g_strfreev (tokens);
-  }
-
-  if (gst_uri_is_valid (id))
-    return g_strdup (id);
-
-  return NULL;
-}
-
-static GParameter *
-extractable_get_parameters_from_id (const gchar * id, guint * n_params)
-{
-  GParameter *params = g_new0 (GParameter, 2);
-
-  params[0].name = "uri";
-  g_value_init (&params[0].value, G_TYPE_STRING);
-  g_value_set_string (&params[0].value, id);
-
-  *n_params = 1;
-
-  return params;
-}
-
-static gchar *
-extractable_get_id (GESExtractable * self)
-{
-  return g_strdup (GES_URI_CLIP (self)->priv->uri);
-}
-
-static void
-extractable_set_asset (GESExtractable * self, GESAsset * asset)
-{
-  GESUriClip *uriclip = GES_URI_CLIP (self);
-  GESUriClipAsset *filesource_asset = GES_URI_CLIP_ASSET (asset);
-  GESClip *clip = GES_CLIP (self);
-
-  if (GST_CLOCK_TIME_IS_VALID (GES_TIMELINE_ELEMENT_DURATION (clip)) == FALSE)
-    _set_duration0 (GES_TIMELINE_ELEMENT (uriclip),
-        ges_uri_clip_asset_get_duration (filesource_asset));
-
-  ges_timeline_element_set_max_duration (GES_TIMELINE_ELEMENT (uriclip),
-      ges_uri_clip_asset_get_duration (filesource_asset));
-  ges_uri_clip_set_is_image (uriclip,
-      ges_uri_clip_asset_is_image (filesource_asset));
-
-  if (ges_clip_get_supported_formats (clip) == GES_TRACK_TYPE_UNKNOWN) {
-
-    ges_clip_set_supported_formats (clip,
-        ges_clip_asset_get_supported_formats
-        (GES_CLIP_ASSET (filesource_asset)));
-  }
-
-  GES_TIMELINE_ELEMENT (uriclip)->asset = asset;
-}
-
-static void
-ges_extractable_interface_init (GESExtractableInterface * iface)
-{
-  iface->asset_type = GES_TYPE_URI_CLIP_ASSET;
-  iface->check_id = (GESExtractableCheckId) extractable_check_id;
-  iface->get_parameters_from_id = extractable_get_parameters_from_id;
-  iface->get_id = extractable_get_id;
-  iface->set_asset = extractable_set_asset;
-}
-
 static GrlMedia *
 grl_media_from_uri (const gchar * uri)
 {
@@ -439,19 +328,24 @@ ges_uri_clip_get_uri (GESUriClip * self)
 static GList *
 ges_uri_clip_create_track_elements (GESClip * clip, GESTrackType type)
 {
+  GESUriClip *uclip = GES_URI_CLIP (clip);
   GList *res = NULL;
-  const GList *tmp, *stream_assets;
+  GESTrackElement *tck_element;
 
-  g_return_val_if_fail (GES_TIMELINE_ELEMENT (clip)->asset, NULL);
-
-  stream_assets =
-      ges_uri_clip_asset_get_stream_assets (GES_URI_CLIP_ASSET
-      (GES_TIMELINE_ELEMENT (clip)->asset));
-  for (tmp = stream_assets; tmp; tmp = tmp->next) {
-    GESTrackElementAsset *asset = GES_TRACK_ELEMENT_ASSET (tmp->data);
-
-    if (ges_track_element_asset_get_track_type (asset) == type)
-      res = g_list_prepend (res, ges_asset_extract (GES_ASSET (asset), NULL));
+  if ((type & GES_TRACK_TYPE_AUDIO) &&
+      (ges_clip_get_supported_formats (clip) & GES_TRACK_TYPE_AUDIO)) {
+    tck_element =
+        GES_TRACK_ELEMENT (ges_audio_uri_source_new (g_strdup (uclip->
+                priv->uri)));
+    ges_track_element_set_track_type (tck_element, GES_TRACK_TYPE_AUDIO);
+    res = g_list_prepend (res, tck_element);
+  } else if ((type & GES_TRACK_TYPE_VIDEO) &&
+      (ges_clip_get_supported_formats (clip) & GES_TRACK_TYPE_VIDEO)) {
+    tck_element =
+        GES_TRACK_ELEMENT (ges_video_uri_source_new (g_strdup (uclip->
+                priv->uri)));
+    ges_track_element_set_track_type (tck_element, GES_TRACK_TYPE_VIDEO);
+    res = g_list_prepend (res, tck_element);
   }
 
   return res;
@@ -495,6 +389,46 @@ ges_uri_clip_create_track_element (GESClip * clip, GESTrackType type)
   return res;
 }
 
+static void
+_set_supported_formats (GESClip * clip, GrlMedia * media)
+{
+  GstDiscovererInfo *info;
+  GList *tmp, *stream_list;
+  const GValue *info_value;
+  GESTrackType supportedformats = GES_TRACK_TYPE_UNKNOWN;
+  GrlRegistry *registry = grl_registry_get_default ();
+  GrlKeyID disco_key_id =
+      grl_registry_lookup_metadata_key (registry, "discovery");
+
+  info_value = grl_data_get (GRL_DATA (media), disco_key_id);
+  info = g_value_get_object (info_value);
+
+  /* Extract infos from the GstDiscovererInfo */
+  stream_list = gst_discoverer_info_get_stream_list (info);
+  for (tmp = stream_list; tmp; tmp = tmp->next) {
+    GstDiscovererStreamInfo *sinf = (GstDiscovererStreamInfo *) tmp->data;
+
+    if (GST_IS_DISCOVERER_AUDIO_INFO (sinf)) {
+      if (supportedformats == GES_TRACK_TYPE_UNKNOWN)
+        supportedformats = GES_TRACK_TYPE_AUDIO;
+      else
+        supportedformats |= GES_TRACK_TYPE_AUDIO;
+    } else if (GST_IS_DISCOVERER_VIDEO_INFO (sinf)) {
+      if (supportedformats == GES_TRACK_TYPE_UNKNOWN)
+        supportedformats = GES_TRACK_TYPE_VIDEO;
+      else
+        supportedformats |= GES_TRACK_TYPE_VIDEO;
+    }
+  }
+
+  ges_clip_set_supported_formats (clip, supportedformats);
+  GST_ERROR ("setting duration to %lld",
+      (long long int) gst_discoverer_info_get_duration (info));
+  ges_timeline_element_set_duration (GES_TIMELINE_ELEMENT (clip),
+      gst_discoverer_info_get_duration (info));
+  GST_ERROR ("set duration");
+}
+
 /**
  * ges_uri_clip_new:
  * @uri: the URI the source should control
@@ -514,6 +448,7 @@ ges_uri_clip_new (const gchar * uri)
     media = grl_media_from_uri (uri);
     GST_ERROR ("we got ourselves a nice media : %p\n", media);
     res = g_object_new (GES_TYPE_URI_CLIP, "uri", uri, NULL);
+    _set_supported_formats (GES_CLIP (res), media);
   }
 
   return res;

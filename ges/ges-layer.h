@@ -108,6 +108,11 @@ GESClip * ges_layer_add_asset   (GESLayer *layer,
                                                        GstClockTime duration,
                                                        GESTrackType track_types);
 
+GESClip *
+ges_layer_add_clip_from_uri (GESLayer * layer,
+    const gchar *uri, GstClockTime start, GstClockTime inpoint,
+    GstClockTime duration, GESTrackType track_types);
+
 gboolean ges_layer_remove_clip (GESLayer * layer,
 					   GESClip * clip);
 

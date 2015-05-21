@@ -304,18 +304,6 @@ _ges_add_clip_from_struct (GESTimeline * timeline, GstStructure * structure,
     goto beach;
   }
 
-  if (type == GES_TYPE_URI_CLIP) {
-    asset_id = ensure_uri (asset_id);
-  } else {
-    asset_id = g_strdup (asset_id);
-  }
-
-  asset = _ges_get_asset_from_timeline (timeline, type, asset_id, error);
-  if (!asset) {
-    res = FALSE;
-
-    goto beach;
-  }
 
   if (layer_priority == -1) {
     GESContainer *container;
@@ -334,8 +322,23 @@ _ges_add_clip_from_struct (GESTimeline * timeline, GstStructure * structure,
     goto beach;
   }
 
-  clip = ges_layer_add_asset (layer, asset, start, inpoint, duration,
-      GES_TRACK_TYPE_UNKNOWN);
+  if (type == GES_TYPE_URI_CLIP) {
+    asset_id = ensure_uri (asset_id);
+    clip =
+        ges_layer_add_clip_from_uri (layer, asset_id, start, inpoint, duration,
+        GES_TRACK_TYPE_UNKNOWN);
+  } else {
+    asset_id = g_strdup (asset_id);
+    asset = _ges_get_asset_from_timeline (timeline, type, asset_id, error);
+    if (!asset) {
+      res = FALSE;
+
+      goto beach;
+    }
+    clip = ges_layer_add_asset (layer, asset, start, inpoint, duration,
+        GES_TRACK_TYPE_UNKNOWN);
+  }
+
 
   if (clip) {
     res = TRUE;

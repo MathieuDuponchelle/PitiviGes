@@ -792,13 +792,14 @@ ges_clip_create_track_elements (GESClip * clip, GESTrackType type)
   klass = GES_CLIP_GET_CLASS (clip);
 
   if (!(klass->create_track_elements)) {
-    GST_WARNING ("no GESClip::create_track_elements implentation");
+    GST_ERROR ("no GESClip::create_track_elements implentation");
     return NULL;
   }
 
-  GST_DEBUG_OBJECT (clip, "Creating TrackElements for type: %s",
+  GST_ERROR_OBJECT (clip, "Creating TrackElements for type: %s",
       ges_track_type_name (type));
   result = klass->create_track_elements (clip, type);
+  GST_ERROR ("created track elements\n");
 
   _get_priority_range (GES_CONTAINER (clip), &min_prio, &max_prio);
   for (tmp = result; tmp; tmp = tmp->next) {

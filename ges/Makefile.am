@@ -64,9 +64,6 @@ libges_@GST_API_VERSION@_la_SOURCES = 		\
 	ges-formatter.c				\
 	ges-pitivi-formatter.c			\
 	ges-asset.c \
-	ges-uri-asset.c \
-	ges-clip-asset.c \
-	ges-track-element-asset.c \
 	ges-extractable.c \
 	ges-project.c \
 	ges-base-xml-formatter.c \
@@ -83,6 +80,7 @@ libges_@GST_API_VERSION@_la_SOURCES = 		\
 	ges-validate.c \
 	ges-structured-interface.c \
 	ges-structure-parser.c \
+	ges-track-element-asset.c \
 	gstframepositionner.c
 
 libges_@GST_API_VERSION@includedir = $(includedir)/gstreamer-@GST_API_VERSION@/ges/
@@ -133,9 +131,6 @@ libges_@GST_API_VERSION@include_HEADERS = 	\
 	ges-formatter.h				\
 	ges-pitivi-formatter.h			\
 	ges-asset.h \
-	ges-uri-asset.h \
-	ges-clip-asset.h \
-	ges-track-element-asset.h \
 	ges-extractable.h \
 	ges-project.h \
 	ges-base-xml-formatter.h \
@@ -148,6 +143,7 @@ libges_@GST_API_VERSION@include_HEADERS = 	\
 	ges-smart-video-mixer.h \
 	ges-utils.h \
 	ges-group.h \
+	ges-track-element-asset.h \
 	ges-version.h
 
 noinst_HEADERS = \

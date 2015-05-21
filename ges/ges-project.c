@@ -741,11 +741,7 @@ ges_project_create_asset_sync (GESProject * project, const gchar * id,
   /* TODO Add a GCancellable somewhere in our API */
   while (retry) {
 
-    if (g_type_is_a (extractable_type, GES_TYPE_URI_CLIP)) {
-      asset = GES_ASSET (ges_uri_clip_asset_request_sync (id, error));
-    } else {
-      asset = ges_asset_request (extractable_type, id, error);
-    }
+    asset = ges_asset_request (extractable_type, id, error);
 
     if (asset) {
       retry = FALSE;

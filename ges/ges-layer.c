@@ -524,7 +524,7 @@ ges_layer_add_clip (GESLayer * layer, GESClip * clip)
   }
 
   asset = ges_extractable_get_asset (GES_EXTRACTABLE (clip));
-  if (asset == NULL) {
+  if (asset == NULL && FALSE) {
     gchar *id;
     NewAssetUData *mudata = g_slice_new (NewAssetUData);
 
@@ -626,16 +626,47 @@ ges_layer_add_asset (GESLayer * layer,
       GST_TIME_ARGS (inpoint), GST_TIME_ARGS (duration), track_types,
       ges_track_type_name (track_types));
 
-  if (g_type_is_a (ges_asset_get_extractable_type (asset), GES_TYPE_URI_CLIP)) {
-    GstDiscovererInfo *info =
-        ges_uri_clip_asset_get_info (GES_URI_CLIP_ASSET (asset));
+  clip = GES_CLIP (ges_asset_extract (asset, NULL));
 
-    GST_ERROR ("extracting a uri clip");
-    clip = GES_CLIP (ges_uri_clip_new (gst_discoverer_info_get_uri (info)));
-    GST_ERROR ("extracted the uri clip");
-  } else {
-    clip = GES_CLIP (ges_asset_extract (asset, NULL));
+  if (!GST_CLOCK_TIME_IS_VALID (start)) {
+    start = ges_layer_get_duration (layer);
+
+    GST_DEBUG_OBJECT (layer,
+        "No start specified, setting it to %" GST_TIME_FORMAT,
+        GST_TIME_ARGS (start));
   }
+
+  _set_start0 (GES_TIMELINE_ELEMENT (clip), start);
+  _set_inpoint0 (GES_TIMELINE_ELEMENT (clip), inpoint);
+  if (track_types != GES_TRACK_TYPE_UNKNOWN)
+    ges_clip_set_supported_formats (clip, track_types);
+
+  if (GST_CLOCK_TIME_IS_VALID (duration)) {
+    _set_duration0 (GES_TIMELINE_ELEMENT (clip), duration);
+  }
+
+  if (!ges_layer_add_clip (layer, clip)) {
+    gst_object_unref (clip);
+
+    return NULL;
+  }
+
+  return clip;
+}
+
+GESClip *
+ges_layer_add_clip_from_uri (GESLayer * layer,
+    const gchar * uri, GstClockTime start, GstClockTime inpoint,
+    GstClockTime duration, GESTrackType track_types)
+{
+  GESClip *clip;
+
+  g_return_val_if_fail (GES_IS_LAYER (layer), NULL);
+
+  clip = GES_CLIP (ges_uri_clip_new (uri));
+
+  if (!clip)
+    return NULL;
 
   if (!GST_CLOCK_TIME_IS_VALID (start)) {
     start = ges_layer_get_duration (layer);

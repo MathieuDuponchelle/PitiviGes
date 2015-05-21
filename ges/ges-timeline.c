@@ -2196,8 +2196,9 @@ layer_object_added_cb (GESLayer * layer, GESClip * clip, GESTimeline * timeline)
   GST_DEBUG ("Making sure that the asset is in our project");
   project =
       GES_PROJECT (ges_extractable_get_asset (GES_EXTRACTABLE (timeline)));
-  ges_project_add_asset (project,
-      ges_extractable_get_asset (GES_EXTRACTABLE (clip)));
+  if (FALSE)
+    ges_project_add_asset (project,
+        ges_extractable_get_asset (GES_EXTRACTABLE (clip)));
 
   GST_DEBUG ("Done");
 }
