@@ -419,21 +419,27 @@ _ges_container_add_child_from_struct (GESTimeline * timeline,
   id = gst_structure_get_string (structure, "asset-id");
   child_type = gst_structure_get_string (structure, "child-type");
 
+  GST_ERROR ("id : %s child-type : %s\n", id, child_type);
   if (id && child_type) {
-    asset =
-        _ges_get_asset_from_timeline (timeline, g_type_from_name (child_type),
-        id, error);
+    if (!g_strcmp0 (child_type, "GESEffect")) {
+      child = GES_TIMELINE_ELEMENT (ges_effect_new (id));
+      GST_ERROR ("created effect : %p\n", child);
+    } else {
+      asset =
+          _ges_get_asset_from_timeline (timeline, g_type_from_name (child_type),
+          id, error);
 
-    if (asset == NULL) {
-      res = FALSE;
-      goto beach;
-    }
+      if (asset == NULL) {
+        res = FALSE;
+        goto beach;
+      }
 
-    child = GES_TIMELINE_ELEMENT (ges_asset_extract (asset, NULL));
-    if (!GES_IS_TIMELINE_ELEMENT (child)) {
-      g_error_new (GES_ERROR, 0, "Could not extract child element");
+      child = GES_TIMELINE_ELEMENT (ges_asset_extract (asset, NULL));
+      if (!GES_IS_TIMELINE_ELEMENT (child)) {
+        g_error_new (GES_ERROR, 0, "Could not extract child element");
 
-      goto beach;
+        goto beach;
+      }
     }
   }
 
@@ -458,6 +464,7 @@ _ges_container_add_child_from_struct (GESTimeline * timeline,
   else
     child_name = GES_TIMELINE_ELEMENT_NAME (child);
 
+  GST_ERROR ("adding child %p to container %p", child, container);
   res = ges_container_add (container, child);
   if (res == FALSE) {
     g_error_new (GES_ERROR, 0, "Could not add child to container");

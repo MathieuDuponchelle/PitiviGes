@@ -24,18 +24,11 @@
  */
 
 #include "ges-internal.h"
-#include "ges-extractable.h"
 #include "ges-track-element.h"
 #include "ges-base-effect.h"
-#include "ges-effect-asset.h"
 #include "ges-effect.h"
 
-static void ges_extractable_interface_init (GESExtractableInterface * iface);
-
-G_DEFINE_TYPE_WITH_CODE (GESEffect,
-    ges_effect, GES_TYPE_BASE_EFFECT,
-    G_IMPLEMENT_INTERFACE (GES_TYPE_EXTRACTABLE,
-        ges_extractable_interface_init));
+G_DEFINE_TYPE (GESEffect, ges_effect, GES_TYPE_BASE_EFFECT);
 
 static void ges_effect_dispose (GObject * object);
 static void ges_effect_finalize (GObject * object);
@@ -51,47 +44,6 @@ enum
   PROP_0,
   PROP_BIN_DESCRIPTION,
 };
-
-static gchar *
-extractable_check_id (GType type, const gchar * id, GError ** error)
-{
-  GstElement *effect = gst_parse_bin_from_description (id, TRUE, error);
-
-  if (effect == NULL)
-    return NULL;
-
-  gst_object_unref (effect);
-  return g_strdup (id);
-}
-
-static GParameter *
-extractable_get_parameters_from_id (const gchar * id, guint * n_params)
-{
-  GParameter *params = g_new0 (GParameter, 2);
-
-  params[0].name = "bin-description";
-  g_value_init (&params[0].value, G_TYPE_STRING);
-  g_value_set_string (&params[0].value, id);
-
-  *n_params = 1;
-
-  return params;
-}
-
-static gchar *
-extractable_get_id (GESExtractable * self)
-{
-  return g_strdup (GES_EFFECT (self)->priv->bin_description);
-}
-
-static void
-ges_extractable_interface_init (GESExtractableInterface * iface)
-{
-  iface->asset_type = GES_TYPE_EFFECT_ASSET;
-  iface->check_id = (GESExtractableCheckId) extractable_check_id;
-  iface->get_parameters_from_id = extractable_get_parameters_from_id;
-  iface->get_id = extractable_get_id;
-}
 
 static void
 ges_effect_get_property (GObject * object,
@@ -191,6 +143,7 @@ ges_effect_create_element (GESTrackElement * object)
   GESTrack *track = ges_track_element_get_track (object);
   const gchar *wanted_categories[] = { "Effect", NULL };
 
+  GST_ERROR ("creating effect track element");
   if (!track) {
     GST_WARNING
         ("The object %p should be in a Track for the element to be created",
@@ -230,6 +183,40 @@ ges_effect_create_element (GESTrackElement * object)
   return effect;
 }
 
+static void
+_fill_track_type (GESEffect * self)
+{
+  GList *tmp;
+  GstElement *effect =
+      gst_parse_bin_from_description (self->priv->bin_description,
+      TRUE, NULL);
+
+  if (effect == NULL)
+    return;
+
+  for (tmp = GST_BIN_CHILDREN (effect); tmp; tmp = tmp->next) {
+    GstElementFactory *factory =
+        gst_element_get_factory (GST_ELEMENT (tmp->data));
+    const gchar *klass =
+        gst_element_factory_get_metadata (factory, GST_ELEMENT_METADATA_KLASS);
+
+    if (g_strrstr (klass, "Effect")) {
+      if (g_strrstr (klass, "Audio")) {
+        ges_track_element_set_track_type (GES_TRACK_ELEMENT (self),
+            GES_TRACK_TYPE_AUDIO);
+        break;
+      } else if (g_strrstr (klass, "Video")) {
+        ges_track_element_set_track_type (GES_TRACK_ELEMENT (self),
+            GES_TRACK_TYPE_VIDEO);
+        break;
+      }
+    }
+  }
+
+  gst_object_unref (effect);
+  return;
+}
+
 /**
  * ges_effect_new:
  * @bin_description: The gst-launch like bin description of the effect
@@ -243,14 +230,10 @@ GESEffect *
 ges_effect_new (const gchar * bin_description)
 {
   GESEffect *effect;
-  GESAsset *asset = ges_asset_request (GES_TYPE_EFFECT,
-      bin_description, NULL);
 
-  g_return_val_if_fail (asset, NULL);
-
-  effect = GES_EFFECT (ges_asset_extract (asset, NULL));
-
-  gst_object_unref (asset);
+  effect =
+      g_object_new (GES_TYPE_EFFECT, "bin-description", bin_description, NULL);
+  _fill_track_type (effect);
 
   return effect;
 }

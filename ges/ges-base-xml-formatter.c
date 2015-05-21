@@ -794,16 +794,8 @@ ges_base_xml_formatter_add_track_element (GESBaseXmlFormatter * self,
     goto out;
   }
 
-  asset = ges_asset_request (track_element_type, asset_id, &err);
-  if (asset == NULL) {
-    GST_DEBUG_OBJECT (self, "Can not create trackelement %s", asset_id);
-    GST_FIXME_OBJECT (self, "Check if missing plugins etc %s",
-        err ? err->message : "");
-
-    goto out;
-  }
-
-  trackelement = GES_TRACK_ELEMENT (ges_asset_extract (asset, NULL));
+  trackelement = GES_TRACK_ELEMENT (ges_effect_new (asset_id));
+  GST_ERROR ("created effect : %p\n", trackelement);
   if (trackelement) {
     GESClip *clip;
     if (metadatas)
