@@ -81,7 +81,7 @@ struct _GESTransitionClipClass {
 GType ges_transition_clip_get_type (void);
 
 GESTransitionClip *ges_transition_clip_new (GESVideoStandardTransitionType vtype);
-GESTransitionClip *ges_transition_clip_new_for_nick (char *nick);
+GESTransitionClip *ges_transition_clip_new_for_nick (const gchar *nick);
 
 G_END_DECLS
 

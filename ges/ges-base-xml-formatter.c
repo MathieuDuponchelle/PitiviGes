@@ -380,7 +380,6 @@ _loading_done (GESFormatter * self)
       priv->timeline_auto_transition);
 
   g_hash_table_foreach (priv->layers, (GHFunc) _set_auto_transition, NULL);
-  GST_ERROR ("project loaded believe it or not");
   ges_project_set_loaded (self->project, self);
 }
 
@@ -427,8 +426,6 @@ _add_object_to_layer (GESBaseXmlFormatterPrivate * priv, const gchar * id,
 {
   GESClip *clip;
 
-  GST_ERROR ("adding asset to layer : %s",
-      g_type_name (G_TYPE_FROM_INSTANCE (asset)));
   clip =
       ges_layer_add_asset (layer, asset, start, inpoint, duration, track_types);
 
@@ -452,7 +449,8 @@ _add_object_to_layer (GESBaseXmlFormatterPrivate * priv, const gchar * id,
 }
 
 static inline GESClip *
-_add_clip_to_layer (GESBaseXmlFormatterPrivate * priv, const gchar * id,
+_add_clip_to_layer (GESBaseXmlFormatterPrivate * priv, const gchar * asset_id,
+    const gchar * id,
     GESLayer * layer, GstClockTime start,
     GstClockTime inpoint, GstClockTime duration,
     GESTrackType track_types, const gchar * metadatas,
@@ -460,15 +458,42 @@ _add_clip_to_layer (GESBaseXmlFormatterPrivate * priv, const gchar * id,
 {
   GESClip *clip;
 
-  GST_ERROR ("adding clip from uri %s", id);
   clip = ges_layer_add_clip_from_uri (layer,
-      id, start, inpoint, duration, track_types);
+      asset_id, start, inpoint, duration, track_types);
 
   if (clip == NULL) {
     GST_WARNING_OBJECT (clip, "Could not add object from uri: %s", id);
 
     return NULL;
   }
+
+  if (metadatas)
+    ges_meta_container_add_metas_from_string (GES_META_CONTAINER (clip),
+        metadatas);
+
+  if (properties)
+    gst_structure_foreach (properties,
+        (GstStructureForeachFunc) set_property_foreach, clip);
+
+  g_hash_table_insert (priv->containers, g_strdup (id), gst_object_ref (clip));
+  return clip;
+}
+
+static inline GESClip *
+_add_transition_to_layer (GESBaseXmlFormatterPrivate * priv,
+    const gchar * asset_id, const gchar * id, GESLayer * layer,
+    GstClockTime start, GstClockTime inpoint, GstClockTime duration,
+    GESTrackType track_types, const gchar * metadatas,
+    GstStructure * properties)
+{
+  GESClip *clip;
+
+  clip = GES_CLIP (ges_transition_clip_new_for_nick (asset_id));
+  g_object_set (clip, "start", start, "in-point", inpoint, "duration", duration,
+      NULL);
+  ges_clip_set_supported_formats (clip, track_types);
+  if (!ges_layer_add_clip (layer, clip))
+    return NULL;
 
   if (metadatas)
     ges_meta_container_add_metas_from_string (GES_META_CONTAINER (clip),
@@ -583,9 +608,14 @@ ges_base_xml_formatter_add_clip (GESBaseXmlFormatter * self,
         "inpoint", "start", "duration", NULL);
 
   asset = ges_asset_request (type, asset_id, NULL);
+  g_print ("asset is is %s\n", asset_id);
   if (type == GES_TYPE_URI_CLIP)
-    priv->current_clip = _add_clip_to_layer (priv, asset_id, entry->layer,
+    priv->current_clip = _add_clip_to_layer (priv, asset_id, id, entry->layer,
         start, inpoint, duration, track_types, metadatas, properties);
+  else if (type == GES_TYPE_TRANSITION_CLIP)
+    priv->current_clip =
+        _add_transition_to_layer (priv, asset_id, id, entry->layer, start,
+        inpoint, duration, track_types, metadatas, properties);
   else
     priv->current_clip = _add_object_to_layer (priv, id, entry->layer,
         asset, start, inpoint, duration, track_types, metadatas, properties);
@@ -777,7 +807,6 @@ ges_base_xml_formatter_add_track_element (GESBaseXmlFormatter * self,
   GESTrackElement *trackelement;
 
   GError *err = NULL;
-  GESAsset *asset = NULL;
   GESBaseXmlFormatterPrivate *priv = _GET_PRIV (self);
 
   if (priv->check_only)
@@ -796,7 +825,6 @@ ges_base_xml_formatter_add_track_element (GESBaseXmlFormatter * self,
   }
 
   trackelement = GES_TRACK_ELEMENT (ges_effect_new (asset_id));
-  GST_ERROR ("created effect : %p\n", trackelement);
   if (trackelement) {
     GESClip *clip;
     if (metadatas)
@@ -813,11 +841,7 @@ ges_base_xml_formatter_add_track_element (GESBaseXmlFormatter * self,
     priv->current_track_element = trackelement;
   }
 
-  ges_project_add_asset (GES_FORMATTER (self)->project, asset);
-
 out:
-  if (asset)
-    gst_object_unref (asset);
   if (err)
     g_error_free (err);
 

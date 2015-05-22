@@ -564,8 +564,6 @@ ges_asset_cache_init (void)
   g_mutex_init (&asset_cache_lock);
   type_entries_table = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) g_hash_table_unref);
-
-  _init_standard_transition_assets ();
 }
 
 gboolean

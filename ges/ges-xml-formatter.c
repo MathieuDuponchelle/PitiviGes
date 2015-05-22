@@ -997,6 +997,7 @@ _save_effect (GString * str, guint clip_id, GESTrackElement * trackelement,
   gchar *properties, *metas;
   guint track_id = 0;
   gboolean serialize;
+  gchar *id;
 
   g_object_get (trackelement, "serialize", &serialize, NULL);
   if (!serialize) {
@@ -1021,6 +1022,7 @@ _save_effect (GString * str, guint clip_id, GESTrackElement * trackelement,
   }
   g_list_free_full (tracks, gst_object_unref);
 
+  g_object_get (trackelement, "bin-description", &id, NULL);
   properties = _serialize_properties (G_OBJECT (trackelement), "start",
       "in-point", "duration", "locked", "max-duration", "name", NULL);
   metas =
@@ -1028,11 +1030,12 @@ _save_effect (GString * str, guint clip_id, GESTrackElement * trackelement,
   append_escaped (str,
       g_markup_printf_escaped ("          <effect asset-id='%s' clip-id='%u'"
           " type-name='%s' track-type='%i' track-id='%i' properties='%s' metadatas='%s'",
-          ges_extractable_get_id (GES_EXTRACTABLE (trackelement)), clip_id,
+          id, clip_id,
           g_type_name (G_OBJECT_TYPE (trackelement)), tck->type, track_id,
           properties, metas));
   g_free (properties);
   g_free (metas);
+  g_free (id);
 
   _save_children_properties (str, trackelement);
   append_escaped (str, g_markup_printf_escaped (">\n"));
@@ -1071,6 +1074,7 @@ _save_layers (GESXmlFormatter * self, GString * str, GESTimeline * timeline)
       GList *tmptrackelement;
       GList *tracks;
       gboolean serialize;
+      gchar *id;
 
       clip = GES_CLIP (tmpclip->data);
 
@@ -1087,16 +1091,32 @@ _save_layers (GESXmlFormatter * self, GString * str, GESTimeline * timeline)
       properties = _serialize_properties (G_OBJECT (clip),
           "supported-formats", "rate", "in-point", "start", "duration",
           "max-duration", "priority", "vtype", "uri", NULL);
+
+      if (GES_IS_URI_CLIP (clip))
+        id = g_strdup (ges_uri_clip_get_uri (GES_URI_CLIP (clip)));
+      else if (GES_IS_TRANSITION_CLIP (clip)) {
+        GEnumValue *value;
+        gint vtype;
+        GEnumClass *enum_class =
+            g_type_class_peek (GES_VIDEO_STANDARD_TRANSITION_TYPE_TYPE);
+        g_object_get (clip, "vtype", &vtype, NULL);
+        value = g_enum_get_value (enum_class, vtype);
+        id = g_strdup (value->value_nick);
+      } else {
+        id = g_strdup (ges_extractable_get_id (GES_EXTRACTABLE (clip)));
+      }
+
       append_escaped (str,
           g_markup_printf_escaped ("        <clip id='%i' asset-id='%s'"
               " type-name='%s' layer-priority='%i' track-types='%i' start='%"
               G_GUINT64_FORMAT "' duration='%" G_GUINT64_FORMAT "' inpoint='%"
               G_GUINT64_FORMAT "' rate='%d' properties='%s' >\n",
-              priv->nbelements, ges_extractable_get_id (GES_EXTRACTABLE (clip)),
+              priv->nbelements, id,
               g_type_name (G_OBJECT_TYPE (clip)), priority,
               ges_clip_get_supported_formats (clip), _START (clip),
               _DURATION (clip), _INPOINT (clip), 0, properties));
       g_free (properties);
+      g_free (id);
 
       g_hash_table_insert (self->priv->element_id, clip,
           GINT_TO_POINTER (priv->nbelements));

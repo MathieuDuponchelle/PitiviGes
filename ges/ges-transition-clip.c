@@ -61,7 +61,7 @@ static void _child_removed (GESContainer * container,
 /* Internal methods */
 static void
 ges_transition_clip_update_vtype_internal (GESClip *
-    self, GESVideoStandardTransitionType value, gboolean set_asset)
+    self, GESVideoStandardTransitionType value)
 {
   GSList *tmp;
   guint index;
@@ -92,109 +92,10 @@ ges_transition_clip_update_vtype_internal (GESClip *
 
   trself->vtype = value;
   trself->priv->vtype_name = asset_id;
-
-  if (set_asset) {
-    /* We already checked the value, so we can be sure no error will accured */
-    ges_extractable_set_asset (GES_EXTRACTABLE (self),
-        ges_asset_request (GES_TYPE_TRANSITION_CLIP, asset_id, NULL));
-  }
 }
 
-/* GESExtractable interface overrides */
-static GParameter *
-extractable_get_parameters_from_id (const gchar * id, guint * n_params)
-{
-  GEnumClass *enum_class =
-      g_type_class_peek (GES_VIDEO_STANDARD_TRANSITION_TYPE_TYPE);
-  GParameter *params = g_new0 (GParameter, 1);
-  GEnumValue *value = g_enum_get_value_by_nick (enum_class, id);
-
-  params[0].name = "vtype";
-  g_value_init (&params[0].value, GES_VIDEO_STANDARD_TRANSITION_TYPE_TYPE);
-  g_value_set_enum (&params[0].value, value->value);
-  *n_params = 1;
-
-  return params;
-}
-
-static gchar *
-extractable_check_id (GType type, const gchar * id)
-{
-  guint index;
-  GEnumClass *enum_class;
-  enum_class = g_type_class_peek (GES_VIDEO_STANDARD_TRANSITION_TYPE_TYPE);
-
-  for (index = 0; index < enum_class->n_values; index++) {
-    if (g_strcmp0 (enum_class->values[index].value_nick, id) == 0)
-      return g_strdup (id);
-  }
-
-  return NULL;
-}
-
-static gchar *
-extractable_get_id (GESExtractable * self)
-{
-  guint index;
-  GEnumClass *enum_class;
-  guint value = GES_TRANSITION_CLIP (self)->vtype;
-
-  enum_class = g_type_class_peek (GES_VIDEO_STANDARD_TRANSITION_TYPE_TYPE);
-  for (index = 0; index < enum_class->n_values; index++) {
-    if (enum_class->values[index].value == value)
-      return g_strdup (enum_class->values[index].value_nick);
-  }
-
-  return NULL;
-}
-
-static gboolean
-extractable_set_asset (GESExtractable * self, GESAsset * asset)
-{
-  GEnumClass *enum_class;
-  GESVideoStandardTransitionType value;
-  GESTransitionClip *trans = GES_TRANSITION_CLIP (self);
-  const gchar *vtype = ges_asset_get_id (asset);
-
-  if (!(ges_clip_get_supported_formats (GES_CLIP (self)) &
-          GES_TRACK_TYPE_VIDEO)) {
-    return FALSE;
-  }
-
-  /* Update the transition type if we actually changed it */
-  if (g_strcmp0 (vtype, trans->priv->vtype_name)) {
-    guint index;
-
-    value = GES_VIDEO_STANDARD_TRANSITION_TYPE_CROSSFADE;
-    enum_class = g_type_class_peek (GES_VIDEO_STANDARD_TRANSITION_TYPE_TYPE);
-
-    /* Find the in value in use */
-    for (index = 0; index < enum_class->n_values; index++) {
-      if (g_strcmp0 (enum_class->values[index].value_nick, vtype) == 0) {
-        value = enum_class->values[index].value;
-        break;
-      }
-    }
-    ges_transition_clip_update_vtype_internal (GES_CLIP (self), value, FALSE);
-  }
-
-  return TRUE;
-}
-
-static void
-ges_extractable_interface_init (GESExtractableInterface * iface)
-{
-  iface->check_id = (GESExtractableCheckId) extractable_check_id;
-  iface->get_id = extractable_get_id;
-  iface->get_parameters_from_id = extractable_get_parameters_from_id;
-  iface->can_update_asset = TRUE;
-  iface->set_asset_full = extractable_set_asset;
-}
-
-G_DEFINE_TYPE_WITH_CODE (GESTransitionClip,
-    ges_transition_clip, GES_TYPE_BASE_TRANSITION_CLIP,
-    G_IMPLEMENT_INTERFACE (GES_TYPE_EXTRACTABLE,
-        ges_extractable_interface_init));
+G_DEFINE_TYPE (GESTransitionClip,
+    ges_transition_clip, GES_TYPE_BASE_TRANSITION_CLIP);
 
 static void
 ges_transition_clip_get_property (GObject * object,
@@ -219,7 +120,7 @@ ges_transition_clip_set_property (GObject * object,
   switch (property_id) {
     case PROP_VTYPE:
       ges_transition_clip_update_vtype_internal (self,
-          g_value_get_enum (value), TRUE);
+          g_value_get_enum (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -377,17 +278,13 @@ ges_transition_clip_new (GESVideoStandardTransitionType vtype)
  */
 
 GESTransitionClip *
-ges_transition_clip_new_for_nick (gchar * nick)
+ges_transition_clip_new_for_nick (const gchar * nick)
 {
-  GESTransitionClip *ret = NULL;
-  GESAsset *asset = ges_asset_request (GES_TYPE_TRANSITION_CLIP, nick, NULL);
+  GEnumClass *enum_class =
+      g_type_class_peek (GES_VIDEO_STANDARD_TRANSITION_TYPE_TYPE);
+  GEnumValue *value = g_enum_get_value_by_nick (enum_class, nick);
 
-  if (asset != NULL) {
-    ret = GES_TRANSITION_CLIP (ges_asset_extract (asset, NULL));
-
-    gst_object_unref (asset);
-  } else
-    GST_WARNING ("No asset found for nick: %s", nick);
-
-  return ret;
+  g_print ("nick is %s\n", nick);
+  return GES_TRANSITION_CLIP (g_object_new (GES_TYPE_TRANSITION_CLIP, "vtype",
+          value->value, NULL));
 }
