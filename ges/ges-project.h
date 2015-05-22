@@ -81,7 +81,7 @@ GList   * ges_project_list_assets  (GESProject * project,
 gboolean  ges_project_save         (GESProject * project,
                                     GESTimeline * timeline,
                                     const gchar *uri,
-                                    GESAsset * formatter_asset,
+                                    GESFormatter * formatter,
                                     gboolean overwrite,
                                     GError **error);
 gboolean  ges_project_load         (GESProject * project,

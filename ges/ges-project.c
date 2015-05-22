@@ -60,7 +60,7 @@ struct _GESProjectPrivate
   /* Set of asset ID being loaded */
   GHashTable *loading_assets;
   GHashTable *loaded_with_error;
-  GESAsset *formatter_asset;
+  GESFormatter *formatter;
 
   GList *formatters;
 
@@ -169,7 +169,6 @@ _load_project (GESProject * project, GESTimeline * timeline, GError ** error)
 {
   GError *lerr = NULL;
   GESProjectPrivate *priv;
-  GESFormatter *formatter;
 
   priv = GES_PROJECT (project)->priv;
 
@@ -188,24 +187,18 @@ _load_project (GESProject * project, GESTimeline * timeline, GError ** error)
     return TRUE;
   }
 
-  if (priv->formatter_asset == NULL)
-    priv->formatter_asset = _find_formatter_asset_for_id (priv->uri);
+  if (priv->formatter == NULL)
+    priv->formatter = _find_formatter_for_id (priv->uri);
 
-  if (priv->formatter_asset == NULL) {
+  if (priv->formatter == NULL) {
     lerr = g_error_new (GES_ERROR, 0, "Could not find a suitable formatter");
     goto failed;
   }
 
-  formatter = GES_FORMATTER (ges_asset_extract (priv->formatter_asset, &lerr));
-  if (lerr) {
-    GST_WARNING_OBJECT (project, "Could not create the formatter: %s",
-        (*error)->message);
-
-    goto failed;
-  }
-
-  ges_project_add_formatter (GES_PROJECT (project), formatter);
-  ges_formatter_load_from_uri (formatter, timeline, priv->uri, &lerr);
+  GST_ERROR ("now loading from uri, formatter is %s",
+      g_type_name (G_TYPE_FROM_INSTANCE (priv->formatter)));
+  ges_project_add_formatter (GES_PROJECT (project), priv->formatter);
+  ges_formatter_load_from_uri (priv->formatter, timeline, priv->uri, &lerr);
   if (lerr) {
     GST_WARNING_OBJECT (project, "Could not load the timeline,"
         " returning: %s", lerr->message);
@@ -359,8 +352,8 @@ _dispose (GObject * object)
     g_hash_table_unref (priv->loading_assets);
   if (priv->loaded_with_error)
     g_hash_table_unref (priv->loaded_with_error);
-  if (priv->formatter_asset)
-    gst_object_unref (priv->formatter_asset);
+  if (priv->formatter)
+    g_object_unref (priv->formatter);
 
   for (tmp = priv->formatters; tmp; tmp = tmp->next)
     ges_project_remove_formatter (GES_PROJECT (object), tmp->data);;
@@ -528,7 +521,7 @@ ges_project_init (GESProject * project)
 
   priv->uri = NULL;
   priv->formatters = NULL;
-  priv->formatter_asset = NULL;
+  priv->formatter = NULL;
   priv->encoding_profiles = NULL;
   priv->assets = g_hash_table_new_full (g_str_hash, g_str_equal,
       g_free, gst_object_unref);
@@ -889,7 +882,7 @@ ges_project_list_assets (GESProject * project, GType filter)
  * @project: A #GESProject to save
  * @timeline: The #GESTimeline to save, it must have been extracted from @project
  * @uri: The uri where to save @project and @timeline
- * @formatter_asset: (allow-none): The formatter asset to use or %NULL. If %NULL,
+ * @formatter: (allow-none): The formatter to use or %NULL. If %NULL,
  * will try to save in the same format as the one from which the timeline as been loaded
  * or default to the formatter with highest rank
  * @overwrite: %TRUE to overwrite file if it exists
@@ -903,17 +896,13 @@ ges_project_list_assets (GESProject * project, GType filter)
  */
 gboolean
 ges_project_save (GESProject * project, GESTimeline * timeline,
-    const gchar * uri, GESAsset * formatter_asset, gboolean overwrite,
+    const gchar * uri, GESFormatter * formatter, gboolean overwrite,
     GError ** error)
 {
   GESAsset *tl_asset;
   gboolean ret = TRUE;
-  GESFormatter *formatter = NULL;
 
   g_return_val_if_fail (GES_IS_PROJECT (project), FALSE);
-  g_return_val_if_fail (formatter_asset == NULL ||
-      g_type_is_a (ges_asset_get_extractable_type (formatter_asset),
-          GES_TYPE_FORMATTER), FALSE);
   g_return_val_if_fail ((error == NULL || *error == NULL), FALSE);
 
   tl_asset = ges_extractable_get_asset (GES_EXTRACTABLE (timeline));
@@ -938,18 +927,8 @@ ges_project_save (GESProject * project, GESTimeline * timeline,
     goto out;
   }
 
-  if (formatter_asset == NULL)
-    formatter_asset = gst_object_ref (ges_formatter_get_default ());
-
-  formatter = GES_FORMATTER (ges_asset_extract (formatter_asset, error));
-  if (formatter == NULL) {
-    GST_WARNING_OBJECT (project, "Could not create the formatter %p %s: %s",
-        formatter_asset, ges_asset_get_id (formatter_asset),
-        (error && *error) ? (*error)->message : "Unknown Error");
-
-    ret = FALSE;
-    goto out;
-  }
+  if (formatter == NULL)
+    formatter = ges_formatter_get_default ();
 
   ges_project_add_formatter (project, formatter);
   ret = ges_formatter_save_to_uri (formatter, timeline, uri, overwrite, error);
@@ -957,8 +936,6 @@ ges_project_save (GESProject * project, GESTimeline * timeline,
     ges_project_set_uri (project, uri);
 
 out:
-  if (formatter_asset)
-    gst_object_unref (formatter_asset);
   ges_project_remove_formatter (project, formatter);
 
   return ret;

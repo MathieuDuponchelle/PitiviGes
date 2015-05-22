@@ -717,6 +717,7 @@ ges_pitivi_formatter_class_init (GESPitiviFormatterClass * klass)
   formatter_klass->can_load_uri = pitivi_can_load_uri;
   formatter_klass->save_to_uri = NULL;
   formatter_klass->load_from_uri = load_pitivi_file_from_uri;
+
   object_class->finalize = ges_pitivi_formatter_finalize;
 
   ges_formatter_class_register_metas (formatter_klass, "pitivi",

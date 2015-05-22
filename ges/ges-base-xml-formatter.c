@@ -164,6 +164,7 @@ _load_from_uri (GESFormatter * self, GESTimeline * timeline, const gchar * uri,
 {
   GESBaseXmlFormatterPrivate *priv = _GET_PRIV (self);
 
+  priv->check_only = FALSE;
   ges_timeline_set_auto_transition (timeline, FALSE);
 
   priv->parsecontext =

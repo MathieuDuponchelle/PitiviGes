@@ -160,6 +160,6 @@ gboolean ges_formatter_save_to_uri      (GESFormatter * formatter,
                                          gboolean overwrite,
                                          GError **error);
 
-GESAsset *ges_formatter_get_default    (void);
+GESFormatter *ges_formatter_get_default    (void);
 
 #endif /* _GES_FORMATTER */

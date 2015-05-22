@@ -34,11 +34,8 @@
 #include "ges.h"
 
 /* TODO Add a GCancellable somewhere in the API */
-static void ges_extractable_interface_init (GESExtractableInterface * iface);
 
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (GESFormatter, ges_formatter,
-    G_TYPE_INITIALLY_UNOWNED, G_IMPLEMENT_INTERFACE (GES_TYPE_EXTRACTABLE,
-        ges_extractable_interface_init));
+G_DEFINE_ABSTRACT_TYPE (GESFormatter, ges_formatter, G_TYPE_INITIALLY_UNOWNED);
 
 struct _GESFormatterPrivate
 {
@@ -48,62 +45,6 @@ struct _GESFormatterPrivate
 static void ges_formatter_dispose (GObject * object);
 static gboolean default_can_load_uri (GESFormatter * dummy_instance,
     const gchar * uri, GError ** error);
-
-/* GESExtractable implementation */
-static gchar *
-extractable_check_id (GType type, const gchar * id)
-{
-  GESFormatterClass *class;
-
-  if (id)
-    return g_strdup (id);
-
-  class = g_type_class_peek (type);
-  return g_strdup (class->name);
-}
-
-static gchar *
-extractable_get_id (GESExtractable * self)
-{
-  GESAsset *asset;
-
-  if (!(asset = ges_extractable_get_asset (self)))
-    return NULL;
-
-  return g_strdup (ges_asset_get_id (asset));
-}
-
-static gboolean
-_register_metas (GESExtractableInterface * iface, GObjectClass * class,
-    GESAsset * asset)
-{
-  GESFormatterClass *fclass = GES_FORMATTER_CLASS (class);
-  GESMetaContainer *container = GES_META_CONTAINER (asset);
-
-  ges_meta_container_register_meta_string (container, GES_META_READABLE,
-      GES_META_FORMATTER_NAME, fclass->name);
-  ges_meta_container_register_meta_string (container, GES_META_READABLE,
-      GES_META_DESCRIPTION, fclass->description);
-  ges_meta_container_register_meta_string (container, GES_META_READABLE,
-      GES_META_FORMATTER_MIMETYPE, fclass->mimetype);
-  ges_meta_container_register_meta_string (container, GES_META_READABLE,
-      GES_META_FORMATTER_EXTENSION, fclass->extension);
-  ges_meta_container_register_meta_double (container, GES_META_READABLE,
-      GES_META_FORMATTER_VERSION, fclass->version);
-  ges_meta_container_register_meta_uint (container, GES_META_READABLE,
-      GES_META_FORMATTER_RANK, fclass->rank);
-
-  return TRUE;
-}
-
-static void
-ges_extractable_interface_init (GESExtractableInterface * iface)
-{
-  iface->check_id = (GESExtractableCheckId) extractable_check_id;
-  iface->get_id = extractable_get_id;
-  iface->asset_type = GES_TYPE_ASSET;
-  iface->register_metas = _register_metas;
-}
 
 static void
 ges_formatter_class_init (GESFormatterClass * klass)
@@ -402,35 +343,66 @@ ges_formatter_save_to_uri (GESFormatter * formatter, GESTimeline *
   return ret;
 }
 
+static void
+_list_formatter_classes (GType parent, GList ** formatters)
+{
+  GType *children;
+  guint i, n_children;
+
+  children = g_type_children (parent, &n_children);
+
+  for (i = 0; i < n_children; i++) {
+    if (G_TYPE_IS_INSTANTIATABLE (children[i]) &&
+        !G_TYPE_IS_ABSTRACT (children[i]))
+      *formatters = g_list_append (*formatters, g_type_class_ref (children[i]));
+
+    _list_formatter_classes (children[i], formatters);
+  }
+
+  g_free (children);
+}
+
+static void
+_find_best_formatter (GType parent, GType * best, guint * best_rank)
+{
+  GType *children;
+  guint i, n_children;
+
+  children = g_type_children (parent, &n_children);
+
+  for (i = 0; i < n_children; i++) {
+    GTypeClass *klass = g_type_class_ref (children[i]);
+    GESFormatterClass *formatter_class = GES_FORMATTER_CLASS (klass);
+
+    if (formatter_class->rank > *best_rank) {
+      *best_rank = formatter_class->rank;
+      *best = children[i];
+    }
+
+    _find_best_formatter (children[i], best, best_rank);
+    g_type_class_unref (klass);
+  }
+
+  g_free (children);
+}
+
 /**
  * ges_formatter_get_default:
  *
  * Get the default #GESAsset to use as formatter. It will return
  * the asset for the #GESFormatter that has the highest @rank
  *
- * Returns: (transfer none): The #GESAsset for the formatter with highest @rank
+ * Returns: (transfer none): The #GESFormatter with the highest rank
  */
-GESAsset *
+GESFormatter *
 ges_formatter_get_default (void)
 {
-  GList *assets, *tmp;
-  GESAsset *ret = NULL;
-  GstRank tmprank, rank = GST_RANK_NONE;
+  GType best_formatter;
+  guint best_rank = 0;
 
-  assets = ges_list_assets (GES_TYPE_FORMATTER);
-  for (tmp = assets; tmp; tmp = tmp->next) {
-    tmprank = GST_RANK_NONE;
-    ges_meta_container_get_uint (GES_META_CONTAINER (tmp->data),
-        GES_META_FORMATTER_RANK, &tmprank);
+  _find_best_formatter (GES_TYPE_FORMATTER, &best_formatter, &best_rank);
 
-    if (tmprank > rank) {
-      rank = tmprank;
-      ret = GES_ASSET (tmp->data);
-    }
-  }
-  g_list_free (assets);
-
-  return ret;
+  return g_object_new (best_formatter, NULL);
 }
 
 void
@@ -461,86 +433,41 @@ ges_formatter_get_project (GESFormatter * formatter)
   return formatter->project;
 }
 
-static void
-_list_formatters (GType * formatters, guint n_formatters)
-{
-  GType *tmptypes, type;
-  guint tmp_n_types, i;
-
-  for (i = 0; i < n_formatters; i++) {
-    type = formatters[i];
-    tmptypes = g_type_children (type, &tmp_n_types);
-    if (tmp_n_types) {
-      /* Recurse as g_type_children does not */
-      _list_formatters (tmptypes, tmp_n_types);
-    }
-    g_free (tmptypes);
-
-    if (G_TYPE_IS_ABSTRACT (type)) {
-      GST_DEBUG ("%s is abstract, not using", g_type_name (type));
-    } else {
-      gst_object_unref (ges_asset_request (type, NULL, NULL));
-    }
-  }
-}
-
-void
-_init_formatter_assets (void)
-{
-  GType *formatters;
-  guint n_formatters;
-
-  formatters = g_type_children (GES_TYPE_FORMATTER, &n_formatters);
-  _list_formatters (formatters, n_formatters);
-  g_free (formatters);
-}
-
 static gint
-_sort_formatters (GESAsset * asset, GESAsset * asset1)
+_sort_formatters (GESFormatterClass * formatter_class,
+    GESFormatterClass * formatter_class1)
 {
-  GESFormatterClass *class =
-      g_type_class_peek (ges_asset_get_extractable_type (asset));
-  GESFormatterClass *class1 =
-      g_type_class_peek (ges_asset_get_extractable_type (asset1));
-
   /* We want the highest ranks to be first! */
-  if (class->rank > class1->rank)
+  if (formatter_class->rank > formatter_class1->rank)
     return -1;
-  else if (class->rank < class1->rank)
+  else if (formatter_class->rank < formatter_class1->rank)
     return 1;
 
   return 0;
 }
 
-GESAsset *
-_find_formatter_asset_for_id (const gchar * id)
+GESFormatter *
+_find_formatter_for_id (const gchar * id)
 {
-  GESFormatterClass *class = NULL;
-  GList *formatter_assets, *tmp;
-  GESAsset *asset = NULL;
+  GList *formatter_classes = NULL;
+  GList *tmp;
+  GESFormatter *formatter = NULL;
 
-  formatter_assets = g_list_sort (ges_list_assets (GES_TYPE_FORMATTER),
-      (GCompareFunc) _sort_formatters);
-  for (tmp = formatter_assets; tmp; tmp = tmp->next) {
-    GESFormatter *dummy_instance;
+  _list_formatter_classes (GES_TYPE_FORMATTER, &formatter_classes);
+  formatter_classes =
+      g_list_sort (formatter_classes, (GCompareFunc) _sort_formatters);
+  for (tmp = formatter_classes; tmp; tmp = tmp->next) {
+    GESFormatterClass *klass = GES_FORMATTER_CLASS (tmp->data);
 
-    asset = GES_ASSET (tmp->data);
-    class = g_type_class_ref (ges_asset_get_extractable_type (asset));
-    dummy_instance =
-        g_object_new (ges_asset_get_extractable_type (asset), NULL);
-    if (class->can_load_uri (dummy_instance, id, NULL)) {
-      g_type_class_unref (class);
-      asset = gst_object_ref (asset);
-      gst_object_unref (dummy_instance);
+    formatter = g_object_new (G_TYPE_FROM_CLASS (klass), NULL);
+    if (klass->can_load_uri (formatter, id, NULL)) {
       break;
     }
 
-    asset = NULL;
-    g_type_class_unref (class);
-    gst_object_unref (dummy_instance);
+    g_object_unref (formatter);
   }
 
-  g_list_free (formatter_assets);
+  g_list_free (formatter_classes);
 
-  return asset;
+  return formatter;
 }

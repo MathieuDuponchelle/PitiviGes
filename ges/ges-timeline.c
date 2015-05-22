@@ -2578,7 +2578,7 @@ ges_timeline_load_from_uri (GESTimeline * timeline, const gchar * uri,
  * ges_timeline_save_to_uri:
  * @timeline: a #GESTimeline
  * @uri: The location to save to
- * @formatter_asset: (allow-none): The formatter asset to use or %NULL. If %NULL,
+ * @formatter: (allow-none): The formatter to use or %NULL. If %NULL,
  * will try to save in the same format as the one from which the timeline as been loaded
  * or default to the formatter with highest rank
  * @overwrite: %TRUE to overwrite file if it exists
@@ -2591,7 +2591,7 @@ ges_timeline_load_from_uri (GESTimeline * timeline, const gchar * uri,
  */
 gboolean
 ges_timeline_save_to_uri (GESTimeline * timeline, const gchar * uri,
-    GESAsset * formatter_asset, gboolean overwrite, GError ** error)
+    GESFormatter * formatter, gboolean overwrite, GError ** error)
 {
   GESProject *project;
 
@@ -2606,8 +2606,7 @@ ges_timeline_save_to_uri (GESTimeline * timeline, const gchar * uri,
     created_proj = TRUE;
   }
 
-  ret = ges_project_save (project, timeline, uri, formatter_asset, overwrite,
-      error);
+  ret = ges_project_save (project, timeline, uri, formatter, overwrite, error);
 
   if (created_proj)
     gst_object_unref (project);

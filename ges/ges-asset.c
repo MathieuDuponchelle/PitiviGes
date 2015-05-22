@@ -565,7 +565,6 @@ ges_asset_cache_init (void)
   type_entries_table = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) g_hash_table_unref);
 
-  _init_formatter_assets ();
   _init_standard_transition_assets ();
 }
 

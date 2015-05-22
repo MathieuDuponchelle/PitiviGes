@@ -162,8 +162,8 @@ ges_formatter_set_project                        (GESFormatter *formatter,
                                                   GESProject *project);
 G_GNUC_INTERNAL GESProject *
 ges_formatter_get_project                        (GESFormatter *formatter);
-G_GNUC_INTERNAL  GESAsset *
-_find_formatter_asset_for_id                     (const gchar *id);
+G_GNUC_INTERNAL  GESFormatter *
+_find_formatter_for_id                     (const gchar *id);
 
 
 
