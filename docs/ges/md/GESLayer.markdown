@@ -1,0 +1,18 @@
+### GESLayer
+
+* [GESLayer]()
+* [GESLayerClass]()
+* [ges_layer_add_clip]()
+* [ges_layer_add_asset]()
+* [ges_layer_new]()
+* [ges_layer_remove_clip]()
+* [ges_layer_set_priority]()
+* [ges_layer_get_priority]()
+* [ges_layer_get_clips]()
+* [ges_layer_get_timeline]()
+* [ges_layer_get_auto_transition]()
+* [ges_layer_set_auto_transition]()
+* [ges_layer_is_empty]()
+* [ges_layer_get_duration]()
+* [GES_TIMELINE_GET_LAYERS]()
+* [GES_TIMELINE_GET_TRACKS]()

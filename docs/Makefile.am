@@ -1,5 +1,5 @@
 if ENABLE_GTK_DOC
-DOCS_SUBDIRS = libs
+DOCS_SUBDIRS = ges
 else
 DOCS_SUBDIRS = 
 endif

@@ -1,0 +1,18 @@
+### GESTextOverlayClip
+
+* [GESTextOverlayClip]()
+* [ges_text_overlay_clip_new]()
+* [ges_text_overlay_clip_set_text]()
+* [ges_text_overlay_clip_set_font_desc]()
+* [ges_text_overlay_clip_set_valign]()
+* [ges_text_overlay_clip_set_halign]()
+* [ges_text_overlay_clip_set_color]()
+* [ges_text_overlay_clip_set_xpos]()
+* [ges_text_overlay_clip_set_ypos]()
+* [ges_text_overlay_clip_get_text]()
+* [ges_text_overlay_clip_get_font_desc]()
+* [ges_text_overlay_clip_get_valignment]()
+* [ges_text_overlay_clip_get_halignment]()
+* [ges_text_overlay_clip_get_color]()
+* [ges_text_overlay_clip_get_xpos]()
+* [ges_text_overlay_clip_get_ypos]()

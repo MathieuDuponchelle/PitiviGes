@@ -449,7 +449,7 @@ tests/validate/scenarios/Makefile
 tools/Makefile
 docs/Makefile
 docs/version.entities
-docs/libs/Makefile
+docs/ges/Makefile
 pkgconfig/Makefile
 pkgconfig/gst-editing-services.pc
 pkgconfig/gst-editing-services-uninstalled.pc

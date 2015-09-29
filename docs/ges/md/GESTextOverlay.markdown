@@ -1,0 +1,18 @@
+### GESTextOverlay
+
+* [GESTextOverlay]()
+* [ges_text_overlay_new]()
+* [ges_text_overlay_set_text]()
+* [ges_text_overlay_set_font_desc]()
+* [ges_text_overlay_set_halignment]()
+* [ges_text_overlay_set_valignment]()
+* [ges_text_overlay_set_color]()
+* [ges_text_overlay_set_xpos]()
+* [ges_text_overlay_set_ypos]()
+* [ges_text_overlay_get_text]()
+* [ges_text_overlay_get_font_desc]()
+* [ges_text_overlay_get_halignment]()
+* [ges_text_overlay_get_valignment]()
+* [ges_text_overlay_get_color]()
+* [ges_text_overlay_get_xpos]()
+* [ges_text_overlay_get_ypos]()
