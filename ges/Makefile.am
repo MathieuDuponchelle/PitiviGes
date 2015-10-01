@@ -138,8 +138,6 @@ libges_@GST_API_VERSION@include_HEADERS = 	\
 	ges-timeline-element.h \
 	ges-container.h \
 	ges-effect-asset.h \
-	ges-smart-adder.h \
-	ges-smart-video-mixer.h \
 	ges-utils.h \
 	ges-group.h \
 	ges-version.h
@@ -147,6 +145,8 @@ libges_@GST_API_VERSION@include_HEADERS = 	\
 noinst_HEADERS = \
 	ges-internal.h \
 	ges-auto-transition.h \
+	ges-smart-adder.h \
+	ges-smart-video-mixer.h \
 	ges-structured-interface.h \
 	ges-structure-parser.h \
 	gstframepositionner.h
