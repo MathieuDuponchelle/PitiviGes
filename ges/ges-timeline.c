@@ -172,6 +172,8 @@ struct _GESTimelinePrivate
   GHashTable *by_object;        /* {timecode: Source} */
   GHashTable *obj_iters;        /* {Source: TrackObjIters} */
   GSequence *starts_ends;       /* Sorted list of starts/ends */
+  GSequence *extra_snapping_points;     /* User-defined snapping points */
+
   /* We keep 1 reference to our trackelement here */
   GSequence *tracksources;      /* Source-s sorted by start/priorities */
 
@@ -362,6 +364,7 @@ ges_timeline_dispose (GObject * object)
   g_hash_table_unref (priv->by_layer);
   g_hash_table_unref (priv->obj_iters);
   g_sequence_free (priv->starts_ends);
+  g_sequence_free (priv->extra_snapping_points);
   g_sequence_free (priv->tracksources);
   g_list_free (priv->movecontext.moving_trackelements);
   g_hash_table_unref (priv->movecontext.toplevel_containers);
@@ -644,6 +647,7 @@ ges_timeline_init (GESTimeline * self)
   priv->obj_iters = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL,
       (GDestroyNotify) _destroy_obj_iters);
   priv->starts_ends = g_sequence_new (g_free);
+  priv->extra_snapping_points = g_sequence_new (g_free);
   priv->tracksources = g_sequence_new (gst_object_unref);
 
   priv->needs_transitions_update = TRUE;
@@ -1219,17 +1223,20 @@ ges_timeline_snap_position (GESTimeline * timeline,
   GESContainer *container = get_toplevel_container (trackelement);
   GstClockTime *ret = NULL;
   GstClockTime smallest_offset = G_MAXUINT64;
-  GstClockTime tmp_pos;
+  GstClockTime start_pos, end_pos;
 
-  tmp_pos = timecode - priv->snapping_distance;
+
+  start_pos = timecode - priv->snapping_distance;
+  end_pos = timecode + priv->snapping_distance;
   /* Rippling, not snapping with previous elements */
   if (priv->movecontext.moving_trackelements)
-    tmp_pos = timecode;
-  iter = g_sequence_search (priv->starts_ends, &tmp_pos,
+    start_pos = timecode;
+
+  /* check elements in the timeline */
+  iter = g_sequence_search (priv->starts_ends, &start_pos,
       (GCompareDataFunc) compare_uint64, NULL);
 
-  tmp_pos = timecode + priv->snapping_distance;
-  end_iter = g_sequence_search (priv->starts_ends, &tmp_pos,
+  end_iter = g_sequence_search (priv->starts_ends, &end_pos,
       (GCompareDataFunc) compare_uint64, NULL);
 
   for (; iter != end_iter && !g_sequence_iter_is_end (iter);
@@ -1247,6 +1254,23 @@ ges_timeline_snap_position (GESTimeline * timeline,
 
     smallest_offset = ABS (timecode - *iter_tc);
     ret = iter_tc;
+  }
+
+  /* check user-defined snapping points, simpler */
+  iter = g_sequence_search (priv->extra_snapping_points,
+      &start_pos, (GCompareDataFunc) compare_uint64, NULL);
+  end_iter = g_sequence_search (priv->extra_snapping_points,
+      &end_pos, (GCompareDataFunc) compare_uint64, NULL);
+
+  for (; iter != end_iter && !g_sequence_iter_is_end (iter);
+      iter = g_sequence_iter_next (iter)) {
+    GstClockTime *iter_tc = g_sequence_get (iter);
+
+    if (smallest_offset == GST_CLOCK_TIME_NONE ||
+        ABS (timecode - *iter_tc) < smallest_offset) {
+      smallest_offset = ABS (timecode - *iter_tc);
+      ret = iter_tc;
+    }
   }
 
   /* We emit the snapping signal only if we snapped with a different value
@@ -3463,6 +3487,169 @@ ges_timeline_set_snapping_distance (GESTimeline * timeline,
   g_return_if_fail (GES_IS_TIMELINE (timeline));
 
   timeline->priv->snapping_distance = snapping_distance;
+}
+
+/**
+ * ges_timeline_add_snapping_points:
+ * @timeline: the instance
+ * @n_points: The number of points
+ * @snapping_points: (array length=n_points) (element-type GstClockTime) (transfer none):
+ * A list of timestamps that can be snapped to.
+ *
+ * This function allows to add custom snapping points in addition
+ * to the clips start and stop points.
+ *
+ * See #GESTimeline:snapping-distance for more information.
+ *
+ * Returns: %TRUE if the snapping points were added, %FALSE otherwise.
+ *
+ * Since: 1.7.1
+ */
+void
+ges_timeline_add_snapping_points (GESTimeline * timeline,
+    gsize n_points, const GstClockTime * snapping_points)
+{
+  guint i;
+  GESTimelinePrivate *priv;
+
+  g_return_if_fail (GES_IS_TIMELINE (timeline));
+
+  priv = timeline->priv;
+
+  for (i = 0; i < n_points; i++) {
+    GstClockTime *point = g_malloc (sizeof (GstClockTime));
+
+    *point = snapping_points[i];
+    g_sequence_insert_sorted (priv->extra_snapping_points, point,
+        (GCompareDataFunc) compare_uint64, NULL);
+  }
+}
+
+/**
+ * ges_timeline_remove_snapping_points_in_range:
+ * @timeline: the instance.
+ * @start: The start of the range in which to remove snapping
+ * points, exclusive. Use %GST_CLOCK_TIME_NONE if you want
+ * to remove points starting from the first one.
+ * @end: The end of the range in which to remove snapping
+ * points, use %GST_CLOCK_TIME_NONE to remove all the points
+ * situated after @start. Inclusive.
+ *
+ * This function allows removing custom snapping points over a
+ * specified range.
+ *
+ * Returns: the number of points removed
+ *
+ * Since: 1.7.1
+ */
+guint
+ges_timeline_remove_snapping_points_in_range (GESTimeline * timeline,
+    GstClockTime start, GstClockTime end)
+{
+  GSequenceIter *iter, *end_iter;
+  GESTimelinePrivate *priv;
+  guint res = 0;
+
+  g_return_val_if_fail (GES_IS_TIMELINE (timeline), 0);
+
+  priv = timeline->priv;
+
+  if (start > end) {
+    GstClockTime proxy = start;
+    start = end;
+    end = proxy;
+  }
+
+  if (start == GST_CLOCK_TIME_NONE)
+    iter = g_sequence_get_begin_iter (priv->extra_snapping_points);
+  else
+    iter = g_sequence_search (priv->extra_snapping_points, &start,
+        (GCompareDataFunc) compare_uint64, NULL);
+
+  if (end == GST_CLOCK_TIME_NONE) {
+    end_iter = g_sequence_get_end_iter (priv->extra_snapping_points);
+  } else {
+    end_iter = g_sequence_search (priv->extra_snapping_points, &end,
+        (GCompareDataFunc) compare_uint64, NULL);
+  }
+
+  res = g_sequence_iter_get_position (end_iter) -
+      g_sequence_iter_get_position (iter);
+
+  g_sequence_remove_range (iter, end_iter);
+
+  return res;
+}
+
+
+
+/**
+ * ges_timeline_get_snapping_points:
+ * @timeline: a timeline instance
+ * @start: The start of the range in which to retrieve snapping
+ * points, exclusive. Use %GST_CLOCK_TIME_NONE if you want
+ * to retrieve points starting from the first one.
+ * @end: The end of the range in which to retrieve snapping
+ * points, use %GST_CLOCK_TIME_NONE to retrieve all the points
+ * situated after @start. Inclusive.
+ * @n_points: (out): size of the returned array
+ * @snapping_points: (array length=n_points) (out) (element-type GstClockTime):
+ * The resulting array
+ *
+ * This function allows retrieving custom snapping points over a
+ * specified range.
+ *
+ * Returns: %TRUE if the query was valid, %FALSE otherwise
+ *
+ * Since: 1.7.1
+ */
+void
+ges_timeline_get_snapping_points (GESTimeline * timeline, GstClockTime start,
+    GstClockTime end, gsize * n_points, GstClockTime ** snapping_points)
+{
+  GSequenceIter *iter, *end_iter;
+  GESTimelinePrivate *priv;
+  GstClockTime *tmpsnap;
+  guint i = 0;
+
+  g_return_if_fail (GES_IS_TIMELINE (timeline));
+
+  priv = timeline->priv;
+
+  if (start > end) {
+    GstClockTime proxy = start;
+    start = end;
+    end = proxy;
+  }
+
+  if (start == GST_CLOCK_TIME_NONE)
+    iter = g_sequence_get_begin_iter (priv->extra_snapping_points);
+  else
+    iter = g_sequence_search (priv->extra_snapping_points, &start,
+        (GCompareDataFunc) compare_uint64, NULL);
+
+  if (end == GST_CLOCK_TIME_NONE) {
+    end_iter = g_sequence_get_end_iter (priv->extra_snapping_points);
+  } else {
+    end_iter = g_sequence_search (priv->extra_snapping_points, &end,
+        (GCompareDataFunc) compare_uint64, NULL);
+  }
+
+  *n_points = g_sequence_iter_get_position (end_iter) -
+      g_sequence_iter_get_position (iter);
+
+  *snapping_points = g_malloc (sizeof (GstClockTime) * (*n_points));
+
+  while (iter != end_iter) {
+    tmpsnap = g_sequence_get (iter);
+
+    if (*tmpsnap > end)
+      break;
+
+    (*snapping_points)[i] = *tmpsnap;
+    i += 1;
+    iter = g_sequence_iter_next (iter);
+  }
 }
 
 /**

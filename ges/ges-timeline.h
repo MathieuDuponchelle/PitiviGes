@@ -127,6 +127,19 @@ gboolean ges_timeline_get_auto_transition (GESTimeline * timeline);
 void ges_timeline_set_auto_transition (GESTimeline * timeline, gboolean auto_transition);
 GstClockTime ges_timeline_get_snapping_distance (GESTimeline * timeline);
 void ges_timeline_set_snapping_distance (GESTimeline * timeline, GstClockTime snapping_distance);
+
+void ges_timeline_add_snapping_points(GESTimeline *timeline,
+                                          gsize n_points,
+                                          const GstClockTime *snapping_points);
+void ges_timeline_get_snapping_points(GESTimeline *timeline,
+                                          GstClockTime start,
+                                          GstClockTime end,
+                                          gsize *n_points,
+                                          GstClockTime **snapping_points);
+guint ges_timeline_remove_snapping_points_in_range (GESTimeline * timeline,
+                                                    GstClockTime start,
+                                                    GstClockTime end);
+
 GESTimelineElement * ges_timeline_get_element (GESTimeline * timeline, const gchar *name);
 gboolean ges_timeline_is_empty (GESTimeline * timeline);
 

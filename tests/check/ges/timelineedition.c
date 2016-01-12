@@ -234,6 +234,111 @@ GST_START_TEST (test_basic_timeline_edition)
 
 GST_END_TEST;
 
+GST_START_TEST (test_custom_snapping)
+{
+  GESTrack *track;
+  GESTimeline *timeline;
+  GESContainer *clip, *clip1, *clip2;
+  GESLayer *layer;
+  GstClockTime *custom_snaps = NULL;
+  gsize n_snaps = 0;
+  GstClockTime snaps[2] = { 0, 12 };
+
+  track = GES_TRACK (ges_video_track_new ());
+  fail_unless (track != NULL);
+
+  timeline = ges_timeline_new ();
+  fail_unless (timeline != NULL);
+
+  fail_unless (ges_timeline_add_track (timeline, track));
+
+  clip = GES_CONTAINER (ges_test_clip_new ());
+  clip1 = GES_CONTAINER (ges_test_clip_new ());
+  clip2 = GES_CONTAINER (ges_test_clip_new ());
+
+  fail_unless (clip && clip1 && clip2);
+
+  /**
+   * Our timeline
+   * ------------
+   * inpoints 0--------+    0---------+    0---------+
+   *          |  clip  |    |  clip1  |    |  clip2  |
+   * time     0--------10  20---------30  40---------50
+   */
+
+  g_object_set (clip, "start", (guint64) 0, "duration", (guint64) 10,
+      "in-point", (guint64) 0, NULL);
+  g_object_set (clip1, "start", (guint64) 20, "duration", (guint64) 10,
+      "in-point", (guint64) 0, NULL);
+  g_object_set (clip2, "start", (guint64) 40, "duration", (guint64) 10,
+      "in-point", (guint64) 0, NULL);
+
+  fail_unless ((layer = ges_timeline_append_layer (timeline)) != NULL);
+  assert_equals_int (ges_layer_get_priority (layer), 0);
+
+  fail_unless (ges_layer_add_clip (layer, GES_CLIP (clip)));
+  fail_unless (ges_layer_add_clip (layer, GES_CLIP (clip1)));
+  fail_unless (ges_layer_add_clip (layer, GES_CLIP (clip2)));
+
+  ges_timeline_add_snapping_points (timeline, 2, snaps);
+
+  ges_timeline_get_snapping_points (timeline, 0,
+      GST_CLOCK_TIME_NONE, &n_snaps, &custom_snaps);
+  fail_unless_equals_int (n_snaps, 1);
+  g_free (custom_snaps);
+
+  ges_timeline_get_snapping_points (timeline, 0, 10, &n_snaps, &custom_snaps);
+  fail_unless_equals_int (n_snaps, 0);
+  g_free (custom_snaps);
+
+  ges_timeline_get_snapping_points (timeline, 15, 20, &n_snaps, &custom_snaps);
+  fail_unless_equals_int (n_snaps, 0);
+  g_free (custom_snaps);
+
+  ges_timeline_get_snapping_points (timeline, 12, 20, &n_snaps, &custom_snaps);
+  fail_unless_equals_int (n_snaps, 0);
+  g_free (custom_snaps);
+
+  ges_timeline_get_snapping_points (timeline, 0, 12, &n_snaps, &custom_snaps);
+  fail_unless_equals_int (n_snaps, 1);
+  g_free (custom_snaps);
+
+  ges_timeline_get_snapping_points (timeline, GST_CLOCK_TIME_NONE,
+      GST_CLOCK_TIME_NONE, &n_snaps, &custom_snaps);
+  fail_unless_equals_int (n_snaps, 2);
+  g_free (custom_snaps);
+
+  g_object_set (timeline, "snapping-distance", (guint64) 4, NULL);
+
+  fail_unless (ges_container_edit (clip1, NULL, -1, GES_EDIT_MODE_NORMAL,
+          GES_EDGE_NONE, 13) == TRUE);
+
+  CHECK_OBJECT_PROPS (clip1, 12, 0, 10);
+
+  snaps[0] = 19;
+  ges_timeline_add_snapping_points (timeline, 1, snaps);
+
+  fail_unless (ges_container_edit (clip1, NULL, -1, GES_EDIT_MODE_NORMAL,
+          GES_EDGE_NONE, 18) == TRUE);
+
+  CHECK_OBJECT_PROPS (clip1, 19, 0, 10);
+
+  fail_unless_equals_int (ges_timeline_remove_snapping_points_in_range
+      (timeline, 5, 5), 0);
+
+  fail_unless_equals_int (ges_timeline_remove_snapping_points_in_range
+      (timeline, GST_CLOCK_TIME_NONE, GST_CLOCK_TIME_NONE), 3);
+
+  ASSERT_OBJECT_REFCOUNT (clip, "First clip", 2);
+  ASSERT_OBJECT_REFCOUNT (clip1, "Second clip", 2);
+  ASSERT_OBJECT_REFCOUNT (clip2, "Third clip", 2);
+
+  check_destroyed (G_OBJECT (timeline), G_OBJECT (clip), clip1, clip2, layer,
+      NULL);
+}
+
+GST_END_TEST;
+
 GST_START_TEST (test_snapping)
 {
   GESTrack *track;
@@ -307,6 +412,9 @@ GST_START_TEST (test_snapping)
   ASSERT_OBJECT_REFCOUNT (trackelement2, "First trackelement", 4);
   ASSERT_OBJECT_REFCOUNT (clip2, "First clip", 2);
 
+  CHECK_OBJECT_PROPS (trackelement, 25, 0, 37);
+  CHECK_OBJECT_PROPS (trackelement1, 20, 0, 15);
+  CHECK_OBJECT_PROPS (trackelement2, 62, 0, 60);
   /* Snaping to edge, so no move */
   g_object_set (timeline, "snapping-distance", (guint64) 3, NULL);
   fail_unless (ges_container_edit (clip1, NULL, -1, GES_EDIT_MODE_TRIM,
@@ -1497,6 +1605,7 @@ ges_suite (void)
   tcase_add_test (tc_chain, test_groups);
   tcase_add_test (tc_chain, test_snapping_groups);
   tcase_add_test (tc_chain, test_scaling);
+  tcase_add_test (tc_chain, test_custom_snapping);
 
   return s;
 }
