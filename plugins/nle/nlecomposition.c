@@ -1351,12 +1351,17 @@ get_new_seek_event (NleComposition * comp, gboolean initial,
       GST_TIME_FORMAT, GST_TIME_ARGS (priv->segment->stop),
       GST_TIME_ARGS (priv->segment_stop));
 
-  start = GST_CLOCK_TIME_IS_VALID (priv->segment->start)
-      ? MAX (priv->segment->start, priv->segment_start)
-      : priv->segment_start;
-  stop = GST_CLOCK_TIME_IS_VALID (priv->segment->stop)
-      ? MIN (priv->segment->stop, priv->segment_stop)
-      : priv->segment_stop;
+  if (initial) {
+    start = priv->segment_start;
+    stop = priv->segment_stop;
+  } else {
+    start = GST_CLOCK_TIME_IS_VALID (priv->segment->start)
+        ? MAX (priv->segment->start, priv->segment_start)
+        : priv->segment_start;
+    stop = GST_CLOCK_TIME_IS_VALID (priv->segment->stop)
+        ? MIN (priv->segment->stop, priv->segment_stop)
+        : priv->segment_stop;
+  }
 
   if (updatestoponly) {
     starttype = GST_SEEK_TYPE_NONE;
